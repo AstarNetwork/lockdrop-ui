@@ -1,0 +1,13 @@
+language: node_js
+sudo: false
+
+node_js:
+- "10"
+
+install:
+- npm install
+
+script:
+- npm run testrpc >/dev/null &
+- sleep 5
+- npm test

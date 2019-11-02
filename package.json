@@ -1,0 +1,34 @@
+{
+  "name": "ethereum-lockdrop",
+  "version": "0.1.0",
+  "homepage": "https://github.com/stakedtechnologies/ethereum-lockdrop#readme",
+  "description": "Ethereum lockdrop smart contracts",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test",
+    "compile": "truffle compile",
+    "migrate": "truffle migrate",
+    "console": "truffle console",
+    "testrpc": "ganache-cli",
+    "release": "truffle migrate --network mainnet"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stakedtechnologies/ethereum-lockdrop.git"
+  },
+  "keywords": [
+    "ethereum",
+    "solidity",
+    "lockdrop"
+  ],
+  "dependencies": {
+    "ganache-cli": "^6.2.4",
+    "truffle": "5.0.4",
+    "truffle-flattener": "^1.2.9"
+  },
+  "author": "Aleksandr Krupenkin <mail@akru.me>",
+  "license": "BSD-3-Clause"
+}
