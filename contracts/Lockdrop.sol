@@ -32,13 +32,17 @@ contract Lockdrop {
         didStart
         didNotEnd
     {
+        require(msg.value > 0);
+
         uint256 eth = msg.value;
         address owner = msg.sender;
         uint256 unlockTime = unlockTimeForTerm(term);
+
         // Create ETH lock contract
         Lock lockAddr = (new Lock).value(eth)(owner, unlockTime);
         // ensure lock contract has all ETH, or fail
         assert(address(lockAddr).balance == msg.value);
+
         emit Locked(owner, eth, address(lockAddr));
     }
 
