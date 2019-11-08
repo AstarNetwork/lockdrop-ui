@@ -3,11 +3,10 @@
   "version": "0.1.0",
   "homepage": "https://github.com/stakedtechnologies/ethereum-lockdrop#readme",
   "description": "Ethereum lockdrop smart contracts",
-  "main": "truffle.js",
+  "main": "index.js",
   "directories": {
     "lib": "lib",
-    "test": "test",
-    "scripts": "scripts"
+    "test": "test"
   },
   "scripts": {
     "test": "truffle test",
@@ -27,6 +26,8 @@
     "lockdrop"
   ],
   "dependencies": {
+    "yargs": "^13.0",
+    "web3": "^1.2",
     "chai": "^4.2.0",
     "bn-chai": "^1.0.1",
     "chai-as-promised": "^7.1.1",
