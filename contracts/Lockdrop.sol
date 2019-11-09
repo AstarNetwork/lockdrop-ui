@@ -3,19 +3,13 @@ pragma solidity ^0.5.0;
 import './Lock.sol';
 
 contract Lockdrop {
-    enum Term {
-        ThreeMo,
-        SixMo,
-        TwelveMo
-    }
-
     // Time constants
     uint256 constant public LOCK_DROP_PERIOD = 1 days * 92; // 3 months
     uint256 public LOCK_START_TIME;
     uint256 public LOCK_END_TIME;
 
     // ETH locking events
-    event Locked(address indexed owner, uint256 indexed eth, address indexed lockAddr);
+    event Locked(uint256 indexed eth, uint256 indexed duration, address lock);
 
     constructor(uint startTime) public {
         LOCK_START_TIME = startTime;
@@ -24,26 +18,32 @@ contract Lockdrop {
 
     /**
      * @dev        Locks up the value sent to contract in a new Lock
-     * @param      term         The length of the lock up\
+     * @param      _days         The length of the lock up
      */
-    function lock(Term term)
+    function lock(uint256 _days)
         external
         payable
         didStart
         didNotEnd
     {
-        require(msg.value > 0);
+        // Accept External Owned Accounts only
+        require(msg.sender == tx.origin);
 
+        // Accept only fixed set of durations
+        require(_days == 30 || _days == 100 || _days == 300 || _days == 1000); 
+        uint256 unlockTime = now + _days * 1 days;
+
+        // Accept non-zero payments only
+        require(msg.value > 0);
         uint256 eth = msg.value;
-        address owner = msg.sender;
-        uint256 unlockTime = unlockTimeForTerm(term);
 
         // Create ETH lock contract
-        Lock lockAddr = (new Lock).value(eth)(owner, unlockTime);
-        // ensure lock contract has all ETH, or fail
-        assert(address(lockAddr).balance == msg.value);
+        Lock lockAddr = (new Lock).value(eth)(msg.sender, unlockTime);
 
-        emit Locked(owner, eth, address(lockAddr));
+        // ensure lock contract has all ETH, or fail
+        assert(address(lockAddr).balance == eth);
+
+        emit Locked(eth, _days, address(lockAddr));
     }
 
     /**
@@ -60,13 +60,5 @@ contract Lockdrop {
     modifier didNotEnd() {
         require(now <= LOCK_END_TIME);
         _;
-    }
-
-    function unlockTimeForTerm(Term term) internal view returns (uint256) {
-        if (term == Term.ThreeMo) return now + 92 days;
-        if (term == Term.SixMo) return now + 183 days;
-        if (term == Term.TwelveMo) return now + 365 days;
-
-        revert();
     }
 }
