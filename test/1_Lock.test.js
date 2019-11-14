@@ -6,7 +6,6 @@ chai.use(require('bn-chai')(web3.utils.BN));
 chai.should();
 
 contract('Lock', (accounts) => {
-
     describe('Locking funds', () => {
         let lock_account = accounts[0];
         let lock_balance = web3.utils.toWei('1', 'ether')
@@ -23,5 +22,4 @@ contract('Lock', (accounts) => {
             chai.expect(await web3.eth.getBalance(lock.address)).to.eq.BN('0');
         });
     });
-
 });
