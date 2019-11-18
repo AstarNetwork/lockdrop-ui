@@ -1,0 +1,433 @@
+{
+  "contractName": "Lock",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "name": "unlockTime",
+          "type": "uint256"
+        }
+      ],
+      "payable": true,
+      "stateMutability": "payable",
+      "type": "constructor"
+    },
+    {
+      "payable": true,
+      "stateMutability": "payable",
+      "type": "fallback"
+    }
+  ],
+  "metadata": "{\"compiler\":{\"version\":\"0.5.8+commit.23d335f2\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"name\":\"owner\",\"type\":\"address\"},{\"name\":\"unlockTime\",\"type\":\"uint256\"}],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"constructor\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol\":\"Lock\"},\"evmVersion\":\"petersburg\",\"libraries\":{},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol\":{\"keccak256\":\"0x810328790ffa48740c5da44de8e87fe4946314220139ec54a8f52a3b5a9f49a0\",\"urls\":[\"bzzr://844e97cea376735153a502509facdd5f25ccf1428b08da468b3f04e55eb7deec\"]}},\"version\":1}",
+  "bytecode": "0x60806040526040516040806100c383398101806040526040811015602257600080fd5b81019080805190602001909291908051906020019092919050505081600055806001555050606e806100556000396000f3fe6080604052600154421160008114601b5760018114602057603f565b600080fd5b60008060008030316000545af160008114603857603d565b600080fd5b505b5000fea165627a7a723058209124476914c039ee0df34131617736c1f1b8b97b1de27a95e4512f9e6e40c7900029",
+  "deployedBytecode": "0x6080604052600154421160008114601b5760018114602057603f565b600080fd5b60008060008030316000545af160008114603857603d565b600080fd5b505b5000fea165627a7a723058209124476914c039ee0df34131617736c1f1b8b97b1de27a95e4512f9e6e40c7900029",
+  "sourceMap": "25:701:0:-;;;110:168;;;;;;;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;110:168:0;;;;;;;;;;;;;;;;;;;;;;;;;219:5;213:4;206:19;251:10;245:4;238:24;192:80;;25:701;;;;;;",
+  "deployedSourceMap": "25:701:0:-;;;515:4;509:11;498:9;495:26;539:1;534:23;;;;575:1;570:138;;;;488:220;;534:23;553:1;550;543:12;570:138;652:1;649;646;643;633:7;625:16;618:4;612:11;607:3;602:52;676:1;671:23;;;;595:99;;671:23;690:1;687;680:12;595:99;;488:220;;25:701",
+  "source": "pragma solidity ^0.5.0;\n\ncontract Lock {\n    // address owner; slot #0\n    // address unlockTime; slot #1\n    constructor (address owner, uint256 unlockTime) public payable {\n        assembly {\n            sstore(0x00, owner)\n            sstore(0x01, unlockTime)\n        }\n    }\n\n    /**\n    * @dev        Withdraw function once timestamp has passed unlock time\n    */\n    function () external payable { // payable so solidity doesn't add unnecessary logic\n        assembly {\n            switch gt(timestamp, sload(0x01))\n            case 0 { revert(0, 0) }\n            case 1 {\n                switch call(gas, sload(0x00), balance(address), 0, 0, 0, 0)\n                case 0 { revert(0, 0) }\n            }\n        }\n    }\n}\n",
+  "sourcePath": "/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol",
+  "ast": {
+    "absolutePath": "/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol",
+    "exportedSymbols": {
+      "Lock": [
+        16
+      ]
+    },
+    "id": 17,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 1,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:23:0"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": true,
+        "id": 16,
+        "linearizedBaseContracts": [
+          16
+        ],
+        "name": "Lock",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": {
+              "id": 9,
+              "nodeType": "Block",
+              "src": "173:105:0",
+              "statements": [
+                {
+                  "externalReferences": [
+                    {
+                      "unlockTime": {
+                        "declaration": 5,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "251:10:0",
+                        "valueSize": 1
+                      }
+                    },
+                    {
+                      "owner": {
+                        "declaration": 3,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "219:5:0",
+                        "valueSize": 1
+                      }
+                    }
+                  ],
+                  "id": 8,
+                  "nodeType": "InlineAssembly",
+                  "operations": "{\n    sstore(0x00, owner)\n    sstore(0x01, unlockTime)\n}",
+                  "src": "183:89:0"
+                }
+              ]
+            },
+            "documentation": null,
+            "id": 10,
+            "implemented": true,
+            "kind": "constructor",
+            "modifiers": [],
+            "name": "",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 6,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 3,
+                  "name": "owner",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 10,
+                  "src": "123:13:0",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 2,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "123:7:0",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 5,
+                  "name": "unlockTime",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 10,
+                  "src": "138:18:0",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 4,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "138:7:0",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "122:35:0"
+            },
+            "returnParameters": {
+              "id": 7,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "173:0:0"
+            },
+            "scope": 16,
+            "src": "110:168:0",
+            "stateMutability": "payable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": {
+              "id": 14,
+              "nodeType": "Block",
+              "src": "402:322:0",
+              "statements": [
+                {
+                  "externalReferences": [],
+                  "id": 13,
+                  "nodeType": "InlineAssembly",
+                  "operations": "{\n    switch gt(timestamp(), sload(0x01))\n    case 0 {\n        revert(0, 0)\n    }\n    case 1 {\n        switch call(gas(), sload(0x00), balance(address()), 0, 0, 0, 0)\n        case 0 {\n            revert(0, 0)\n        }\n    }\n}",
+                  "src": "465:253:0"
+                }
+              ]
+            },
+            "documentation": "@dev        Withdraw function once timestamp has passed unlock time",
+            "id": 15,
+            "implemented": true,
+            "kind": "fallback",
+            "modifiers": [],
+            "name": "",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 11,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "382:2:0"
+            },
+            "returnParameters": {
+              "id": 12,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "402:0:0"
+            },
+            "scope": 16,
+            "src": "373:351:0",
+            "stateMutability": "payable",
+            "superFunction": null,
+            "visibility": "external"
+          }
+        ],
+        "scope": 17,
+        "src": "25:701:0"
+      }
+    ],
+    "src": "0:727:0"
+  },
+  "legacyAST": {
+    "absolutePath": "/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol",
+    "exportedSymbols": {
+      "Lock": [
+        16
+      ]
+    },
+    "id": 17,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 1,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:23:0"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": true,
+        "id": 16,
+        "linearizedBaseContracts": [
+          16
+        ],
+        "name": "Lock",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": {
+              "id": 9,
+              "nodeType": "Block",
+              "src": "173:105:0",
+              "statements": [
+                {
+                  "externalReferences": [
+                    {
+                      "unlockTime": {
+                        "declaration": 5,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "251:10:0",
+                        "valueSize": 1
+                      }
+                    },
+                    {
+                      "owner": {
+                        "declaration": 3,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "219:5:0",
+                        "valueSize": 1
+                      }
+                    }
+                  ],
+                  "id": 8,
+                  "nodeType": "InlineAssembly",
+                  "operations": "{\n    sstore(0x00, owner)\n    sstore(0x01, unlockTime)\n}",
+                  "src": "183:89:0"
+                }
+              ]
+            },
+            "documentation": null,
+            "id": 10,
+            "implemented": true,
+            "kind": "constructor",
+            "modifiers": [],
+            "name": "",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 6,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 3,
+                  "name": "owner",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 10,
+                  "src": "123:13:0",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 2,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "123:7:0",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 5,
+                  "name": "unlockTime",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 10,
+                  "src": "138:18:0",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 4,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "138:7:0",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "122:35:0"
+            },
+            "returnParameters": {
+              "id": 7,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "173:0:0"
+            },
+            "scope": 16,
+            "src": "110:168:0",
+            "stateMutability": "payable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": {
+              "id": 14,
+              "nodeType": "Block",
+              "src": "402:322:0",
+              "statements": [
+                {
+                  "externalReferences": [],
+                  "id": 13,
+                  "nodeType": "InlineAssembly",
+                  "operations": "{\n    switch gt(timestamp(), sload(0x01))\n    case 0 {\n        revert(0, 0)\n    }\n    case 1 {\n        switch call(gas(), sload(0x00), balance(address()), 0, 0, 0, 0)\n        case 0 {\n            revert(0, 0)\n        }\n    }\n}",
+                  "src": "465:253:0"
+                }
+              ]
+            },
+            "documentation": "@dev        Withdraw function once timestamp has passed unlock time",
+            "id": 15,
+            "implemented": true,
+            "kind": "fallback",
+            "modifiers": [],
+            "name": "",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 11,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "382:2:0"
+            },
+            "returnParameters": {
+              "id": 12,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "402:0:0"
+            },
+            "scope": 16,
+            "src": "373:351:0",
+            "stateMutability": "payable",
+            "superFunction": null,
+            "visibility": "external"
+          }
+        ],
+        "scope": 17,
+        "src": "25:701:0"
+      }
+    ],
+    "src": "0:727:0"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.5.8+commit.23d335f2.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.0.11",
+  "updatedAt": "2019-11-18T04:36:42.078Z",
+  "devdoc": {
+    "methods": {}
+  },
+  "userdoc": {
+    "methods": {}
+  }
+}
