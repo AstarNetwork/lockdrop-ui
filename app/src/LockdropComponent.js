@@ -12,19 +12,7 @@ import logo from "./logo.png";
 export default () => (
   <Container className="p-3">
     <ToastContainer />
-    <div>
-      <img src={logo} id="logo" alt="plasm-logo" />
-      <h1>Plasm Ethereum Lockdrop</h1>
-      <p>TODO: short instruction how to use</p>
-    </div>
-
-    <div className="section">
-      <h2>Lockdrop Contract</h2>
-      <p>
-        <strong>Stored Value: </strong>
-        <ContractData contract="Lockdrop" method="LOCK_START_TIME" />
-      </p>
-      <ContractForm contract="Lockdrop" method="lock"/>
-    </div>
+    <img class="img-fluid" src={logo} alt="plasm-logo" />
+    Lock 1 ETH for <ContractForm contract="Lockdrop" method="lock" sendArgs={{value: 10**18}}/>
   </Container>
 );
