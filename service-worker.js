@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.3/workbox-sw.js");
 
 importScripts(
-  "/ethereum-lockdrop/precache-manifest.8d64075dba0a97f0c7f13d6de338710d.js"
+  "/ethereum-lockdrop/precache-manifest.06706393e0c1bfb1dc7568cd0f57822a.js"
 );
 
 workbox.clientsClaim();

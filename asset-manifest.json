@@ -1,7 +1,7 @@
 {
   "main.css": "/ethereum-lockdrop/static/css/main.58f6a003.chunk.css",
-  "main.js": "/ethereum-lockdrop/static/js/main.d32259d1.chunk.js",
-  "main.js.map": "/ethereum-lockdrop/static/js/main.d32259d1.chunk.js.map",
+  "main.js": "/ethereum-lockdrop/static/js/main.3466a7de.chunk.js",
+  "main.js.map": "/ethereum-lockdrop/static/js/main.3466a7de.chunk.js.map",
   "static/css/1.99ee73b8.chunk.css": "/ethereum-lockdrop/static/css/1.99ee73b8.chunk.css",
   "static/js/1.883efbdc.chunk.js": "/ethereum-lockdrop/static/js/1.883efbdc.chunk.js",
   "static/js/1.883efbdc.chunk.js.map": "/ethereum-lockdrop/static/js/1.883efbdc.chunk.js.map",
@@ -11,6 +11,6 @@
   "static/media/logo.png": "/ethereum-lockdrop/static/media/logo.eaa7a31a.png",
   "static/css/main.58f6a003.chunk.css.map": "/ethereum-lockdrop/static/css/main.58f6a003.chunk.css.map",
   "index.html": "/ethereum-lockdrop/index.html",
-  "precache-manifest.8d64075dba0a97f0c7f13d6de338710d.js": "/ethereum-lockdrop/precache-manifest.8d64075dba0a97f0c7f13d6de338710d.js",
+  "precache-manifest.06706393e0c1bfb1dc7568cd0f57822a.js": "/ethereum-lockdrop/precache-manifest.06706393e0c1bfb1dc7568cd0f57822a.js",
   "service-worker.js": "/ethereum-lockdrop/service-worker.js"
 }
