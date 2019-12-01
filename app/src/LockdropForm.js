@@ -63,7 +63,7 @@ class LockdropForm extends Component {
                     </InputGroup.Append>
                 </InputGroup>
                 <Form.Text className='text-muted'>
-                    ETH will be locked on simple separated contract (<a href='https://ropsten.etherscan.io/address/0xf1cf4d16451b1fcb2fd79e2212d617fb95d24a6e#code'>source code</a>)
+                    ETH will be locked on simple separated contract (<a href='https://ropsten.etherscan.io/address/0x70fb65463cf099aac7e97d65a2e7c6baaa337843#code'>source code</a>)
                 </Form.Text>
             </Form.Group>
             <Button variant='primary' type='button' onClick={this.handleSubmit}>
