@@ -4,7 +4,7 @@ import './Lock.sol';
 
 contract Lockdrop {
     // Time constants
-    uint256 constant public LOCK_DROP_PERIOD = 1 days * 92; // 3 months
+    uint256 constant public LOCK_DROP_PERIOD = 14 days; // Testnet lockdrop duration
     uint256 public LOCK_START_TIME;
     uint256 public LOCK_END_TIME;
 
