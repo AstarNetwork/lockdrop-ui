@@ -13,5 +13,6 @@ export default (props) => (
         <ToastContainer />
         <Image src={logo} fluid />
         <LockdropForm />
+        <em>Inspired by <a href="https://edgewa.re/lockdrop/">Edgeware lockdrop</a> initiative</em> 
     </Container>
 )

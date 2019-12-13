@@ -17,7 +17,7 @@ class LockdropForm extends Component {
         this.utils = context.drizzle.web3.utils;
 
         this.state = {
-            'form-days': 30,
+            'form-days': 1,
             'form-value': 1,
         };
     }
@@ -41,10 +41,9 @@ class LockdropForm extends Component {
                 <Form.Label>How long</Form.Label>
                 <InputGroup>
                     <Form.Control as='select' name='form-days' required onChange={this.handleInputChange}>
-                        <option>30</option>
-                        <option>100</option>
-                        <option>300</option>
-                        <option>1000</option>
+                        <option>1</option>
+                        <option>3</option>
+                        <option>10</option>
                     </Form.Control>
                     <InputGroup.Append>
                         <InputGroup.Text id='days-addon'>days</InputGroup.Text>
