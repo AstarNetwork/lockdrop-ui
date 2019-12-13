@@ -1,7 +1,7 @@
 {
   "homepage": "https://lockdrop.plasmnet.io",
   "name": "app",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "dependencies": {
     "drizzle": "^1.4.0",

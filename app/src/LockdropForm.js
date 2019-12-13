@@ -18,7 +18,7 @@ class LockdropForm extends Component {
 
         this.state = {
             'form-days': 1,
-            'form-value': 1,
+            'form-value': 0.42,
         };
     }
 
@@ -35,8 +35,19 @@ class LockdropForm extends Component {
     }
 
     render() {
-        return (
-            <Form>
+        return (<Form>
+            <Form.Group controlId='LockValue'>
+                <Form.Label>How much</Form.Label>
+                <InputGroup>
+                    <Form.Control type='number' name='form-value' placeholder='0,42' required onChange={this.handleInputChange}/>
+                    <InputGroup.Append>
+                        <InputGroup.Text id='eth-addon'>ETH</InputGroup.Text>
+                    </InputGroup.Append>
+                </InputGroup>
+                <Form.Text className='text-muted'>
+                    ETH will be locked on simple separated contract (<a href='https://ropsten.etherscan.io/address/0x89AbD163b178C6375dfE9F37e77dFAB53967Af20#code'>source code</a>).<br/><em>Inspired by <a href="https://edgewa.re/lockdrop/">Edgeware lockdrop</a> initiative.</em> 
+                </Form.Text>
+            </Form.Group>
             <Form.Group controlId='DurationSelect'>
                 <Form.Label>How long</Form.Label>
                 <InputGroup>
@@ -51,18 +62,6 @@ class LockdropForm extends Component {
                 </InputGroup>
                 <Form.Text className='text-muted'>
                     Your asset will be released after days spended.
-                </Form.Text>
-            </Form.Group>
-            <Form.Group controlId='LockValue'>
-                <Form.Label>How much</Form.Label>
-                <InputGroup>
-                    <Form.Control type='number' name='form-value' placeholder='Locked value' required onChange={this.handleInputChange}/>
-                    <InputGroup.Append>
-                        <InputGroup.Text id='eth-addon'>ETH</InputGroup.Text>
-                    </InputGroup.Append>
-                </InputGroup>
-                <Form.Text className='text-muted'>
-                    ETH will be locked on simple separated contract (<a href='https://ropsten.etherscan.io/address/0x70fb65463cf099aac7e97d65a2e7c6baaa337843#code'>source code</a>)
                 </Form.Text>
             </Form.Group>
             <Button variant='primary' type='button' onClick={this.handleSubmit}>
