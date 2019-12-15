@@ -54,7 +54,7 @@ class LockdropForm extends Component {
                     <Form.Control as='select' name='form-days' required onChange={this.handleInputChange}>
                         <option>1</option>
                         <option>3</option>
-                        <option>10</option>
+                        <option>7</option>
                     </Form.Control>
                     <InputGroup.Append>
                         <InputGroup.Text id='days-addon'>days</InputGroup.Text>
