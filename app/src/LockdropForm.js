@@ -35,6 +35,7 @@ class LockdropForm extends Component {
     }
 
     render() {
+        return (<center><em>Testnet lockdrop finished 20th december</em></center>);
         return (<Form>
             <Form.Group controlId='LockValue'>
                 <Form.Label>How much</Form.Label>
