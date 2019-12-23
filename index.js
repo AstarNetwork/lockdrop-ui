@@ -33,7 +33,12 @@ require('yargs')
 
             // Get locks events from contract
             lib.getLocks(argv.contract, argv.from, argv.to ? argv.to : 'latest')(web3)
-                .then(locks => console.log('balances: ' + JSON.stringify(lib.getBalances(locks))))
+                .then(locks => {
+                    let rates = lib.getIssueRates(locks);
+                    let balances = lib.getBalances(rates); 
+                    console.log('"balances": ' + balances.reduce((s, i) => s+'(hex!["'+i[0]+'"], '+i[1]+'),\n'));
+                    console.log('total: ' + balances.reduce((s, i) => s + parseInt(i[1]), 0) / 10**15);
+                })
                 .catch(console.log)
         }
     )
