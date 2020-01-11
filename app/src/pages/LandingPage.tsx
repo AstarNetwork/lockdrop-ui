@@ -22,7 +22,7 @@ import './LandingPage.css';
 import { logoGithub } from 'ionicons/icons';
 import CountdownTimer from '../components/CountdownTimer';
 
-const endDate = '2020-02-24';
+const endDate = '2020-02-29';
 
 const LandingPage: React.FC = () => {
 
