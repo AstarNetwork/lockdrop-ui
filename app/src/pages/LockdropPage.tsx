@@ -14,11 +14,11 @@ import {
 	IonCard,
 	IonCardContent,
 	IonSelect,
-	IonSelectOption
+	IonSelectOption,
+	IonCardTitle
 } from '@ionic/react';
 import React, { useState } from 'react';
 import './LockdropPage.css';
-import { IonicReactProps } from '@ionic/react/dist/types/components/IonicReactProps';
 
 // option item type is used to provide the data for dropdown items
 type OptionItem = {
@@ -39,7 +39,10 @@ const durations: OptionItem[] = [
 	{ label: '1000 Days', value: 1000 }
 ];
 
-const txType: OptionItem[] = [{ label: 'Metamask', value: 'metamask' }];
+const txTypes: OptionItem[] = [
+	{ label: 'Metamask', value: 'metamask' },
+	{ label: 'yo mama', value: 'yoMama' }
+];
 
 const tokenTypes: OptionItem[] = [
 	{ label: 'ETH', value: 'eth' },
@@ -48,49 +51,58 @@ const tokenTypes: OptionItem[] = [
 	{ label: 'EOS', value: 'eos' }
 ];
 
+// react function component for making dropdown with the given items
+const DropdownOption = (props: OptionData) => {
+	const items = props.dataSets.map(x => {
+		return (
+			<IonSelectOption
+				className='dropdown-item'
+				key={props.dataSets.indexOf(x)}
+				value={x.value}
+			>
+				{x.label}
+			</IonSelectOption>
+		);
+	});
+
+	return (
+		<IonSelect interface='popover' onIonChange={e => props.onChoose(e)}>
+			{items}
+		</IonSelect>
+	);
+};
+
 // the main component function
 const LockdropPage: React.FC = () => {
 	// states used in this component
 	const [lockAmount, setAmount] = useState(0);
 	const [lockDuration, setDuration] = useState(0);
-	const [tokenType, setTokenType] = useState('ETH');
-
-	// react function component for making dropdown with the given items
-	const DropdownOption = (props: OptionData) => {
-		const items = props.dataSets.map(x => {
-			return (
-				<IonSelectOption
-					className='dropdown-item'
-					key={props.dataSets.indexOf(x)}
-					value={x.value}
-				>
-					{x.label}
-				</IonSelectOption>
-			);
-		});
-
-		return (
-			<IonSelect interface='popover' onIonChange={e => props.onChoose(e)}>
-				{items}
-			</IonSelect>
-		);
-	};
+	const [tokenType, setTokenType] = useState('');
+	const [txType, setTxType] = useState('');
 
 	// the submit button function
 	function handleSubmit(
 		lockAmount: number,
 		lockDuration: number,
-		tokenName: string
+		tokenName: string,
+		txType: string
 	) {
-		console.log(
-			'you have submitted ' +
-				lockAmount +
-				' ' +
-				tokenName +
-				' for ' +
-				lockDuration +
-				' days'
-		);
+		// checks user input
+		if (lockAmount > 0 && lockDuration && tokenName && txType) {
+			console.log(
+				'you have submitted ' +
+					lockAmount +
+					' ' +
+					tokenName +
+					' for ' +
+					lockDuration +
+					' days with ' +
+					txType
+			);
+		} else {
+			// display warning if there is a problem with the input
+			console.log("you're missing an input!");
+		}
 	}
 
 	return (
@@ -107,7 +119,7 @@ const LockdropPage: React.FC = () => {
 						<IonCol></IonCol>
 						<IonCol size='auto'>
 							<div className='main-content'>
-								<IonLabel>Lockdrop Contract Address</IonLabel>
+								<IonLabel>Form Inputs</IonLabel>
 								<IonCard>
 									<IonCardContent>
 										This is the lockdrop form, please input your information
@@ -115,34 +127,57 @@ const LockdropPage: React.FC = () => {
 									</IonCardContent>
 								</IonCard>
 								<IonItem>
-									<IonLabel>Tokens Locking</IonLabel>
+									<IonLabel>Tokens Locking in</IonLabel>
 
 									<DropdownOption
 										dataSets={tokenTypes}
-										onChoose={() => console.log('you choose ')}
+										onChoose={(e: React.ChangeEvent<HTMLInputElement>) =>
+											setTokenType(e.target.value)
+										}
 									></DropdownOption>
 								</IonItem>
+
 								<IonItem>
-									<IonLabel position='floating'>Amount of {tokenType}</IonLabel>
-									<IonInput placeholder={'0.64646 ' + tokenType}></IonInput>
+									<IonLabel position='floating'>
+										Number of{' '}
+										{tokenType !== '' ? tokenType.toUpperCase() : 'Tokens'}
+									</IonLabel>
+									<IonInput
+										placeholder={
+											'ex: 0.64646 ' +
+											(tokenType !== '' ? tokenType.toUpperCase() : 'Tokens')
+										}
+										onIonInput={e =>
+											setAmount(
+												((e.target as HTMLInputElement)
+													.value as unknown) as number
+											)
+										}
+									></IonInput>
 								</IonItem>
 								<IonItem>
 									<IonLabel>Lock Duration</IonLabel>
+
 									<DropdownOption
 										dataSets={durations}
-										onChoose={() => console.log('you choose ')}
+										onChoose={(e: React.ChangeEvent<HTMLInputElement>) =>
+											setDuration((e.target.value as unknown) as number)
+										}
 									></DropdownOption>
 								</IonItem>
+
 								<IonItem>
-									<IonLabel>Transaction Type</IonLabel>
+									<IonLabel>Transaction With</IonLabel>
 									<DropdownOption
-										dataSets={txType}
-										onChoose={() => console.log('you choose ')}
+										dataSets={txTypes}
+										onChoose={(e: React.ChangeEvent<HTMLInputElement>) =>
+											setTxType(e.target.value)
+										}
 									></DropdownOption>
 								</IonItem>
 								<IonButton
 									onClick={() =>
-										handleSubmit(lockAmount, lockDuration, tokenType)
+										handleSubmit(lockAmount, lockDuration, tokenType, txType)
 									}
 								>
 									Submit Transaction
