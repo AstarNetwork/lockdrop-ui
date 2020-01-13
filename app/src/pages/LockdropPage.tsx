@@ -21,6 +21,9 @@ import './LockdropPage.css';
 
 import '../helpers/lockdrop_helpers/EthereumLockdrop';
 import { lockEthereum } from '../helpers/lockdrop_helpers/EthereumLockdrop';
+import { lockBitcoin } from '../helpers/lockdrop_helpers/BitcoinLockdrop';
+import { lockEos } from '../helpers/lockdrop_helpers/EosioLockdrop';
+import { lockDots } from '../helpers/lockdrop_helpers/PolkadotLockdrop';
 
 // option item type is used to provide the data for dropdown items
 type OptionItem = {
@@ -34,7 +37,7 @@ type OptionData = {
 	onChoose: Function;
 };
 
-const contractAddr = '0xFEC6F679e32D45E22736aD09dFdF6E3368704e31';
+const ethContractAddr = '0xFEC6F679e32D45E22736aD09dFdF6E3368704e31';
 
 const durations: OptionItem[] = [
 	{ label: '30 Days', value: 30 },
@@ -43,10 +46,7 @@ const durations: OptionItem[] = [
 	{ label: '1000 Days', value: 1000 }
 ];
 
-const txTypes: OptionItem[] = [
-	{ label: 'Metamask', value: 'metamask' },
-	{ label: 'yo mama', value: 'yoMama' }
-];
+const txTypes: OptionItem[] = [{ label: 'Metamask', value: 'metamask' }];
 
 const tokenTypes: OptionItem[] = [
 	{ label: 'ETH', value: 'eth' },
@@ -95,21 +95,25 @@ const LockdropPage: React.FC = () => {
 		if (lockAmount > 0 && lockDuration && tokenName && txType) {
 			switch (tokenName) {
 				case 'eth':
-					lockEthereum(lockDuration, lockAmount, contractAddr);
+					lockEthereum(lockDuration, lockAmount, ethContractAddr);
 					break;
 				case 'btc':
+					lockBitcoin();
 					break;
 				case 'dot':
+					lockDots();
 					break;
 				case 'eos':
+					lockEos();
 					break;
 			}
 		} else {
-			// display warning if there is a problem with the input
+			//todo: display warning if there is a problem with the input
 			console.log("you're missing an input!");
 		}
 	}
 
+	// main render JSX
 	return (
 		<IonPage>
 			<IonHeader translucent>
@@ -150,7 +154,9 @@ const LockdropPage: React.FC = () => {
 									<IonInput
 										placeholder={
 											'ex: 0.64646 ' +
-											(tokenType !== '' ? tokenType.toUpperCase() : 'Tokens')
+											(tokenType !== ''
+												? `(${tokenType.toUpperCase()})`
+												: '(Tokens)')
 										}
 										onIonInput={e =>
 											setAmount(
