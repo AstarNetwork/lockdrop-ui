@@ -14,11 +14,13 @@ import {
 	IonCard,
 	IonCardContent,
 	IonSelect,
-	IonSelectOption,
-	IonCardTitle
+	IonSelectOption
 } from '@ionic/react';
 import React, { useState } from 'react';
 import './LockdropPage.css';
+
+import '../helpers/lockdrop_helpers/EthereumLockdrop';
+import { lockEthereum } from '../helpers/lockdrop_helpers/EthereumLockdrop';
 
 // option item type is used to provide the data for dropdown items
 type OptionItem = {
@@ -31,6 +33,8 @@ type OptionData = {
 	dataSets: OptionItem[];
 	onChoose: Function;
 };
+
+const contractAddr = '0xFEC6F679e32D45E22736aD09dFdF6E3368704e31';
 
 const durations: OptionItem[] = [
 	{ label: '30 Days', value: 30 },
@@ -89,16 +93,17 @@ const LockdropPage: React.FC = () => {
 	) {
 		// checks user input
 		if (lockAmount > 0 && lockDuration && tokenName && txType) {
-			console.log(
-				'you have submitted ' +
-					lockAmount +
-					' ' +
-					tokenName +
-					' for ' +
-					lockDuration +
-					' days with ' +
-					txType
-			);
+			switch (tokenName) {
+				case 'eth':
+					lockEthereum(lockDuration, lockAmount, contractAddr);
+					break;
+				case 'btc':
+					break;
+				case 'dot':
+					break;
+				case 'eos':
+					break;
+			}
 		} else {
 			// display warning if there is a problem with the input
 			console.log("you're missing an input!");
