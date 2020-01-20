@@ -27,8 +27,8 @@ import { lockDots } from '../helpers/lockdrop_helpers/PolkadotLockdrop';
 
 // option item type is used to provide the data for dropdown items
 type OptionItem = {
-	label: string;
-	value: number | string;
+	label: string; // the dropdown display label
+	value: number | string; // dropdown select return value
 };
 
 // option data is the type that is going to be passed to the component
@@ -36,8 +36,6 @@ type OptionData = {
 	dataSets: OptionItem[];
 	onChoose: Function;
 };
-
-const ethContractAddr = '0xFEC6F679e32D45E22736aD09dFdF6E3368704e31';
 
 const durations: OptionItem[] = [
 	{ label: '30 Days', value: 30 },
@@ -95,7 +93,7 @@ const LockdropPage: React.FC = () => {
 		if (lockAmount > 0 && lockDuration && tokenName && txType) {
 			switch (tokenName) {
 				case 'eth':
-					lockEthereum(lockDuration, lockAmount, ethContractAddr);
+					lockEthereum(lockDuration, lockAmount);
 					break;
 				case 'btc':
 					lockBitcoin();

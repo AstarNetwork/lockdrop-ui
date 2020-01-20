@@ -3,6 +3,16 @@
 
 import Lockdrop from '../../abi/Lockdrop.json';
 
+// the rate of growth for each lock duration
+const rates = [
+	{ key: 20, value: 24 },
+	{ key: 100, value: 100 },
+	{ key: 300, value: 360 },
+	{ key: 1000, value: 1600 }
+];
+
+const ethContractAddr = '0xFEC6F679e32D45E22736aD09dFdF6E3368704e31';
+
 export const ethereumOptions = {
 	web3: {
 		block: false,
@@ -24,11 +34,13 @@ export const ethereumOptions = {
 // locks the given token
 export function lockEthereum(
 	duration: number,
-	amount: number,
-	contractAddr: string
+	amount: number
 ) {
+	// get the increase rate from the given lock duration
+	let incRate = rates.filter(x => x.key === duration)[0].value;
+
 	console.log(
-		'locking ' + amount + ' ETH for ' + duration + ' days to ' + contractAddr
+		'locking ' + amount + ' ETH for ' + duration + ' days to ' + ethContractAddr + ' with the rate of ' + incRate
 	);
 }
 

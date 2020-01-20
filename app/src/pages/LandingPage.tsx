@@ -33,7 +33,7 @@ const LandingPage: React.FC = () => {
                     <IonTitle>Plasm Network</IonTitle>
                     <IonButtons slot='end'>
                         <IonButton slot='primary' href='https://github.com/staketechnologies/Plasm.git'>
-                            <IonIcon slot='icon-only' icon={logoGithub} />
+                            <IonIcon slot='icon-only' name={logoGithub} />
                         </IonButton>
                     </IonButtons>
                 </IonToolbar>
