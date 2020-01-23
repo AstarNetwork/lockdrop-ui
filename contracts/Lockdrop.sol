@@ -4,7 +4,7 @@ import './Lock.sol';
 
 contract Lockdrop {
     // Time constants
-    uint256 constant public LOCK_DROP_PERIOD = 7 days; // Testnet lockdrop duration
+    uint256 constant public LOCK_DROP_PERIOD = 30 days;
     uint256 public LOCK_START_TIME;
     uint256 public LOCK_END_TIME;
 
@@ -31,9 +31,7 @@ contract Lockdrop {
         require(msg.sender == tx.origin);
 
         // Accept only fixed set of durations
-        //require(_days == 30 || _days == 100 || _days == 300 || _days == 1000); 
-        // XXX: Testnet
-        require(_days == 1 || _days == 3 || _days == 7); 
+        require(_days == 30 || _days == 100 || _days == 300 || _days == 1000); 
         uint256 unlockTime = now + _days * 1 days;
 
         // Accept non-zero payments only
