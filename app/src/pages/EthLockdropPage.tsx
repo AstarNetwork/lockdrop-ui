@@ -42,24 +42,27 @@ const EthLockdropPage: React.FC = () => {
 	const [lockAmount, setAmount] = useState(0);
 	const [lockDuration, setDuration] = useState(0);
 	const [txType, setTxType] = useState('');
+	const [affAccount, setAff] = useState('');
 
 	// the submit button function
 	function handleSubmit(
 		lockAmount: number,
 		lockDuration: number,
-		tokenName: string
+		tokenName: string,
+		affiliationAccount: string
 	) {
 		// checks user input
 		if (lockAmount > 0 && lockDuration && tokenName) {
+			//todo: check if affiliationAccount is a proper Ethereum address
 
 			// get the token increase rate
 			let incRate = rates.filter(x => x.key === lockDuration)[0].value;
 
-			lockEthereum(lockDuration, lockAmount, incRate);
+			lockEthereum(lockDuration, lockAmount, incRate, affiliationAccount);
 
 		} else {
 			//todo: display warning if there is a problem with the input
-			console.log("you're missing an input!");
+			alert('you\'re missing an input!');
 		}
 	}
 
@@ -124,9 +127,27 @@ const EthLockdropPage: React.FC = () => {
 										}
 									></DropdownOption>
 								</IonItem>
+
+								<IonItem>
+									<IonCard>
+										<IonCardContent>
+											If you have a friend who is also participating in the lockdrop, please input the address.
+											Both parties will be able to receive a bonus rate.
+									</IonCardContent>
+									</IonCard>
+									<IonLabel position='floating'>Affiliation (optional)</IonLabel>
+
+									<IonInput
+										placeholder={
+											'ex: 0x324632...'
+										}
+										onIonInput={e => setAff((e.target as HTMLInputElement).value)}
+									></IonInput>
+								</IonItem>
+
 								<IonButton
 									onClick={() =>
-										handleSubmit(lockAmount, lockDuration, txType)
+										handleSubmit(lockAmount, lockDuration, txType, affAccount)
 									}
 								>
 									Submit Transaction

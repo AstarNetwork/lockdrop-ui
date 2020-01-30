@@ -23,7 +23,7 @@ import React, { useState } from 'react';
 import './LandingPage.css';
 import CountdownTimer from '../components/CountdownTimer';
 import { DropdownOption, OptionItem } from '../components/DropdownOption';
-import { authEthereum } from '../helpers/lockdrop_helpers/EthereumLockdrop';
+import { connectMetaMask } from '../helpers/lockdrop_helpers/EthereumLockdrop';
 
 const endDate = '2020-02-29';
 
@@ -40,28 +40,37 @@ const LandingPage: React.FC = () => {
     const [redirect, setRedirect] = useState('');
 
     function handleTokenChoose(dropdownItem: string) {
-        // check if the client meets the requirements for transaction
-        switch (dropdownItem) {
-            case 'eth':
-                authEthereum();
-                break;
-            //todo: add auth check for other tokens
-            case 'btc':
 
-                break;
-            case 'dot':
+        try {
+            // check if the client meets the requirements for transaction
+            switch (dropdownItem) {
+                case 'eth':
 
-                break;
-            case 'eos':
+                    //todo: check if MetaMask is installed
+                    let drizzle = connectMetaMask();
 
-                break;
+                    setTokenType(dropdownItem);
+                    
+                    setRedirect('/eth-lockdrop');
+                    setLockState(false);
+                    break;
+                //todo: add auth check for other tokens
+                case 'btc':
+
+                    break;
+                case 'dot':
+
+                    break;
+                case 'eos':
+
+                    break;
+            }
         }
+        catch (err){
+            alert('found error ' + err);
+        }
+        
 
-        setTokenType(dropdownItem);
-
-        setLockState(false);
-        // sets redirect link to be {tokenTypes.value}-lockdrop
-        setRedirect(`/${dropdownItem}-lockdrop`);
     }
 
     function handleOnClick() {
@@ -108,14 +117,11 @@ const LandingPage: React.FC = () => {
                                         until closing.
                                     </IonCardContent>
                                 </IonCard>
-
-
                             </div>
                         </IonCol>
                         <IonCol>
 
                         </IonCol>
-
                     </IonRow>
                     <IonRow>
                         <IonCol>
@@ -145,8 +151,6 @@ const LandingPage: React.FC = () => {
                 </IonGrid>
 
             </IonContent>
-
-
         </IonPage >
     )
 }

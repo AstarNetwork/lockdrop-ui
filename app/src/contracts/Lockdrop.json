@@ -99,15 +99,15 @@
       "type": "function"
     }
   ],
-  "metadata": "{\"compiler\":{\"version\":\"0.5.13+commit.5b0b510c\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"startTime\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"eth\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"duration\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"lock\",\"type\":\"address\"}],\"name\":\"Locked\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[],\"name\":\"LOCK_DROP_PERIOD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"LOCK_END_TIME\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"LOCK_START_TIME\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_days\",\"type\":\"uint256\"}],\"name\":\"lock\",\"outputs\":[],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"}],\"devdoc\":{\"methods\":{\"lock(uint256)\":{\"details\":\"Locks up the value sent to contract in a new Lock\",\"params\":{\"_days\":\"The length of the lock up\"}}}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/home/akru/devel/ethereum-lockdrop/contracts/Lockdrop.sol\":\"Lockdrop\"},\"evmVersion\":\"petersburg\",\"libraries\":{},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol\":{\"keccak256\":\"0x810328790ffa48740c5da44de8e87fe4946314220139ec54a8f52a3b5a9f49a0\",\"urls\":[\"bzz-raw://a9d170e03a602a5b62e563c471ea6cbaef367bd911b3a9e8eb11c7f247edcf24\",\"dweb:/ipfs/QmcRyDV34p6AqTh7n4kYvRRpx5BVtBvHkN6nrgtBa4khHF\"]},\"/home/akru/devel/ethereum-lockdrop/contracts/Lockdrop.sol\":{\"keccak256\":\"0x6afc5732aa04c518fbf18c710e557e6c7136160c31042a5bb61c8350dd528084\",\"urls\":[\"bzz-raw://bfd0d6f39dd11edf65a8195d2ceb12abb68e59ef0a67e6074ecf17022f130c1f\",\"dweb:/ipfs/QmNbKco6jnVrLGRJKLn1qJDW3czxVvDNVXG3KrGe7XkTCZ\"]}},\"version\":1}",
-  "bytecode": "0x608060405234801561001057600080fd5b5060405161030a38038061030a8339818101604052602081101561003357600080fd5b5051600081905562093a80016001556102b9806100516000396000f3fe60806040526004361061003f5760003560e01c806315f2e2f714610044578063396214661461006b5780638cf0cb5514610080578063dd46706414610095575b600080fd5b34801561005057600080fd5b506100596100b4565b60408051918252519081900360200190f35b34801561007757600080fd5b506100596100ba565b34801561008c57600080fd5b506100596100c0565b6100b2600480360360208110156100ab57600080fd5b50356100c7565b005b60005481565b60015481565b62093a8081565b6000544210156100d657600080fd5b6001544211156100e557600080fd5b3332146100f157600080fd5b80600114806101005750806003145b8061010b5750806007145b61011457600080fd5b42620151808202013461012657600080fd5b6000349050600081338460405161013c906101c9565b6001600160a01b03909216825260208201526040805191829003019082f08015801561016c573d6000803e3d6000fd5b509150506001600160a01b03811631821461018357fe5b604080516001600160a01b03831681529051859184917ffa6c2c931d0791e8fa17b66f2d4a4c4930b1e590bc2033e540fc3435f67aec769181900360200190a350505050565b60af806101d68339019056fe60806040526040516100af3803806100af83398181016040526040811015602557600080fd5b508051602090910151600091909155600155606a806100456000396000f3fe60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a72315820209a4db22f9d2b92340ef94770713dbb73a3d14b3fad2bc9661d05e152ac949564736f6c634300050d0032a265627a7a723158200583acae3c1b08df551eb3521ef94391e11419c331b9341c90512a73d85ebbc564736f6c634300050d0032",
-  "deployedBytecode": "0x60806040526004361061003f5760003560e01c806315f2e2f714610044578063396214661461006b5780638cf0cb5514610080578063dd46706414610095575b600080fd5b34801561005057600080fd5b506100596100b4565b60408051918252519081900360200190f35b34801561007757600080fd5b506100596100ba565b34801561008c57600080fd5b506100596100c0565b6100b2600480360360208110156100ab57600080fd5b50356100c7565b005b60005481565b60015481565b62093a8081565b6000544210156100d657600080fd5b6001544211156100e557600080fd5b3332146100f157600080fd5b80600114806101005750806003145b8061010b5750806007145b61011457600080fd5b42620151808202013461012657600080fd5b6000349050600081338460405161013c906101c9565b6001600160a01b03909216825260208201526040805191829003019082f08015801561016c573d6000803e3d6000fd5b509150506001600160a01b03811631821461018357fe5b604080516001600160a01b03831681529051859184917ffa6c2c931d0791e8fa17b66f2d4a4c4930b1e590bc2033e540fc3435f67aec769181900360200190a350505050565b60af806101d68339019056fe60806040526040516100af3803806100af83398181016040526040811015602557600080fd5b508051602090910151600091909155600155606a806100456000396000f3fe60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a72315820209a4db22f9d2b92340ef94770713dbb73a3d14b3fad2bc9661d05e152ac949564736f6c634300050d0032a265627a7a723158200583acae3c1b08df551eb3521ef94391e11419c331b9341c90512a73d85ebbc564736f6c634300050d0032",
+  "metadata": "{\"compiler\":{\"version\":\"0.5.13+commit.5b0b510c\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"startTime\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"eth\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"duration\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"lock\",\"type\":\"address\"}],\"name\":\"Locked\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[],\"name\":\"LOCK_DROP_PERIOD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"LOCK_END_TIME\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"LOCK_START_TIME\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_days\",\"type\":\"uint256\"}],\"name\":\"lock\",\"outputs\":[],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"}],\"devdoc\":{\"methods\":{\"lock(uint256)\":{\"details\":\"Locks up the value sent to contract in a new Lock\",\"params\":{\"_days\":\"The length of the lock up\"}}}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/home/hoonkim/Projects/ethereum-lockdrop/contracts/Lockdrop.sol\":\"Lockdrop\"},\"evmVersion\":\"petersburg\",\"libraries\":{},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/home/hoonkim/Projects/ethereum-lockdrop/contracts/Lock.sol\":{\"keccak256\":\"0x810328790ffa48740c5da44de8e87fe4946314220139ec54a8f52a3b5a9f49a0\",\"urls\":[\"bzz-raw://a9d170e03a602a5b62e563c471ea6cbaef367bd911b3a9e8eb11c7f247edcf24\",\"dweb:/ipfs/QmcRyDV34p6AqTh7n4kYvRRpx5BVtBvHkN6nrgtBa4khHF\"]},\"/home/hoonkim/Projects/ethereum-lockdrop/contracts/Lockdrop.sol\":{\"keccak256\":\"0x6afc5732aa04c518fbf18c710e557e6c7136160c31042a5bb61c8350dd528084\",\"urls\":[\"bzz-raw://bfd0d6f39dd11edf65a8195d2ceb12abb68e59ef0a67e6074ecf17022f130c1f\",\"dweb:/ipfs/QmNbKco6jnVrLGRJKLn1qJDW3czxVvDNVXG3KrGe7XkTCZ\"]}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b5060405161030a38038061030a8339818101604052602081101561003357600080fd5b5051600081905562093a80016001556102b9806100516000396000f3fe60806040526004361061003f5760003560e01c806315f2e2f714610044578063396214661461006b5780638cf0cb5514610080578063dd46706414610095575b600080fd5b34801561005057600080fd5b506100596100b4565b60408051918252519081900360200190f35b34801561007757600080fd5b506100596100ba565b34801561008c57600080fd5b506100596100c0565b6100b2600480360360208110156100ab57600080fd5b50356100c7565b005b60005481565b60015481565b62093a8081565b6000544210156100d657600080fd5b6001544211156100e557600080fd5b3332146100f157600080fd5b80600114806101005750806003145b8061010b5750806007145b61011457600080fd5b42620151808202013461012657600080fd5b6000349050600081338460405161013c906101c9565b6001600160a01b03909216825260208201526040805191829003019082f08015801561016c573d6000803e3d6000fd5b509150506001600160a01b03811631821461018357fe5b604080516001600160a01b03831681529051859184917ffa6c2c931d0791e8fa17b66f2d4a4c4930b1e590bc2033e540fc3435f67aec769181900360200190a350505050565b60af806101d68339019056fe60806040526040516100af3803806100af83398181016040526040811015602557600080fd5b508051602090910151600091909155600155606a806100456000396000f3fe60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a72315820780eefe1ac52fced780b85376d2c5653bdca344e69ac4a582011ef1f634aea8464736f6c634300050d0032a265627a7a72315820542bcd665fc53d7393e4efa5ee3e7643e143bc94a23db2bf753fe7e326c27a7064736f6c634300050d0032",
+  "deployedBytecode": "0x60806040526004361061003f5760003560e01c806315f2e2f714610044578063396214661461006b5780638cf0cb5514610080578063dd46706414610095575b600080fd5b34801561005057600080fd5b506100596100b4565b60408051918252519081900360200190f35b34801561007757600080fd5b506100596100ba565b34801561008c57600080fd5b506100596100c0565b6100b2600480360360208110156100ab57600080fd5b50356100c7565b005b60005481565b60015481565b62093a8081565b6000544210156100d657600080fd5b6001544211156100e557600080fd5b3332146100f157600080fd5b80600114806101005750806003145b8061010b5750806007145b61011457600080fd5b42620151808202013461012657600080fd5b6000349050600081338460405161013c906101c9565b6001600160a01b03909216825260208201526040805191829003019082f08015801561016c573d6000803e3d6000fd5b509150506001600160a01b03811631821461018357fe5b604080516001600160a01b03831681529051859184917ffa6c2c931d0791e8fa17b66f2d4a4c4930b1e590bc2033e540fc3435f67aec769181900360200190a350505050565b60af806101d68339019056fe60806040526040516100af3803806100af83398181016040526040811015602557600080fd5b508051602090910151600091909155600155606a806100456000396000f3fe60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a72315820780eefe1ac52fced780b85376d2c5653bdca344e69ac4a582011ef1f634aea8464736f6c634300050d0032a265627a7a72315820542bcd665fc53d7393e4efa5ee3e7643e143bc94a23db2bf753fe7e326c27a7064736f6c634300050d0032",
   "sourceMap": "47:1730:1:-;;;354:133;8:9:-1;5:2;;;30:1;27;20:12;5:2;354:133:1;;;;;;;;;;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;354:133:1;399:15;:27;;;136:6;452:28;436:13;:44;47:1730;;;;;;",
   "deployedSourceMap": "47:1730:1:-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;177:30;;8:9:-1;5:2;;;30:1;27;20:12;5:2;177:30:1;;;:::i;:::-;;;;;;;;;;;;;;;;213:28;;8:9:-1;5:2;;;30:1;27;20:12;5:2;213:28:1;;;:::i;93:49::-;;8:9:-1;5:2;;;30:1;27;20:12;5:2;93:49:1;;;:::i;637:831::-;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;637:831:1;;:::i;:::-;;177:30;;;;:::o;213:28::-;;;;:::o;93:49::-;136:6;93:49;:::o;637:831::-;1587:15;;1580:3;:22;;1572:31;;;;;;1743:13;;1736:3;:20;;1728:29;;;;;;803:10;817:9;803:23;795:32;;;;;;998:5;1007:1;998:10;:24;;;;1012:5;1021:1;1012:10;998:24;:38;;;;1026:5;1035:1;1026:10;998:38;990:47;;;;;;1069:3;1083:6;1075:14;;1069:20;1149:9;1141:22;;;;;;1173:11;1187:9;1173:23;;1243:13;1276:3;1281:10;1293;1259:45;;;;;:::i;:::-;-1:-1:-1;;;;;1259:45:1;;;;;;;;;;;;;;;;;;;;;;8:9:-1;5:2;;;45:16;42:1;39;24:38;77:16;74:1;67:27;5:2;-1:-1;1259:45:1;-1:-1:-1;;;;;;;1375:25:1;;;:32;;1368:40;;;;1424:37;;;-1:-1:-1;;;;;1424:37:1;;;;;;1436:5;;1431:3;;1424:37;;;;;;;;;1767:1;;;637:831;:::o;47:1730::-;;;;;;;;:::o",
   "source": "pragma solidity ^0.5.0;\n\nimport './Lock.sol';\n\ncontract Lockdrop {\n    // Time constants\n    uint256 constant public LOCK_DROP_PERIOD = 7 days; // Testnet lockdrop duration\n    uint256 public LOCK_START_TIME;\n    uint256 public LOCK_END_TIME;\n\n    // ETH locking events\n    event Locked(uint256 indexed eth, uint256 indexed duration, address lock);\n\n    constructor(uint startTime) public {\n        LOCK_START_TIME = startTime;\n        LOCK_END_TIME = startTime + LOCK_DROP_PERIOD;\n    }\n\n    /**\n     * @dev        Locks up the value sent to contract in a new Lock\n     * @param      _days         The length of the lock up\n     */\n    function lock(uint256 _days)\n        external\n        payable\n        didStart\n        didNotEnd\n    {\n        // Accept External Owned Accounts only\n        require(msg.sender == tx.origin);\n\n        // Accept only fixed set of durations\n        //require(_days == 30 || _days == 100 || _days == 300 || _days == 1000); \n        // XXX: Testnet\n        require(_days == 1 || _days == 3 || _days == 7); \n        uint256 unlockTime = now + _days * 1 days;\n\n        // Accept non-zero payments only\n        require(msg.value > 0);\n        uint256 eth = msg.value;\n\n        // Create ETH lock contract\n        Lock lockAddr = (new Lock).value(eth)(msg.sender, unlockTime);\n\n        // ensure lock contract has all ETH, or fail\n        assert(address(lockAddr).balance == eth);\n\n        emit Locked(eth, _days, address(lockAddr));\n    }\n\n    /**\n     * @dev        Ensures the lockdrop has started\n     */\n    modifier didStart() {\n        require(now >= LOCK_START_TIME);\n        _;\n    }\n\n    /**\n     * @dev        Ensures the lockdrop has not ended\n     */\n    modifier didNotEnd() {\n        require(now <= LOCK_END_TIME);\n        _;\n    }\n}\n",
-  "sourcePath": "/home/akru/devel/ethereum-lockdrop/contracts/Lockdrop.sol",
+  "sourcePath": "/home/hoonkim/Projects/ethereum-lockdrop/contracts/Lockdrop.sol",
   "ast": {
-    "absolutePath": "/home/akru/devel/ethereum-lockdrop/contracts/Lockdrop.sol",
+    "absolutePath": "/home/hoonkim/Projects/ethereum-lockdrop/contracts/Lockdrop.sol",
     "exportedSymbols": {
       "Lockdrop": [
         153
@@ -128,7 +128,7 @@
         "src": "0:23:1"
       },
       {
-        "absolutePath": "/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol",
+        "absolutePath": "/home/hoonkim/Projects/ethereum-lockdrop/contracts/Lock.sol",
         "file": "./Lock.sol",
         "id": 19,
         "nodeType": "ImportDirective",
@@ -1980,7 +1980,7 @@
     "src": "0:1778:1"
   },
   "legacyAST": {
-    "absolutePath": "/home/akru/devel/ethereum-lockdrop/contracts/Lockdrop.sol",
+    "absolutePath": "/home/hoonkim/Projects/ethereum-lockdrop/contracts/Lockdrop.sol",
     "exportedSymbols": {
       "Lockdrop": [
         153
@@ -2001,7 +2001,7 @@
         "src": "0:23:1"
       },
       {
-        "absolutePath": "/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol",
+        "absolutePath": "/home/hoonkim/Projects/ethereum-lockdrop/contracts/Lock.sol",
         "file": "./Lock.sol",
         "id": 19,
         "nodeType": "ImportDirective",
@@ -3862,10 +3862,44 @@
       "links": {},
       "address": "0x89AbD163b178C6375dfE9F37e77dFAB53967Af20",
       "transactionHash": "0x3703495bd868406ec0178a11434151c370f13f2d5802c154bc27e7d8635086eb"
+    },
+    "5777": {
+      "events": {
+        "0xfa6c2c931d0791e8fa17b66f2d4a4c4930b1e590bc2033e540fc3435f67aec76": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "uint256",
+              "name": "eth",
+              "type": "uint256"
+            },
+            {
+              "indexed": true,
+              "internalType": "uint256",
+              "name": "duration",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "lock",
+              "type": "address"
+            }
+          ],
+          "name": "Locked",
+          "type": "event",
+          "signature": "0xfa6c2c931d0791e8fa17b66f2d4a4c4930b1e590bc2033e540fc3435f67aec76"
+        }
+      },
+      "links": {},
+      "address": "0x630F4e036038db7a929bED4a491EBe3E7C792401",
+      "transactionHash": "0xa2fb6443031d2c3a04b8fa6a5778377dd887c429da2e12f5efb3b990de4cbb15"
     }
   },
-  "schemaVersion": "3.0.11",
-  "updatedAt": "2019-12-12T23:03:52.514Z",
+  "schemaVersion": "3.0.22",
+  "updatedAt": "2020-01-30T13:05:40.064Z",
+  "networkType": "ethereum",
   "devdoc": {
     "methods": {
       "lock(uint256)": {
