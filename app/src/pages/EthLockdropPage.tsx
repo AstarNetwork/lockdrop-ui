@@ -12,30 +12,13 @@ import {
 	IonItem,
 	IonInput,
 	IonCard,
-	IonCardContent,
-	IonSelect,
-	IonSelectOption
+	IonCardContent
 } from '@ionic/react';
 import React, { useState } from 'react';
-import './LockdropPage.css';
 
 import '../helpers/lockdrop_helpers/EthereumLockdrop';
 import { lockEthereum } from '../helpers/lockdrop_helpers/EthereumLockdrop';
-import { lockBitcoin } from '../helpers/lockdrop_helpers/BitcoinLockdrop';
-import { lockEos } from '../helpers/lockdrop_helpers/EosioLockdrop';
-import { lockDots } from '../helpers/lockdrop_helpers/PolkadotLockdrop';
-
-// option item type is used to provide the data for dropdown items
-type OptionItem = {
-	label: string; // the dropdown display label
-	value: number | string; // dropdown select return value
-};
-
-// option data is the type that is going to be passed to the component
-type OptionData = {
-	dataSets: OptionItem[];
-	onChoose: Function;
-};
+import { DropdownOption, OptionItem } from '../components/DropdownOption';
 
 const durations: OptionItem[] = [
 	{ label: '30 Days', value: 30 },
@@ -46,65 +29,34 @@ const durations: OptionItem[] = [
 
 const txTypes: OptionItem[] = [{ label: 'Metamask', value: 'metamask' }];
 
-const tokenTypes: OptionItem[] = [
-	{ label: 'ETH', value: 'eth' },
-	{ label: 'BTC', value: 'btc' },
-	{ label: 'DOT', value: 'dot' },
-	{ label: 'EOS', value: 'eos' }
+const rates = [
+	{ key: 20, value: 24 },
+	{ key: 100, value: 100 },
+	{ key: 300, value: 360 },
+	{ key: 1000, value: 1600 }
 ];
 
-// react function component for making dropdown with the given items
-const DropdownOption = (props: OptionData) => {
-	const items = props.dataSets.map(x => {
-		return (
-			<IonSelectOption
-				className='dropdown-item'
-				key={props.dataSets.indexOf(x)}
-				value={x.value}
-			>
-				{x.label}
-			</IonSelectOption>
-		);
-	});
-
-	return (
-		<IonSelect interface='popover' onIonChange={e => props.onChoose(e)}>
-			{items}
-		</IonSelect>
-	);
-};
-
 // the main component function
-const LockdropPage: React.FC = () => {
+const EthLockdropPage: React.FC = () => {
 	// states used in this component
 	const [lockAmount, setAmount] = useState(0);
 	const [lockDuration, setDuration] = useState(0);
-	const [tokenType, setTokenType] = useState('');
 	const [txType, setTxType] = useState('');
 
 	// the submit button function
 	function handleSubmit(
 		lockAmount: number,
 		lockDuration: number,
-		tokenName: string,
-		txType: string
+		tokenName: string
 	) {
 		// checks user input
-		if (lockAmount > 0 && lockDuration && tokenName && txType) {
-			switch (tokenName) {
-				case 'eth':
-					lockEthereum(lockDuration, lockAmount);
-					break;
-				case 'btc':
-					lockBitcoin();
-					break;
-				case 'dot':
-					lockDots();
-					break;
-				case 'eos':
-					lockEos();
-					break;
-			}
+		if (lockAmount > 0 && lockDuration && tokenName) {
+
+			// get the token increase rate
+			let incRate = rates.filter(x => x.key === lockDuration)[0].value;
+
+			lockEthereum(lockDuration, lockAmount, incRate);
+
 		} else {
 			//todo: display warning if there is a problem with the input
 			console.log("you're missing an input!");
@@ -129,32 +81,20 @@ const LockdropPage: React.FC = () => {
 								<IonLabel>Form Inputs</IonLabel>
 								<IonCard>
 									<IonCardContent>
-										This is the lockdrop form, please input your information
-										carefully
+										To continue with this Lockdrop, you must have Metamask extension installed to your browser.
+										You can install it from your browser's App Store page.
+
+										Todo: add table of token increase rate per lock duration
 									</IonCardContent>
 								</IonCard>
-								<IonItem>
-									<IonLabel>Tokens Locking in</IonLabel>
-
-									<DropdownOption
-										dataSets={tokenTypes}
-										onChoose={(e: React.ChangeEvent<HTMLInputElement>) =>
-											setTokenType(e.target.value)
-										}
-									></DropdownOption>
-								</IonItem>
 
 								<IonItem>
 									<IonLabel position='floating'>
-										Number of{' '}
-										{tokenType !== '' ? tokenType.toUpperCase() : 'Tokens'}
+										Number of ETH
 									</IonLabel>
 									<IonInput
 										placeholder={
-											'ex: 0.64646 ' +
-											(tokenType !== ''
-												? `(${tokenType.toUpperCase()})`
-												: '(Tokens)')
+											'ex: 0.64646 ETH'
 										}
 										onIonInput={e =>
 											setAmount(
@@ -186,7 +126,7 @@ const LockdropPage: React.FC = () => {
 								</IonItem>
 								<IonButton
 									onClick={() =>
-										handleSubmit(lockAmount, lockDuration, tokenType, txType)
+										handleSubmit(lockAmount, lockDuration, txType)
 									}
 								>
 									Submit Transaction
@@ -201,4 +141,4 @@ const LockdropPage: React.FC = () => {
 	);
 };
 
-export default LockdropPage;
+export default EthLockdropPage;

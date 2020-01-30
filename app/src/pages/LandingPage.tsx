@@ -15,17 +15,58 @@ import {
     IonRow,
     IonButtons,
     IonIcon,
-    IonChip
+    IonChip,
+    IonItem,
+    IonLabel
 } from '@ionic/react';
-import React from 'react';
+import React, { useState } from 'react';
 import './LandingPage.css';
-import { logoGithub } from 'ionicons/icons';
 import CountdownTimer from '../components/CountdownTimer';
+import { DropdownOption, OptionItem } from '../components/DropdownOption';
+import { authEthereum } from '../helpers/lockdrop_helpers/EthereumLockdrop';
 
 const endDate = '2020-02-29';
 
-const LandingPage: React.FC = () => {
+const tokenTypes: OptionItem[] = [
+    { label: 'ETH', value: 'eth' },
+    //{ label: 'BTC', value: 'btc' },
+    //{ label: 'DOT', value: 'dot' },
+    //{ label: 'EOS', value: 'eos' }
+];
 
+const LandingPage: React.FC = () => {
+    const [tokenType, setTokenType] = useState('');
+    const [canLock, setLockState] = useState(true);
+    const [redirect, setRedirect] = useState('');
+
+    function handleTokenChoose(dropdownItem: string) {
+        // check if the client meets the requirements for transaction
+        switch (dropdownItem) {
+            case 'eth':
+                authEthereum();
+                break;
+            //todo: add auth check for other tokens
+            case 'btc':
+
+                break;
+            case 'dot':
+
+                break;
+            case 'eos':
+
+                break;
+        }
+
+        setTokenType(dropdownItem);
+
+        setLockState(false);
+        // sets redirect link to be {tokenTypes.value}-lockdrop
+        setRedirect(`/${dropdownItem}-lockdrop`);
+    }
+
+    function handleOnClick() {
+        console.log('you choose ' + tokenType);
+    }
     return (
         <IonPage>
             <IonHeader translucent>
@@ -33,7 +74,7 @@ const LandingPage: React.FC = () => {
                     <IonTitle>Plasm Network</IonTitle>
                     <IonButtons slot='end'>
                         <IonButton slot='primary' href='https://github.com/staketechnologies/Plasm.git'>
-                            <IonIcon slot='icon-only' name={logoGithub} />
+                            <IonIcon slot='icon-only' name='logo-github' />
                         </IonButton>
                     </IonButtons>
                 </IonToolbar>
@@ -67,11 +108,38 @@ const LandingPage: React.FC = () => {
                                         until closing.
                                     </IonCardContent>
                                 </IonCard>
-                                <IonButton size='large' expand="block" href='/lockdrop'>Start Lockdrop</IonButton>
+
+
                             </div>
                         </IonCol>
                         <IonCol>
 
+                        </IonCol>
+
+                    </IonRow>
+                    <IonRow>
+                        <IonCol>
+                        </IonCol>
+
+                        <IonCol>
+                            <IonButton size='large' expand='block' disabled={canLock} onClick={handleOnClick} href={redirect}>Start Lockdrop</IonButton>
+
+                        </IonCol>
+                        <IonCol size='auto'>
+                            <IonItem>
+                                <IonLabel>Tokens Locking in</IonLabel>
+                                <DropdownOption
+                                    dataSets={tokenTypes}
+                                    onChoose={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        //setTokenType(e.target.value)
+                                        handleTokenChoose(e.target.value)
+                                    }
+                                ></DropdownOption>
+                            </IonItem>
+
+                        </IonCol>
+
+                        <IonCol>
                         </IonCol>
                     </IonRow>
                 </IonGrid>
