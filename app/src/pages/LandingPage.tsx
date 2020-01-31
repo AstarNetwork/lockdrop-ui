@@ -23,7 +23,7 @@ import React, { useState } from 'react';
 import './LandingPage.css';
 import CountdownTimer from '../components/CountdownTimer';
 import { DropdownOption, OptionItem } from '../components/DropdownOption';
-import { connectMetaMask } from '../helpers/lockdrop_helpers/EthereumLockdrop';
+import { connectMetaMask } from '../helpers/lockdrop/EthereumLockdrop';
 
 const endDate = '2020-02-29';
 
@@ -48,6 +48,8 @@ const LandingPage: React.FC = () => {
 
                     //todo: check if MetaMask is installed
                     let drizzle = connectMetaMask();
+
+                    
 
                     setTokenType(dropdownItem);
                     

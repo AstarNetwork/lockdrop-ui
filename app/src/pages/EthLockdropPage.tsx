@@ -16,8 +16,8 @@ import {
 } from '@ionic/react';
 import React, { useState } from 'react';
 
-import '../helpers/lockdrop_helpers/EthereumLockdrop';
-import { lockEthereum } from '../helpers/lockdrop_helpers/EthereumLockdrop';
+import '../helpers/lockdrop/EthereumLockdrop';
+import { lockEthereum } from '../helpers/lockdrop/EthereumLockdrop';
 import { DropdownOption, OptionItem } from '../components/DropdownOption';
 
 const durations: OptionItem[] = [
@@ -36,6 +36,7 @@ const rates = [
 	{ key: 1000, value: 1600 }
 ];
 
+//todo: change this to a class component and move the MetaMask check to here
 // the main component function
 const EthLockdropPage: React.FC = () => {
 	// states used in this component
@@ -70,7 +71,7 @@ const EthLockdropPage: React.FC = () => {
 	return (
 		<IonPage>
 			<IonHeader translucent>
-				<IonToolbar>
+				<IonToolbar>異種族レビュアーズ
 					<IonTitle>Lockdrop Form</IonTitle>
 				</IonToolbar>
 			</IonHeader>
