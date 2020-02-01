@@ -4,12 +4,12 @@ import './Lock.sol';
 
 contract Lockdrop {
     // Time constants
-    uint256 constant public LOCK_DROP_PERIOD = 7 days; // Testnet lockdrop duration
+    uint256 constant public LOCK_DROP_PERIOD = 30 days;
     uint256 public LOCK_START_TIME;
     uint256 public LOCK_END_TIME;
 
     // ETH locking events
-    event Locked(uint256 indexed eth, uint256 indexed duration, address lock);
+    event Locked(uint256 indexed eth, uint256 indexed duration, address lock, address introducer);
 
     constructor(uint startTime) public {
         LOCK_START_TIME = startTime;
@@ -19,8 +19,9 @@ contract Lockdrop {
     /**
      * @dev        Locks up the value sent to contract in a new Lock
      * @param      _days         The length of the lock up
+     * @param      _introducer   The introducer of the user.
      */
-    function lock(uint256 _days)
+    function lock(uint256 _days, address _introducer)
         external
         payable
         didStart
@@ -30,9 +31,7 @@ contract Lockdrop {
         require(msg.sender == tx.origin);
 
         // Accept only fixed set of durations
-        //require(_days == 30 || _days == 100 || _days == 300 || _days == 1000); 
-        // XXX: Testnet
-        require(_days == 1 || _days == 3 || _days == 7); 
+        require(_days == 30 || _days == 100 || _days == 300 || _days == 1000); 
         uint256 unlockTime = now + _days * 1 days;
 
         // Accept non-zero payments only
@@ -45,7 +44,7 @@ contract Lockdrop {
         // ensure lock contract has all ETH, or fail
         assert(address(lockAddr).balance == eth);
 
-        emit Locked(eth, _days, address(lockAddr));
+        emit Locked(eth, _days, address(lockAddr), _introducer);
     }
 
     /**
