@@ -71,7 +71,7 @@ const EthLockdropPage: React.FC = () => {
 	return (
 		<IonPage>
 			<IonHeader translucent>
-				<IonToolbar>異種族レビュアーズ
+				<IonToolbar>
 					<IonTitle>Lockdrop Form</IonTitle>
 				</IonToolbar>
 			</IonHeader>
