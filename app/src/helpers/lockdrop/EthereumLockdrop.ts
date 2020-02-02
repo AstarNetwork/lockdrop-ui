@@ -3,17 +3,13 @@
 import Lockdrop from '../../contracts/Lockdrop.json';
 
 import {
-	Drizzle, IDrizzleOptions
+	Drizzle, generateStore, IDrizzleOptions, IStoreConfig
 } from '@drizzle/store';
 
-const options: IDrizzleOptions
- = {
+export const options: IDrizzleOptions = {
 	contracts: [],
-	web3: {
-		fallback: {
-			type: 'ws',
-			url: 'ws:127.0.0.1:8545'
-		}
+	events: {
+		Lockdrop: ["Locked"],
 	}
 };
 
@@ -43,7 +39,6 @@ export function getContractEvent() {
 
 // this function will authenticate if the client has metamask installed and can communicate with the blockchain
 export function connectMetaMask() {
-
 	return new Drizzle(options);
 	
 }

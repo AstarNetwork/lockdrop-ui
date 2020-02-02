@@ -80,11 +80,11 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
                 <IonCol size='auto'>
                     <div className='main-content'>
                         <IonLabel>Form Inputs</IonLabel>
-                        <IonCard>
+                        {description ? <IonCard>
                             <IonCardContent>
                                 {description}
                             </IonCardContent>
-                        </IonCard>
+                        </IonCard> : <div></div>}
 
                         <IonItem>
                             <IonLabel position='floating'>

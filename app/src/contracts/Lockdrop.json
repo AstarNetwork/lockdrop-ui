@@ -4183,15 +4183,48 @@
           "name": "Locked",
           "type": "event",
           "signature": "0xfa6c2c931d0791e8fa17b66f2d4a4c4930b1e590bc2033e540fc3435f67aec76"
+        },
+        "0x1f8f04eebd96e2dab57d8611613f0e859a7e1b4bc41c7831d74435a3ee9e42fe": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "uint256",
+              "name": "eth",
+              "type": "uint256"
+            },
+            {
+              "indexed": true,
+              "internalType": "uint256",
+              "name": "duration",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "lock",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "introducer",
+              "type": "address"
+            }
+          ],
+          "name": "Locked",
+          "type": "event",
+          "signature": "0x1f8f04eebd96e2dab57d8611613f0e859a7e1b4bc41c7831d74435a3ee9e42fe"
         }
       },
       "links": {},
-      "address": "0x179D416238DC474AB12Ca191c0ebFaC4DC8100A4",
-      "transactionHash": "0x9d0369c7d7a3eb76bc1c0c8f05313fc205487c5245d16dbfd69d68cc62788c39"
+      "address": "0x428B9a50Dde5C3612a6af0b40D69feCdC9E7948D",
+      "transactionHash": "0x069b199ca8eeed3aa53f193946264ce31dfbcba002a73d8f3e2acf091bbaaf7c"
     }
   },
   "schemaVersion": "3.0.22",
-  "updatedAt": "2020-02-01T03:05:13.195Z",
+  "updatedAt": "2020-02-02T07:41:05.382Z",
+  "networkType": "ethereum",
   "devdoc": {
     "methods": {
       "lock(uint256,address)": {
