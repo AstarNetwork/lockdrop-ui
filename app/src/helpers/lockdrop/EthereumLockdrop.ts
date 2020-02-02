@@ -1,6 +1,7 @@
 // This module is used for communicating with the Ethereum smart contract
 
-//import Lockdrop from '../../contracts/Lockdrop.json';
+import Lockdrop from '../../contracts/Lockdrop.json';
+
 import {
 	Drizzle, IDrizzleOptions
 } from '@drizzle/store';

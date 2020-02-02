@@ -23,7 +23,6 @@ import React, { useState } from 'react';
 import './LandingPage.css';
 import CountdownTimer from '../components/CountdownTimer';
 import { DropdownOption, OptionItem } from '../components/DropdownOption';
-import { connectMetaMask } from '../helpers/lockdrop/EthereumLockdrop';
 
 const endDate = '2020-02-29';
 
@@ -45,12 +44,6 @@ const LandingPage: React.FC = () => {
             // check if the client meets the requirements for transaction
             switch (dropdownItem) {
                 case 'eth':
-
-                    //todo: check if MetaMask is installed
-                    let drizzle = connectMetaMask();
-
-                    
-
                     setTokenType(dropdownItem);
                     
                     setRedirect('/eth-lockdrop');
