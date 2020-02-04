@@ -12,18 +12,12 @@ import '../helpers/lockdrop/EthereumLockdrop';
 import { lockEthereum } from '../helpers/lockdrop/EthereumLockdrop';
 import LockdropForm from '../components/LockdropForm';
 import { connectMetaMask } from '../helpers/lockdrop/EthereumLockdrop';
-
-const rates = [
-	{ key: 20, value: 24 },
-	{ key: 100, value: 100 },
-	{ key: 300, value: 360 },
-	{ key: 1000, value: 1600 }
-];
+import { LockInput } from '../models/LockdropModels';
 
 const loadTimeout = 5000;
 
 const formInfo =
-`This is the lockdrop form for Ethereum
+	`This is the lockdrop form for Ethereum
 You must have Metamask installed in order for this to work properly.
 If you find any errors or find issues with this form, please contact the Plasm team.`;
 
@@ -32,34 +26,24 @@ class EthLockdropPage extends React.Component {
 		loading: true,
 		drizzleState: null
 	};
-	
-	componentWillMount(){
 
-		//let drizzle = connectMetaMask();
+	componentWillMount() {
 
-		const dirzzle = connectMetaMask();
+		const drizzle = connectMetaMask();
 
 		//todo: add MetaMask subscriber
 	}
 
-	componentWillUnmount(){
+	componentWillUnmount() {
 		//todo: remove MetaMask subscriber
 	}
 
-	handleSubmit(
-		lockAmount: number,
-		lockDuration: number,
-		tokenName: string,
-		affiliationAccount: string
-	) {
+	handleSubmit(formInputVal: LockInput) {
 		// checks user input
-		if (lockAmount > 0 && lockDuration && tokenName) {
+		if (formInputVal.amount > 0 && formInputVal.duration && formInputVal.txMethod) {
 			//todo: check if affiliationAccount is a proper Ethereum address
 
-			// get the token increase rate
-			let incRate = rates.filter(x => x.key === lockDuration)[0].value;
-
-			lockEthereum(lockDuration, lockAmount, incRate, affiliationAccount);
+			lockEthereum(formInputVal);
 
 		} else {
 			//todo: display warning if there is a problem with the input
@@ -67,9 +51,8 @@ class EthLockdropPage extends React.Component {
 		}
 	}
 
-	//todo: add loading screen here to check if metamask is connected or not
-	render(){
-		return(
+	render() {
+		return (
 			<IonPage>
 				<IonHeader translucent>
 					<IonToolbar>
@@ -80,11 +63,14 @@ class EthLockdropPage extends React.Component {
 				<IonContent>
 					{this.state.loading ? <IonLoading
 						isOpen={this.state.loading}
-						onDidDismiss={() =>  this.setState({loading: false})}
+						//todo: send error message when timeout is over
+						onDidDismiss={() => this.setState({ loading: false })}
 						message={'Connecting to Metamask...'}
 						duration={loadTimeout}
-					/> : <LockdropForm token='ETH' onSubmit={this.handleSubmit} description={formInfo} />}
-					
+					/> :
+						<LockdropForm token='ETH' onSubmit={this.handleSubmit} description={formInfo} />
+					}
+
 
 				</IonContent>
 			</IonPage>

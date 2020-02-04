@@ -11,8 +11,15 @@ import {
     IonChip
 } from '@ionic/react';
 import React, { useState } from 'react';
+import { LockInput} from '../models/LockdropModels';
 
 import { DropdownOption, OptionItem } from '../components/DropdownOption';
+
+type InputProps = {
+    token: string,
+    onSubmit: Function,
+    description?: string
+}
 
 // used to define the content of the dropdown menu
 const durations: OptionItem[] = [
@@ -32,19 +39,6 @@ const rates = [
     { key: 1000, value: 1600 }
 ];
 
-type InputProps = {
-    token: string,
-    onSubmit: Function,
-    description?: string
-}
-
-type FormInputs = {
-    duration: number,
-    amount: number,
-    affiliation?: string,
-    txMethod?: string
-}
-
 //todo: populate FormInputs data with the form values
 // pass that to the parent element
 
@@ -57,19 +51,24 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
     const [txType, setTxType] = useState('');
 
     function getTokenRate() {
-        return rates.filter(x => x.key === lockDuration)[0].value;
+        if (lockDuration){
+            return rates.filter(x => x.key === lockDuration)[0].value;
+        }
+        return 0;
     }
 
     // the submit button function
     function handleSubmit() {
-        let inputs: FormInputs = {
+
+        let inputs: LockInput = {
             duration: lockDuration,
             amount: lockAmount,
             affiliation: affAccount,
-            txMethod: txType
+            txMethod: txType,
+            rate: getTokenRate()
         };
-
         onSubmit(inputs);
+        
     }
 
     // main render JSX
@@ -112,7 +111,7 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
                                 }
                             ></DropdownOption>
                             <IonChip>
-                                <IonLabel>{lockDuration ? 'The rate is ' + getTokenRate() + '%' : 'Please choose the duration'}</IonLabel>
+                                <IonLabel>{lockDuration ? 'The rate is ' + getTokenRate() + 'x' : 'Please choose the duration'}</IonLabel>
                             </IonChip>
                         </IonItem>
                         <IonItem>
