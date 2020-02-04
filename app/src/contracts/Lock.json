@@ -24,15 +24,15 @@
       "type": "fallback"
     }
   ],
-  "metadata": "{\"compiler\":{\"version\":\"0.5.13+commit.5b0b510c\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"unlockTime\",\"type\":\"uint256\"}],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"constructor\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol\":\"Lock\"},\"evmVersion\":\"petersburg\",\"libraries\":{},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol\":{\"keccak256\":\"0x810328790ffa48740c5da44de8e87fe4946314220139ec54a8f52a3b5a9f49a0\",\"urls\":[\"bzz-raw://a9d170e03a602a5b62e563c471ea6cbaef367bd911b3a9e8eb11c7f247edcf24\",\"dweb:/ipfs/QmcRyDV34p6AqTh7n4kYvRRpx5BVtBvHkN6nrgtBa4khHF\"]}},\"version\":1}",
-  "bytecode": "0x60806040526040516100af3803806100af83398181016040526040811015602557600080fd5b508051602090910151600091909155600155606a806100456000396000f3fe60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a72315820209a4db22f9d2b92340ef94770713dbb73a3d14b3fad2bc9661d05e152ac949564736f6c634300050d0032",
-  "deployedBytecode": "0x60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a72315820209a4db22f9d2b92340ef94770713dbb73a3d14b3fad2bc9661d05e152ac949564736f6c634300050d0032",
+  "metadata": "{\"compiler\":{\"version\":\"0.5.13+commit.5b0b510c\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"unlockTime\",\"type\":\"uint256\"}],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"constructor\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/home/hoonkim/Projects/ethereum-lockdrop/contracts/Lock.sol\":\"Lock\"},\"evmVersion\":\"petersburg\",\"libraries\":{},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/home/hoonkim/Projects/ethereum-lockdrop/contracts/Lock.sol\":{\"keccak256\":\"0x810328790ffa48740c5da44de8e87fe4946314220139ec54a8f52a3b5a9f49a0\",\"urls\":[\"bzz-raw://a9d170e03a602a5b62e563c471ea6cbaef367bd911b3a9e8eb11c7f247edcf24\",\"dweb:/ipfs/QmcRyDV34p6AqTh7n4kYvRRpx5BVtBvHkN6nrgtBa4khHF\"]}},\"version\":1}",
+  "bytecode": "0x60806040526040516100af3803806100af83398181016040526040811015602557600080fd5b508051602090910151600091909155600155606a806100456000396000f3fe60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a72315820780eefe1ac52fced780b85376d2c5653bdca344e69ac4a582011ef1f634aea8464736f6c634300050d0032",
+  "deployedBytecode": "0x60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a72315820780eefe1ac52fced780b85376d2c5653bdca344e69ac4a582011ef1f634aea8464736f6c634300050d0032",
   "sourceMap": "25:701:0:-;;;110:168;;;;;;;;;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;110:168:0;;;;;;;213:4;206:19;;;;245:4;238:24;25:701;;;;;;",
   "deployedSourceMap": "25:701:0:-;;;515:4;509:11;498:9;495:26;534:23;;;;575:1;570:138;;;;488:220;;534:23;553:1;550;543:12;570:138;652:1;649;646;643;633:7;625:16;618:4;612:11;607:3;602:52;671:23;;;;595:99;488:220;;25:701",
   "source": "pragma solidity ^0.5.0;\n\ncontract Lock {\n    // address owner; slot #0\n    // address unlockTime; slot #1\n    constructor (address owner, uint256 unlockTime) public payable {\n        assembly {\n            sstore(0x00, owner)\n            sstore(0x01, unlockTime)\n        }\n    }\n\n    /**\n    * @dev        Withdraw function once timestamp has passed unlock time\n    */\n    function () external payable { // payable so solidity doesn't add unnecessary logic\n        assembly {\n            switch gt(timestamp, sload(0x01))\n            case 0 { revert(0, 0) }\n            case 1 {\n                switch call(gas, sload(0x00), balance(address), 0, 0, 0, 0)\n                case 0 { revert(0, 0) }\n            }\n        }\n    }\n}\n",
-  "sourcePath": "/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol",
+  "sourcePath": "/home/hoonkim/Projects/ethereum-lockdrop/contracts/Lock.sol",
   "ast": {
-    "absolutePath": "/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol",
+    "absolutePath": "/home/hoonkim/Projects/ethereum-lockdrop/contracts/Lock.sol",
     "exportedSymbols": {
       "Lock": [
         16
@@ -226,7 +226,7 @@
     "src": "0:727:0"
   },
   "legacyAST": {
-    "absolutePath": "/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol",
+    "absolutePath": "/home/hoonkim/Projects/ethereum-lockdrop/contracts/Lock.sol",
     "exportedSymbols": {
       "Lock": [
         16
@@ -424,8 +424,8 @@
     "version": "0.5.13+commit.5b0b510c.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "3.0.11",
-  "updatedAt": "2019-12-12T16:53:33.951Z",
+  "schemaVersion": "3.0.22",
+  "updatedAt": "2020-01-30T13:05:38.701Z",
   "devdoc": {
     "methods": {}
   },
