@@ -6,8 +6,8 @@ import {
 	Drizzle, generateStore, IDrizzleOptions, IStoreConfig
 } from '@drizzle/store';
 
-export const options: IDrizzleOptions = {
-	contracts: [],
+export const options = {
+	contracts: [Lockdrop],
 	events: {
 		Lockdrop: ["Locked"],
 	}
@@ -15,10 +15,10 @@ export const options: IDrizzleOptions = {
 
 // locks the given token
 export function lockEthereum(
-	duration: number,
-	amount: number,
-	rate: number,
-	affAccount: string
+	duration,
+	amount,
+	rate,
+	affAccount,
 ) {
 
 	console.log(
