@@ -24,12 +24,12 @@
       "type": "fallback"
     }
   ],
-  "metadata": "{\"compiler\":{\"version\":\"0.5.15+commit.6a57276f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"unlockTime\",\"type\":\"uint256\"}],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"constructor\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol\":\"Lock\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol\":{\"keccak256\":\"0x6c4958cf83de06ec11bd2cafb7f3eac6cac02708f532935ab8d5383b7ff69c28\",\"urls\":[\"bzz-raw://9699b31d8e435804633b5eb07efee5380f2bedc83eb71c5ae857ab1dfe306f5f\",\"dweb:/ipfs/QmQ31qhjc7jZAATjKrCPyPA6Jdgex3ETPboTxBpCFUFYpE\"]}},\"version\":1}",
-  "bytecode": "0x60806040526040516100af3803806100af83398181016040526040811015602557600080fd5b508051602090910151600091909155600155606a806100456000396000f3fe60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a72315820cb6c592036e0b6c86e9f24c8056a596827ddb1d71be7e24b022e24b13f9a97be64736f6c634300050f0032",
-  "deployedBytecode": "0x60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a72315820cb6c592036e0b6c86e9f24c8056a596827ddb1d71be7e24b022e24b13f9a97be64736f6c634300050f0032",
-  "sourceMap": "26:648:0:-;;;111:168;;;;;;;;;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;111:168:0;;;;;;;214:4;207:19;;;;246:4;239:24;26:648;;;;;;",
-  "deployedSourceMap": "26:648:0:-;;;463:4;457:11;446:9;443:26;482:23;;;;523:1;518:138;;;;436:220;;482:23;501:1;498;491:12;518:138;600:1;597;594;591;581:7;573:16;566:4;560:11;555:3;550:52;619:23;;;;543:99;436:220;;26:648",
-  "source": "pragma solidity ^0.5.15;\n\ncontract Lock {\n    // address owner; slot #0\n    // address unlockTime; slot #1\n    constructor (address owner, uint256 unlockTime) public payable {\n        assembly {\n            sstore(0x00, owner)\n            sstore(0x01, unlockTime)\n        }\n    }\n\n    /**\n    * @dev        Withdraw function once timestamp has passed unlock time\n    */\n    function () external payable {\n        assembly {\n            switch gt(timestamp, sload(0x01))\n            case 0 { revert(0, 0) }\n            case 1 {\n                switch call(gas, sload(0x00), balance(address), 0, 0, 0, 0)\n                case 0 { revert(0, 0) }\n            }\n        }\n    }\n}\n",
+  "metadata": "{\"compiler\":{\"version\":\"0.5.15+commit.6a57276f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"unlockTime\",\"type\":\"uint256\"}],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"constructor\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol\":\"Lock\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol\":{\"keccak256\":\"0xfe69d320cbabe9dfa17c86f3071f3bdf9eaf6954a9b808503bc3e7680f40788a\",\"urls\":[\"bzz-raw://0681876d50d5186c728ada1689a97c6771af623dfca7648d23a1b55967debb51\",\"dweb:/ipfs/QmajuEh6YgMjgJ4GcRwZwhGWYJWmiHqKXAp9tVkfjMTLht\"]}},\"version\":1}",
+  "bytecode": "0x60806040526040516100af3803806100af83398181016040526040811015602557600080fd5b508051602090910151600091909155600155606a806100456000396000f3fe60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a72315820ec40d19bc05206424f20c89a91e860bca8a3f8891f3500c003cf084d532eb9a364736f6c634300050f0032",
+  "deployedBytecode": "0x60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a72315820ec40d19bc05206424f20c89a91e860bca8a3f8891f3500c003cf084d532eb9a364736f6c634300050f0032",
+  "sourceMap": "25:648:0:-;;;110:168;;;;;;;;;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;110:168:0;;;;;;;213:4;206:19;;;;245:4;238:24;25:648;;;;;;",
+  "deployedSourceMap": "25:648:0:-;;;462:4;456:11;445:9;442:26;481:23;;;;522:1;517:138;;;;435:220;;481:23;500:1;497;490:12;517:138;599:1;596;593;590;580:7;572:16;565:4;559:11;554:3;549:52;618:23;;;;542:99;435:220;;25:648",
+  "source": "pragma solidity 0.5.15;\n\ncontract Lock {\n    // address owner; slot #0\n    // address unlockTime; slot #1\n    constructor (address owner, uint256 unlockTime) public payable {\n        assembly {\n            sstore(0x00, owner)\n            sstore(0x01, unlockTime)\n        }\n    }\n\n    /**\n    * @dev        Withdraw function once timestamp has passed unlock time\n    */\n    function () external payable {\n        assembly {\n            switch gt(timestamp, sload(0x01))\n            case 0 { revert(0, 0) }\n            case 1 {\n                switch call(gas, sload(0x00), balance(address), 0, 0, 0, 0)\n                case 0 { revert(0, 0) }\n            }\n        }\n    }\n}\n",
   "sourcePath": "/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol",
   "ast": {
     "absolutePath": "/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol",
@@ -45,12 +45,11 @@
         "id": 1,
         "literals": [
           "solidity",
-          "^",
           "0.5",
           ".15"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:24:0"
+        "src": "0:23:0"
       },
       {
         "baseContracts": [],
@@ -69,7 +68,7 @@
             "body": {
               "id": 9,
               "nodeType": "Block",
-              "src": "174:105:0",
+              "src": "173:105:0",
               "statements": [
                 {
                   "externalReferences": [
@@ -78,7 +77,7 @@
                         "declaration": 3,
                         "isOffset": false,
                         "isSlot": false,
-                        "src": "220:5:0",
+                        "src": "219:5:0",
                         "valueSize": 1
                       }
                     },
@@ -87,7 +86,7 @@
                         "declaration": 5,
                         "isOffset": false,
                         "isSlot": false,
-                        "src": "252:10:0",
+                        "src": "251:10:0",
                         "valueSize": 1
                       }
                     }
@@ -95,7 +94,7 @@
                   "id": 8,
                   "nodeType": "InlineAssembly",
                   "operations": "{\n    sstore(0x00, owner)\n    sstore(0x01, unlockTime)\n}",
-                  "src": "184:89:0"
+                  "src": "183:89:0"
                 }
               ]
             },
@@ -116,7 +115,7 @@
                   "name": "owner",
                   "nodeType": "VariableDeclaration",
                   "scope": 10,
-                  "src": "124:13:0",
+                  "src": "123:13:0",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -127,7 +126,7 @@
                     "id": 2,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "124:7:0",
+                    "src": "123:7:0",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -143,7 +142,7 @@
                   "name": "unlockTime",
                   "nodeType": "VariableDeclaration",
                   "scope": 10,
-                  "src": "139:18:0",
+                  "src": "138:18:0",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -154,7 +153,7 @@
                     "id": 4,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "139:7:0",
+                    "src": "138:7:0",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -164,16 +163,16 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "123:35:0"
+              "src": "122:35:0"
             },
             "returnParameters": {
               "id": 7,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "174:0:0"
+              "src": "173:0:0"
             },
             "scope": 16,
-            "src": "111:168:0",
+            "src": "110:168:0",
             "stateMutability": "payable",
             "superFunction": null,
             "visibility": "public"
@@ -182,14 +181,14 @@
             "body": {
               "id": 14,
               "nodeType": "Block",
-              "src": "403:269:0",
+              "src": "402:269:0",
               "statements": [
                 {
                   "externalReferences": [],
                   "id": 13,
                   "nodeType": "InlineAssembly",
                   "operations": "{\n    switch gt(timestamp(), sload(0x01))\n    case 0 { revert(0, 0) }\n    case 1 {\n        switch call(gas(), sload(0x00), balance(address()), 0, 0, 0, 0)\n        case 0 { revert(0, 0) }\n    }\n}",
-                  "src": "413:253:0"
+                  "src": "412:253:0"
                 }
               ]
             },
@@ -204,26 +203,26 @@
               "id": 11,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "383:2:0"
+              "src": "382:2:0"
             },
             "returnParameters": {
               "id": 12,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "403:0:0"
+              "src": "402:0:0"
             },
             "scope": 16,
-            "src": "374:298:0",
+            "src": "373:298:0",
             "stateMutability": "payable",
             "superFunction": null,
             "visibility": "external"
           }
         ],
         "scope": 17,
-        "src": "26:648:0"
+        "src": "25:648:0"
       }
     ],
-    "src": "0:675:0"
+    "src": "0:674:0"
   },
   "legacyAST": {
     "absolutePath": "/home/akru/devel/ethereum-lockdrop/contracts/Lock.sol",
@@ -239,12 +238,11 @@
         "id": 1,
         "literals": [
           "solidity",
-          "^",
           "0.5",
           ".15"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:24:0"
+        "src": "0:23:0"
       },
       {
         "baseContracts": [],
@@ -263,7 +261,7 @@
             "body": {
               "id": 9,
               "nodeType": "Block",
-              "src": "174:105:0",
+              "src": "173:105:0",
               "statements": [
                 {
                   "externalReferences": [
@@ -272,7 +270,7 @@
                         "declaration": 3,
                         "isOffset": false,
                         "isSlot": false,
-                        "src": "220:5:0",
+                        "src": "219:5:0",
                         "valueSize": 1
                       }
                     },
@@ -281,7 +279,7 @@
                         "declaration": 5,
                         "isOffset": false,
                         "isSlot": false,
-                        "src": "252:10:0",
+                        "src": "251:10:0",
                         "valueSize": 1
                       }
                     }
@@ -289,7 +287,7 @@
                   "id": 8,
                   "nodeType": "InlineAssembly",
                   "operations": "{\n    sstore(0x00, owner)\n    sstore(0x01, unlockTime)\n}",
-                  "src": "184:89:0"
+                  "src": "183:89:0"
                 }
               ]
             },
@@ -310,7 +308,7 @@
                   "name": "owner",
                   "nodeType": "VariableDeclaration",
                   "scope": 10,
-                  "src": "124:13:0",
+                  "src": "123:13:0",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -321,7 +319,7 @@
                     "id": 2,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "124:7:0",
+                    "src": "123:7:0",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -337,7 +335,7 @@
                   "name": "unlockTime",
                   "nodeType": "VariableDeclaration",
                   "scope": 10,
-                  "src": "139:18:0",
+                  "src": "138:18:0",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -348,7 +346,7 @@
                     "id": 4,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "139:7:0",
+                    "src": "138:7:0",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -358,16 +356,16 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "123:35:0"
+              "src": "122:35:0"
             },
             "returnParameters": {
               "id": 7,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "174:0:0"
+              "src": "173:0:0"
             },
             "scope": 16,
-            "src": "111:168:0",
+            "src": "110:168:0",
             "stateMutability": "payable",
             "superFunction": null,
             "visibility": "public"
@@ -376,14 +374,14 @@
             "body": {
               "id": 14,
               "nodeType": "Block",
-              "src": "403:269:0",
+              "src": "402:269:0",
               "statements": [
                 {
                   "externalReferences": [],
                   "id": 13,
                   "nodeType": "InlineAssembly",
                   "operations": "{\n    switch gt(timestamp(), sload(0x01))\n    case 0 { revert(0, 0) }\n    case 1 {\n        switch call(gas(), sload(0x00), balance(address()), 0, 0, 0, 0)\n        case 0 { revert(0, 0) }\n    }\n}",
-                  "src": "413:253:0"
+                  "src": "412:253:0"
                 }
               ]
             },
@@ -398,26 +396,26 @@
               "id": 11,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "383:2:0"
+              "src": "382:2:0"
             },
             "returnParameters": {
               "id": 12,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "403:0:0"
+              "src": "402:0:0"
             },
             "scope": 16,
-            "src": "374:298:0",
+            "src": "373:298:0",
             "stateMutability": "payable",
             "superFunction": null,
             "visibility": "external"
           }
         ],
         "scope": 17,
-        "src": "26:648:0"
+        "src": "25:648:0"
       }
     ],
-    "src": "0:675:0"
+    "src": "0:674:0"
   },
   "compiler": {
     "name": "solc",
@@ -425,7 +423,7 @@
   },
   "networks": {},
   "schemaVersion": "3.0.11",
-  "updatedAt": "2020-02-09T08:22:13.569Z",
+  "updatedAt": "2020-02-11T01:24:50.088Z",
   "devdoc": {
     "methods": {}
   },
