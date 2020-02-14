@@ -1,34 +1,32 @@
 // This module is used for communicating with the Ethereum smart contract
 
 import Lockdrop from '../../contracts/Lockdrop.json';
-import {LockInput} from '../../models/LockdropModels';
+import { LockInput } from '../../models/LockdropModels';
 
-import {
-	Drizzle, IDrizzleOptions
-} from '@drizzle/store';
+import { Drizzle, IDrizzleOptions } from '@drizzle/store';
 
 export const drizzleOptions: IDrizzleOptions = {
-	contracts: [],
+	contracts: [Lockdrop],
 	events: {
-		Lockdrop: ["Locked"],
+		Lockdrop: ['Locked']
 	}
 };
 
 // locks the given token
-export function lockEthereum(
-	contractInputs: LockInput
-) {
-
+export function lockEthereum(contractInputs: LockInput) {
 	console.log(
-		'locking ' + contractInputs.amount + ' ETH for ' + contractInputs.duration + ' days with the rate of ' + contractInputs.rate
+		'locking ' +
+			contractInputs.amount +
+			' ETH for ' +
+			contractInputs.duration +
+			' days with the rate of ' +
+			contractInputs.rate
 	);
 	if (contractInputs.affiliation) {
 		console.log('Affiliation from ' + contractInputs.affiliation);
-	}
-	else {
+	} else {
 		console.log('no friends for this poor account');
 	}
-
 }
 
 export function getContractEvent() {
@@ -37,6 +35,7 @@ export function getContractEvent() {
 
 // this function will authenticate if the client has metamask installed and can communicate with the blockchain
 export function connectMetaMask() {
-	return new Drizzle(drizzleOptions);
-	
+	const drizzle = new Drizzle(drizzleOptions);
+	console.log(drizzle);
+	return drizzle;
 }
