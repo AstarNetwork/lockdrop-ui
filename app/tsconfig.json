@@ -23,6 +23,7 @@
     "jsx": "react"
   },
   "include": [
-    "src"
+    "src",
+    "node_modules"
   ]
 }
