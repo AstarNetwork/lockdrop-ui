@@ -29,7 +29,7 @@ const durations: OptionItem[] = [
     { label: '1000 Days', value: 1000 }
 ];
 
-const txTypes: OptionItem[] = [{ label: 'Metamask', value: 'metamask' }];
+//const txTypes: OptionItem[] = [{ label: 'Web3 Wallet', value: 'web3' }];
 
 // the token increase rate for lock durations
 const rates = [
@@ -111,7 +111,7 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
                                 <IonLabel>{lockDuration ? 'The rate is ' + getTokenRate() + 'x' : 'Please choose the duration'}</IonLabel>
                             </IonChip>
                         </IonItem>
-                        <IonItem>
+                        {/* <IonItem>
                             <IonLabel>Transaction With</IonLabel>
                             <DropdownOption
                                 dataSets={txTypes}
@@ -119,7 +119,7 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
                                     setTxType(e.target.value)
                                 }
                             ></DropdownOption>
-                        </IonItem>
+                        </IonItem> */}
 
                         <IonItem>
                             <IonCard>

@@ -9,7 +9,6 @@ import {
 import React from 'react';
 
 import '../helpers/lockdrop/EthereumLockdrop';
-import { lockEthereum } from '../helpers/lockdrop/EthereumLockdrop';
 import LockdropForm from '../components/LockdropForm';
 import getWeb3 from '../helpers/getWeb3';
 import Lockdrop from '../contracts/Lockdrop.json';
@@ -65,22 +64,10 @@ class EthLockdropPage extends React.Component {
 			console.error(error);
 		}
 	};
-	
-	runExample = async () => {
-		const { accounts, contract } = this.state;
-
-		await contract.methods.lock(500, 0x00000).send({ from: accounts[0] });
-
-		// Get the value from the contract to prove it worked.
-		//const response = await contract.methods.get().call();
-
-		// Update state with the result.
-		//this.setState({ storageValue: response });
-	};
 
 	handleSubmit = async(formInputVal) => {
 		// checks user input
-		if (formInputVal.amount && formInputVal.duration && formInputVal.txMethod) {
+		if (formInputVal.amount && formInputVal.duration) {
 			//todo: check if affiliationAccount is a proper Ethereum address
 
 			console.log(formInputVal);
@@ -111,8 +98,6 @@ class EthLockdropPage extends React.Component {
 					/> :
 						<LockdropForm token='ETH' onSubmit={this.handleSubmit} description={formInfo} />
 					}
-
-
 				</IonContent>
 			</IonPage>
 		)
