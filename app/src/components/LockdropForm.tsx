@@ -39,9 +39,6 @@ const rates = [
     { key: 1000, value: 1600 }
 ];
 
-//todo: populate FormInputs data with the form values
-// pass that to the parent element
-
 // the main component function
 const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
     // states used in this component
