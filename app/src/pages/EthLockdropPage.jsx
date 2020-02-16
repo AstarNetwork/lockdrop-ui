@@ -7,14 +7,10 @@ import {
 	IonLoading
 } from '@ionic/react';
 import React from 'react';
-
-import '../helpers/lockdrop/EthereumLockdrop';
 import LockdropForm from '../components/LockdropForm';
-import getWeb3 from '../helpers/getWeb3';
-import Lockdrop from '../contracts/Lockdrop.json';
+import { connectWeb3 } from '../helpers/lockdrop/EthereumLockdrop';
 
-const formInfo =
-	`This is the lockdrop form for Ethereum
+const formInfo = `This is the lockdrop form for Ethereum
 You must have Metamask installed in order for this to work properly.
 If you find any errors or find issues with this form, please contact the Plasm team.`;
 
@@ -25,62 +21,34 @@ class EthLockdropPage extends React.Component {
 		contract: null
 	};
 
-	componentWillMount() {
-
-		//connectMetaMask();
-
-		//todo: add MetaMask subscriber
-	}
-
-	componentWillUnmount() {
-		//todo: remove MetaMask subscriber
-	}
-
 	componentDidMount = async () => {
-		try {
-			// Get network provider and web3 instance.
-			const web3 = await getWeb3();
-
-			// Use web3 to get the user's accounts.
-			const accounts = await web3.eth.getAccounts();
-
-			// Get the contract instance.
-			const networkId = await web3.eth.net.getId();
-			const deployedNetwork = Lockdrop.networks[networkId];
-			const instance = new web3.eth.Contract(
-				Lockdrop.abi,
-				deployedNetwork && deployedNetwork.address,
-			);
-
-			// Set web3, accounts, and contract to the state, and then proceed with an
-			// example of interacting with the contract's methods.
-			//this.setState({ web3, accounts, contract: instance }, this.handleSubmit);
-			this.setState({ web3, accounts, contract: instance });
-		} catch (error) {
-			// Catch any errors for any of the above operations.
-			alert(
-				`Failed to load web3, accounts, or contract. Check console for details.`,
-			);
-			console.error(error);
-		}
+		const web3State = await connectWeb3();
+		this.setState(web3State);
 	};
 
-	handleSubmit = async(formInputVal) => {
+	handleSubmit = async formInputVal => {
 		// checks user input
 		if (formInputVal.amount && formInputVal.duration) {
-			//todo: check if affiliationAccount is a proper Ethereum address
+			//todo: check if affiliation account is a proper Ethereum address before runtime error hits
 
 			console.log(formInputVal);
-			//lockEthereum(formInputVal);
+
 			const { accounts, contract } = this.state;
+			try {
+				//todo: add default affiliation address when none is provided
 
-			await contract.methods.lock(formInputVal.duration, formInputVal.affiliation).send({ from: accounts[0] });
-
+				await contract.methods
+					.lock(formInputVal.duration, formInputVal.affiliation)
+					.send({ from: accounts[0] });
+				//todo: send ether to contract
+			} catch (error) {
+				alert('error!\n' + error);
+			}
 		} else {
 			//todo: display warning if there is a problem with the input
-			alert('you\'re missing an input!');
+			alert("you're missing an input!");
 		}
-	}
+	};
 
 	render() {
 		return (
@@ -92,15 +60,18 @@ class EthLockdropPage extends React.Component {
 				</IonHeader>
 
 				<IonContent>
-					{!this.state.web3 ? <IonLoading
-						isOpen={true}
-						message={'Connecting to Metamask...'}
-					/> :
-						<LockdropForm token='ETH' onSubmit={this.handleSubmit} description={formInfo} />
-					}
+					{!this.state.web3 && !this.state.accounts && !this.state.contract ? (
+						<IonLoading isOpen={true} message={'Connecting to Metamask...'} />
+					) : (
+						<LockdropForm
+							token='ETH'
+							onSubmit={this.handleSubmit}
+							description={formInfo}
+						/>
+					)}
 				</IonContent>
 			</IonPage>
-		)
+		);
 	}
 }
 export default EthLockdropPage;
