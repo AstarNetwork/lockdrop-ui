@@ -30,7 +30,6 @@ class EthLockdropPage extends React.Component {
 	handleSubmit = async formInputVal => {
 		// checks user input
 		if (formInputVal.amount && formInputVal.duration) {
-			//todo: check if affiliation account is a proper Ethereum address before runtime error hits
 
 			console.log(formInputVal);
 
