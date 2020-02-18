@@ -11,8 +11,15 @@ import {
     IonChip
 } from '@ionic/react';
 import React, { useState } from 'react';
+import { LockInput} from '../models/LockdropModels';
 
 import { DropdownOption, OptionItem } from '../components/DropdownOption';
+
+type InputProps = {
+    token: string,
+    onSubmit: Function,
+    description?: string
+}
 
 // used to define the content of the dropdown menu
 const durations: OptionItem[] = [
@@ -22,7 +29,7 @@ const durations: OptionItem[] = [
     { label: '1000 Days', value: 1000 }
 ];
 
-const txTypes: OptionItem[] = [{ label: 'Metamask', value: 'metamask' }];
+//const txTypes: OptionItem[] = [{ label: 'Web3 Wallet', value: 'web3' }];
 
 // the token increase rate for lock durations
 const rates = [
@@ -31,22 +38,6 @@ const rates = [
     { key: 300, value: 360 },
     { key: 1000, value: 1600 }
 ];
-
-type InputProps = {
-    token: string,
-    onSubmit: Function,
-    description?: string
-}
-
-type FormInputs = {
-    duration: number,
-    amount: number,
-    affiliation?: string,
-    txMethod?: string
-}
-
-//todo: populate FormInputs data with the form values
-// pass that to the parent element
 
 // the main component function
 const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
@@ -57,19 +48,24 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
     const [txType, setTxType] = useState('');
 
     function getTokenRate() {
-        return rates.filter(x => x.key === lockDuration)[0].value;
+        if (lockDuration){
+            return rates.filter(x => x.key === lockDuration)[0].value;
+        }
+        return 0;
     }
 
     // the submit button function
     function handleSubmit() {
-        let inputs: FormInputs = {
+
+        let inputs: LockInput = {
             duration: lockDuration,
             amount: lockAmount,
             affiliation: affAccount,
-            txMethod: txType
+            txMethod: txType,
+            rate: getTokenRate()
         };
-
         onSubmit(inputs);
+        
     }
 
     // main render JSX
@@ -112,10 +108,10 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
                                 }
                             ></DropdownOption>
                             <IonChip>
-                                <IonLabel>{lockDuration ? 'The rate is ' + getTokenRate() + '%' : 'Please choose the duration'}</IonLabel>
+                                <IonLabel>{lockDuration ? 'The rate is ' + getTokenRate() + 'x' : 'Please choose the duration'}</IonLabel>
                             </IonChip>
                         </IonItem>
-                        <IonItem>
+                        {/* <IonItem>
                             <IonLabel>Transaction With</IonLabel>
                             <DropdownOption
                                 dataSets={txTypes}
@@ -123,14 +119,15 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
                                     setTxType(e.target.value)
                                 }
                             ></DropdownOption>
-                        </IonItem>
+                        </IonItem> */}
 
                         <IonItem>
                             <IonCard>
                                 <IonCardContent>
                                     If you have a friend who is also participating in the lockdrop, please input the address.
-                                    Both parties will be able to receive a bonus rate.
-									</IonCardContent>
+                                    Both parties will be able to receive a bonus rate of 1% of what the friend is receiving.
+                                    Checkout this <a href='https://medium.com/stake-technologies/lockdrop-with-friends-the-plasm-network-affiliation-program-b385c1cd800d'>article</a> for details.
+								</IonCardContent>
                             </IonCard>
                             <IonLabel position='floating'>Affiliation (optional)</IonLabel>
 
