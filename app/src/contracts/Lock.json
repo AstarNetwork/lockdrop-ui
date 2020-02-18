@@ -24,12 +24,12 @@
       "type": "fallback"
     }
   ],
-  "metadata": "{\"compiler\":{\"version\":\"0.5.13+commit.5b0b510c\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"unlockTime\",\"type\":\"uint256\"}],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"constructor\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/Users/hoonkim/Projects/ethereum-lockdrop/contracts/Lock.sol\":\"Lock\"},\"evmVersion\":\"petersburg\",\"libraries\":{},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/hoonkim/Projects/ethereum-lockdrop/contracts/Lock.sol\":{\"keccak256\":\"0x810328790ffa48740c5da44de8e87fe4946314220139ec54a8f52a3b5a9f49a0\",\"urls\":[\"bzz-raw://a9d170e03a602a5b62e563c471ea6cbaef367bd911b3a9e8eb11c7f247edcf24\",\"dweb:/ipfs/QmcRyDV34p6AqTh7n4kYvRRpx5BVtBvHkN6nrgtBa4khHF\"]}},\"version\":1}",
-  "bytecode": "0x60806040526040516100af3803806100af83398181016040526040811015602557600080fd5b508051602090910151600091909155600155606a806100456000396000f3fe60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a7231582080ec309273df10f359262b868d824012852398e3b0d3892351c72de4fbc5ced964736f6c634300050d0032",
-  "deployedBytecode": "0x60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a7231582080ec309273df10f359262b868d824012852398e3b0d3892351c72de4fbc5ced964736f6c634300050d0032",
-  "sourceMap": "25:701:0:-;;;110:168;;;;;;;;;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;110:168:0;;;;;;;213:4;206:19;;;;245:4;238:24;25:701;;;;;;",
-  "deployedSourceMap": "25:701:0:-;;;515:4;509:11;498:9;495:26;534:23;;;;575:1;570:138;;;;488:220;;534:23;553:1;550;543:12;570:138;652:1;649;646;643;633:7;625:16;618:4;612:11;607:3;602:52;671:23;;;;595:99;488:220;;25:701",
-  "source": "pragma solidity ^0.5.0;\n\ncontract Lock {\n    // address owner; slot #0\n    // address unlockTime; slot #1\n    constructor (address owner, uint256 unlockTime) public payable {\n        assembly {\n            sstore(0x00, owner)\n            sstore(0x01, unlockTime)\n        }\n    }\n\n    /**\n    * @dev        Withdraw function once timestamp has passed unlock time\n    */\n    function () external payable { // payable so solidity doesn't add unnecessary logic\n        assembly {\n            switch gt(timestamp, sload(0x01))\n            case 0 { revert(0, 0) }\n            case 1 {\n                switch call(gas, sload(0x00), balance(address), 0, 0, 0, 0)\n                case 0 { revert(0, 0) }\n            }\n        }\n    }\n}\n",
+  "metadata": "{\"compiler\":{\"version\":\"0.5.15+commit.6a57276f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"unlockTime\",\"type\":\"uint256\"}],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"constructor\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/Users/hoonkim/Projects/ethereum-lockdrop/contracts/Lock.sol\":\"Lock\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/hoonkim/Projects/ethereum-lockdrop/contracts/Lock.sol\":{\"keccak256\":\"0xfe69d320cbabe9dfa17c86f3071f3bdf9eaf6954a9b808503bc3e7680f40788a\",\"urls\":[\"bzz-raw://0681876d50d5186c728ada1689a97c6771af623dfca7648d23a1b55967debb51\",\"dweb:/ipfs/QmajuEh6YgMjgJ4GcRwZwhGWYJWmiHqKXAp9tVkfjMTLht\"]}},\"version\":1}",
+  "bytecode": "0x60806040526040516100af3803806100af83398181016040526040811015602557600080fd5b508051602090910151600091909155600155606a806100456000396000f3fe60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a723158203fddb69c0b8ddafd0718813ba7ab0d5a04c62bd81ed5be2ff92b5a95b5201cc764736f6c634300050f0032",
+  "deployedBytecode": "0x60806040526001544211801560195760018114601e576032565b600080fd5b60008060008030316000545af18015601957505b5000fea265627a7a723158203fddb69c0b8ddafd0718813ba7ab0d5a04c62bd81ed5be2ff92b5a95b5201cc764736f6c634300050f0032",
+  "sourceMap": "25:648:0:-;;;110:168;;;;;;;;;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;110:168:0;;;;;;;213:4;206:19;;;;245:4;238:24;25:648;;;;;;",
+  "deployedSourceMap": "25:648:0:-;;;462:4;456:11;445:9;442:26;481:23;;;;522:1;517:138;;;;435:220;;481:23;500:1;497;490:12;517:138;599:1;596;593;590;580:7;572:16;565:4;559:11;554:3;549:52;618:23;;;;542:99;435:220;;25:648",
+  "source": "pragma solidity 0.5.15;\n\ncontract Lock {\n    // address owner; slot #0\n    // address unlockTime; slot #1\n    constructor (address owner, uint256 unlockTime) public payable {\n        assembly {\n            sstore(0x00, owner)\n            sstore(0x01, unlockTime)\n        }\n    }\n\n    /**\n    * @dev        Withdraw function once timestamp has passed unlock time\n    */\n    function () external payable {\n        assembly {\n            switch gt(timestamp, sload(0x01))\n            case 0 { revert(0, 0) }\n            case 1 {\n                switch call(gas, sload(0x00), balance(address), 0, 0, 0, 0)\n                case 0 { revert(0, 0) }\n            }\n        }\n    }\n}\n",
   "sourcePath": "/Users/hoonkim/Projects/ethereum-lockdrop/contracts/Lock.sol",
   "ast": {
     "absolutePath": "/Users/hoonkim/Projects/ethereum-lockdrop/contracts/Lock.sol",
@@ -45,9 +45,8 @@
         "id": 1,
         "literals": [
           "solidity",
-          "^",
           "0.5",
-          ".0"
+          ".15"
         ],
         "nodeType": "PragmaDirective",
         "src": "0:23:0"
@@ -182,14 +181,14 @@
             "body": {
               "id": 14,
               "nodeType": "Block",
-              "src": "402:322:0",
+              "src": "402:269:0",
               "statements": [
                 {
                   "externalReferences": [],
                   "id": 13,
                   "nodeType": "InlineAssembly",
                   "operations": "{\n    switch gt(timestamp(), sload(0x01))\n    case 0 { revert(0, 0) }\n    case 1 {\n        switch call(gas(), sload(0x00), balance(address()), 0, 0, 0, 0)\n        case 0 { revert(0, 0) }\n    }\n}",
-                  "src": "465:253:0"
+                  "src": "412:253:0"
                 }
               ]
             },
@@ -213,17 +212,17 @@
               "src": "402:0:0"
             },
             "scope": 16,
-            "src": "373:351:0",
+            "src": "373:298:0",
             "stateMutability": "payable",
             "superFunction": null,
             "visibility": "external"
           }
         ],
         "scope": 17,
-        "src": "25:701:0"
+        "src": "25:648:0"
       }
     ],
-    "src": "0:727:0"
+    "src": "0:674:0"
   },
   "legacyAST": {
     "absolutePath": "/Users/hoonkim/Projects/ethereum-lockdrop/contracts/Lock.sol",
@@ -239,9 +238,8 @@
         "id": 1,
         "literals": [
           "solidity",
-          "^",
           "0.5",
-          ".0"
+          ".15"
         ],
         "nodeType": "PragmaDirective",
         "src": "0:23:0"
@@ -376,14 +374,14 @@
             "body": {
               "id": 14,
               "nodeType": "Block",
-              "src": "402:322:0",
+              "src": "402:269:0",
               "statements": [
                 {
                   "externalReferences": [],
                   "id": 13,
                   "nodeType": "InlineAssembly",
                   "operations": "{\n    switch gt(timestamp(), sload(0x01))\n    case 0 { revert(0, 0) }\n    case 1 {\n        switch call(gas(), sload(0x00), balance(address()), 0, 0, 0, 0)\n        case 0 { revert(0, 0) }\n    }\n}",
-                  "src": "465:253:0"
+                  "src": "412:253:0"
                 }
               ]
             },
@@ -407,25 +405,25 @@
               "src": "402:0:0"
             },
             "scope": 16,
-            "src": "373:351:0",
+            "src": "373:298:0",
             "stateMutability": "payable",
             "superFunction": null,
             "visibility": "external"
           }
         ],
         "scope": 17,
-        "src": "25:701:0"
+        "src": "25:648:0"
       }
     ],
-    "src": "0:727:0"
+    "src": "0:674:0"
   },
   "compiler": {
     "name": "solc",
-    "version": "0.5.13+commit.5b0b510c.Emscripten.clang"
+    "version": "0.5.15+commit.6a57276f.Emscripten.clang"
   },
   "networks": {},
   "schemaVersion": "3.0.23",
-  "updatedAt": "2020-02-16T08:31:02.849Z",
+  "updatedAt": "2020-02-18T09:59:18.311Z",
   "devdoc": {
     "methods": {}
   },

@@ -8,11 +8,15 @@ import {
 } from '@ionic/react';
 import React from 'react';
 import LockdropForm from '../components/LockdropForm';
-import { connectWeb3, defaultAffiliation } from '../helpers/lockdrop/EthereumLockdrop';
+import {
+	connectWeb3,
+	defaultAffiliation
+} from '../helpers/lockdrop/EthereumLockdrop';
 import * as ethAddress from 'ethereum-address';
+import Web3 from 'web3';
 
-const formInfo = `This is the lockdrop form for Ethereum
-You must have Metamask installed in order for this to work properly.
+const formInfo = `This is the lockdrop form for Ethereum.
+This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
 If you find any errors or find issues with this form, please contact the Plasm team.`;
 
 class EthLockdropPage extends React.Component {
@@ -22,6 +26,7 @@ class EthLockdropPage extends React.Component {
 		contract: null
 	};
 
+	// get and set the web3 state when the component is mounted
 	componentDidMount = async () => {
 		const web3State = await connectWeb3();
 		this.setState(web3State);
@@ -30,28 +35,32 @@ class EthLockdropPage extends React.Component {
 	handleSubmit = async formInputVal => {
 		// checks user input
 		if (formInputVal.amount && formInputVal.duration) {
-
 			console.log(formInputVal);
 
 			const { accounts, contract } = this.state;
 			try {
-				if(formInputVal.affiliation === accounts[0]){
+				// check user input
+				if (formInputVal.affiliation === accounts[0]) {
 					alert('You cannot affiliate yourself');
-				}
-				else if (formInputVal.affiliation && !ethAddress.isAddress(formInputVal.affiliation)){
+				} else if (
+					formInputVal.affiliation &&
+					!ethAddress.isAddress(formInputVal.affiliation)
+				) {
 					alert('Please input a proper Ethereum address');
-				}
-				else{
-					// return a default value if empty
-					let _affiliation = defaultAffiliation(formInputVal.affiliation);
+				} else {
+					// return a default address if user input is empty
+					let introducer = defaultAffiliation(formInputVal.affiliation);
 
+					// convert user input to Wei
+					const amountToSend = Web3.utils.toWei(formInputVal.amount, 'ether');
+
+					// communicate with the smart contract
 					await contract.methods
-						.lock(formInputVal.duration, _affiliation)
-						.send({ from: accounts[0] });
-					//todo: send ether to contract
+						.lock(formInputVal.duration, introducer)
+						.send({ from: accounts[0], value: amountToSend });
 				}
 			} catch (error) {
-				alert('error!\n' + error);
+				alert('error!\n' + error.message);
 			}
 		} else {
 			//todo: display warning if there is a problem with the input

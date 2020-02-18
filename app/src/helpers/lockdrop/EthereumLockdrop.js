@@ -8,13 +8,12 @@ import getWeb3 from '../getWeb3';
 //todo: change this to the Plasm team's ethereum address
 const defaultAff = '0x0000000000000000000000000000000000000000';
 
-export function defaultAffiliation(aff){
+export function defaultAffiliation(aff) {
 	// check if affiliation address is not empty and is not themselves
 	if (aff) {
 		// return itself when it is a valid address
 		return aff;
-	}
-	else{
+	} else {
 		// if it is an invalid address, return the default affiliation address
 		return defaultAff;
 	}
@@ -35,10 +34,6 @@ export function lockEthereum(duration, amount, rate, affAccount) {
 	} else {
 		console.log('no friends for this poor account');
 	}
-}
-
-export function getContractEvent() {
-	return 'this is a smart contract state';
 }
 
 // this function will authenticate if the client has metamask installed and can communicate with the blockchain
