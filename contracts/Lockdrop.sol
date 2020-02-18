@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.15;
 
 import './Lock.sol';
 
@@ -42,7 +42,7 @@ contract Lockdrop {
         Lock lockAddr = (new Lock).value(eth)(msg.sender, unlockTime);
 
         // ensure lock contract has all ETH, or fail
-        assert(address(lockAddr).balance == eth);
+        assert(address(lockAddr).balance >= eth);
 
         emit Locked(eth, _days, address(lockAddr), _introducer);
     }

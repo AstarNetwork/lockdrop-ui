@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.15;
 
 contract Lock {
     // address owner; slot #0
@@ -13,7 +13,7 @@ contract Lock {
     /**
     * @dev        Withdraw function once timestamp has passed unlock time
     */
-    function () external payable { // payable so solidity doesn't add unnecessary logic
+    function () external payable {
         assembly {
             switch gt(timestamp, sload(0x01))
             case 0 { revert(0, 0) }
