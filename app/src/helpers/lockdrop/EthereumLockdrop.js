@@ -6,7 +6,7 @@ import getWeb3 from '../getWeb3';
 
 // the default introducer address when none is provided by the user
 //todo: change this to the Plasm team's ethereum address
-const defaultAff = '0x01734005354d569716291cD1CFbc67f3f56a0b6F';
+const defaultAff = '0x0000000000000000000000000000000000000000';
 
 export function defaultAffiliation(aff){
 	// check if affiliation address is not empty and is not themselves
