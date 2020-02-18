@@ -125,8 +125,9 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
                             <IonCard>
                                 <IonCardContent>
                                     If you have a friend who is also participating in the lockdrop, please input the address.
-                                    Both parties will be able to receive a bonus rate.
-									</IonCardContent>
+                                    Both parties will be able to receive a bonus rate of 1% of what the friend is receiving.
+                                    Checkout this <a href='https://medium.com/stake-technologies/lockdrop-with-friends-the-plasm-network-affiliation-program-b385c1cd800d'>article</a> for details.
+								</IonCardContent>
                             </IonCard>
                             <IonLabel position='floating'>Affiliation (optional)</IonLabel>
 

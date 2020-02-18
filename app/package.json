@@ -10,6 +10,7 @@
     "@ionic/react-router": "^4.11.0",
     "bignumber.js": "^4.1.0",
     "eth-connect": "^4.0.2",
+    "ethereum-address": "0.0.4",
     "ionicons": "^4.6.3",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",

@@ -4,6 +4,22 @@ import Lockdrop from '../../contracts/Lockdrop.json';
 
 import getWeb3 from '../getWeb3';
 
+// the default introducer address when none is provided by the user
+//todo: change this to the Plasm team's ethereum address
+const defaultAff = '0x01734005354d569716291cD1CFbc67f3f56a0b6F';
+
+export function defaultAffiliation(aff){
+	// check if affiliation address is not empty and is not themselves
+	if (aff) {
+		// return itself when it is a valid address
+		return aff;
+	}
+	else{
+		// if it is an invalid address, return the default affiliation address
+		return defaultAff;
+	}
+}
+
 // locks the given token
 export function lockEthereum(duration, amount, rate, affAccount) {
 	console.log(
