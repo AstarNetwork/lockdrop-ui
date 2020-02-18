@@ -5,6 +5,7 @@
 	"dependencies": {
 		"@ionic/react": "^4.11.0",
 		"@ionic/react-router": "^4.11.0",
+		"bignumber.js": "^4.1.0",
 		"ethereum-address": "0.0.4",
 		"ionicons": "^4.6.3",
 		"react": "^16.12.0",
