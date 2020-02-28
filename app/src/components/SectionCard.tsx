@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React from 'react';
 import Paper from '@material-ui/core/Paper';
 import { makeStyles } from '@material-ui/core/styles';
@@ -5,7 +6,7 @@ import Container from '@material-ui/core/Container';
 import { ThemeColors } from '../theme/themes';
 
 interface Props {
-    maxWidth: false | "xs" | "sm" | "md" | "lg" | "xl" | undefined;
+    maxWidth: false | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | undefined;
 }
 
 const SectionCard: React.FC<Props> = ({ maxWidth, children }) => {

@@ -1,9 +1,11 @@
-import { IonContent, IonPage, IonTitle, IonToolbar, IonHeader, IonLoading } from '@ionic/react';
+import { IonContent, IonPage, IonLoading } from '@ionic/react';
 import React from 'react';
 import LockdropForm from '../components/LockdropForm';
 import { connectWeb3, defaultAffiliation } from '../helpers/lockdrop/EthereumLockdrop';
 import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -58,18 +60,20 @@ class EthLockdropPage extends React.Component {
     render() {
         return (
             <IonPage>
-                <IonHeader translucent>
+                {/* <IonHeader translucent>
                     <IonToolbar>
                         <IonTitle>Lockdrop Form</IonTitle>
                     </IonToolbar>
-                </IonHeader>
+                </IonHeader> */}
 
                 <IonContent>
+                    <Navbar />
                     {!this.state.web3 && !this.state.accounts && !this.state.contract ? (
                         <IonLoading isOpen={true} message={'Connecting to Metamask...'} />
                     ) : (
                         <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
                     )}
+                    <Footer />
                 </IonContent>
             </IonPage>
         );
