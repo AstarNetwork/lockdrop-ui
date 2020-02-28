@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { LockInput } from '../models/LockdropModels';
 import SectionCard from '../components/SectionCard';
 import { DropdownOption, OptionItem } from '../components/DropdownOption';
+import { makeStyles } from '@material-ui/core/styles';
+import Container from '@material-ui/core/Container';
 
 type InputProps = {
     token: string;
@@ -36,6 +38,17 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
     const [affAccount, setAff] = useState('');
     const [txType] = useState('');
 
+    const useStyles = makeStyles(theme => ({
+        txButton: {
+            margin: theme.spacing(3),
+        },
+        formLabel: {
+            margin: theme.spacing(2),
+        },
+    }));
+
+    const classes = useStyles();
+
     function getTokenRate() {
         if (lockDuration) {
             return rates.filter(x => x.key === lockDuration)[0].value;
@@ -60,7 +73,7 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
         <>
             <SectionCard maxWidth="lg">
                 <div className="main-content">
-                    <IonLabel>Form Inputs</IonLabel>
+                    <IonLabel className={classes.formLabel}>Form Inputs</IonLabel>
                     {description ? (
                         <IonCard>
                             <IonCardContent>{description}</IonCardContent>
@@ -76,9 +89,8 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
                             onIonInput={e => setAmount(((e.target as HTMLInputElement).value as unknown) as number)}
                         ></IonInput>
                     </IonItem>
+                    <IonLabel className={classes.formLabel}>Lock Duration</IonLabel>
                     <IonItem>
-                        <IonLabel>Lock Duration</IonLabel>
-
                         <DropdownOption
                             dataSets={durations}
                             onChoose={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -91,15 +103,6 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
                             </IonLabel>
                         </IonChip>
                     </IonItem>
-                    {/* <IonItem>
-                            <IonLabel>Transaction With</IonLabel>
-                            <DropdownOption
-                                dataSets={txTypes}
-                                onChoose={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                    setTxType(e.target.value)
-                                }
-                            ></DropdownOption>
-                        </IonItem> */}
 
                     <IonItem>
                         <IonCard>
@@ -120,8 +123,11 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
                             onIonInput={e => setAff((e.target as HTMLInputElement).value)}
                         ></IonInput>
                     </IonItem>
-
-                    <IonButton onClick={() => handleSubmit()}>Submit Transaction</IonButton>
+                    <Container>
+                        <IonButton expand="block" onClick={() => handleSubmit()} className={classes.txButton}>
+                            Submit Transaction
+                        </IonButton>
+                    </Container>
                 </div>
             </SectionCard>
         </>
