@@ -17,7 +17,7 @@ import {
     IonIcon,
     IonChip,
     IonItem,
-    IonLabel
+    IonLabel,
 } from '@ionic/react';
 import React, { useState } from 'react';
 import './LandingPage.css';
@@ -39,33 +39,26 @@ const LandingPage: React.FC = () => {
     const [redirect, setRedirect] = useState('');
 
     function handleTokenChoose(dropdownItem: string) {
-
         try {
             // check if the client meets the requirements for transaction
             switch (dropdownItem) {
                 case 'eth':
                     setTokenType(dropdownItem);
-                    
+
                     setRedirect('/eth-lockdrop');
                     setLockState(false);
                     break;
                 //todo: add auth check for other tokens
                 case 'btc':
-
                     break;
                 case 'dot':
-
                     break;
                 case 'eos':
-
                     break;
             }
-        }
-        catch (err){
+        } catch (err) {
             alert('found error ' + err);
         }
-        
-
     }
 
     function handleOnClick() {
@@ -76,9 +69,9 @@ const LandingPage: React.FC = () => {
             <IonHeader translucent>
                 <IonToolbar>
                     <IonTitle>Plasm Network</IonTitle>
-                    <IonButtons slot='end'>
-                        <IonButton slot='primary' href='https://github.com/staketechnologies/Plasm.git'>
-                            <IonIcon slot='icon-only' name='logo-github' />
+                    <IonButtons slot="end">
+                        <IonButton slot="primary" href="https://github.com/staketechnologies/Plasm.git">
+                            <IonIcon slot="icon-only" name="logo-github" />
                         </IonButton>
                     </IonButtons>
                 </IonToolbar>
@@ -87,24 +80,26 @@ const LandingPage: React.FC = () => {
             <IonContent>
                 <IonGrid>
                     <IonRow>
-                        <IonCol>
-
-                        </IonCol>
-                        <IonCol size='auto'>
-                            <div className='main-content'>
+                        <IonCol></IonCol>
+                        <IonCol size="auto">
+                            <div className="main-content">
                                 <IonCard>
-                                    <img src='/assets/plasm-logo.png' alt=''></img>
+                                    <img src="/assets/plasm-logo.png" alt=""></img>
                                     <IonCardHeader>
                                         <IonCardTitle>Plasm Network Lockdrop</IonCardTitle>
                                         <IonCardSubtitle>Lockdrop form for PLM</IonCardSubtitle>
                                     </IonCardHeader>
                                     <IonCardContent>
-                                        The Plasm Network is a scaling DApps platform on Substrate.
-                                        This means that the Plasm Network will be connected to Polkadot in the future.
-                                        Our platform is scalable because we are implementing layer2 solutions such as Plasma and Lightning Network.
-                                        It aims at improving smart contract performance and the main platform for developing layer2 applications.
-                                        For details regarding the specs for the Plasm Network,
-                                        please refer to our <a href='https://github.com/staketechnologies/plasmdocs/blob/master/wp/en.pdf'>white paper</a>.
+                                        The Plasm Network is a scaling DApps platform on Substrate. This means that the
+                                        Plasm Network will be connected to Polkadot in the future. Our platform is
+                                        scalable because we are implementing layer2 solutions such as Plasma and
+                                        Lightning Network. It aims at improving smart contract performance and the main
+                                        platform for developing layer2 applications. For details regarding the specs for
+                                        the Plasm Network, please refer to our{' '}
+                                        <a href="https://github.com/staketechnologies/plasmdocs/blob/master/wp/en.pdf">
+                                            white paper
+                                        </a>
+                                        .
                                         <br />
                                         <IonChip>
                                             <CountdownTimer deadline={endDate}></CountdownTimer>
@@ -114,19 +109,23 @@ const LandingPage: React.FC = () => {
                                 </IonCard>
                             </div>
                         </IonCol>
-                        <IonCol>
-
-                        </IonCol>
+                        <IonCol></IonCol>
                     </IonRow>
                     <IonRow>
-                        <IonCol>
-                        </IonCol>
+                        <IonCol></IonCol>
 
                         <IonCol>
-                            <IonButton size='large' expand='block' disabled={canLock} onClick={handleOnClick} href={redirect}>Start Lockdrop</IonButton>
-
+                            <IonButton
+                                size="large"
+                                expand="block"
+                                disabled={canLock}
+                                onClick={handleOnClick}
+                                href={redirect}
+                            >
+                                Start Lockdrop
+                            </IonButton>
                         </IonCol>
-                        <IonCol size='auto'>
+                        <IonCol size="auto">
                             <IonItem>
                                 <IonLabel>Tokens Locking in</IonLabel>
                                 <DropdownOption
@@ -137,17 +136,14 @@ const LandingPage: React.FC = () => {
                                     }
                                 ></DropdownOption>
                             </IonItem>
-
                         </IonCol>
 
-                        <IonCol>
-                        </IonCol>
+                        <IonCol></IonCol>
                     </IonRow>
                 </IonGrid>
-
             </IonContent>
-        </IonPage >
-    )
-}
+        </IonPage>
+    );
+};
 
 export default LandingPage;
