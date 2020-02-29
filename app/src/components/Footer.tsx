@@ -16,7 +16,7 @@ function Copyright() {
     return (
         <Typography variant="body2">
             {'© 2019-' + new Date().getFullYear() + ' '}
-            <Link color="inherit" href="https://material-ui.com/">
+            <Link color="inherit" href="https://stake.co.jp/">
                 Stake Technologies, Inc.
             </Link>{' '}
             {'All Rights Reserved.'}
@@ -64,11 +64,11 @@ export default function StickyFooter() {
 
                             <List component="nav">
                                 {Company.map(company => (
-                                    <a href={company.link} key={company.description}>
+                                    <Link color="inherit" href={company.link} key={company.description}>
                                         <ListItem button>
                                             <ListItemText primary={company.description} />
                                         </ListItem>
-                                    </a>
+                                    </Link>
                                 ))}
                             </List>
                         </Grid>
@@ -79,11 +79,11 @@ export default function StickyFooter() {
                             <Divider />
                             <List component="nav">
                                 {Products.map(product => (
-                                    <a href={product.link} key={product.description}>
+                                    <Link color="inherit" href={product.link} key={product.description}>
                                         <ListItem button>
                                             <ListItemText primary={product.description} />
                                         </ListItem>
-                                    </a>
+                                    </Link>
                                 ))}
                             </List>
                         </Grid>
@@ -94,11 +94,11 @@ export default function StickyFooter() {
                             <Divider />
                             <List component="nav">
                                 {Collaboration.map(collaboration => (
-                                    <a href={collaboration.link} key={collaboration.description}>
+                                    <Link color="inherit" href={collaboration.link} key={collaboration.description}>
                                         <ListItem button>
                                             <ListItemText primary={collaboration.description} />
                                         </ListItem>
-                                    </a>
+                                    </Link>
                                 ))}
                             </List>
                         </Grid>
@@ -109,11 +109,11 @@ export default function StickyFooter() {
                             <Divider />
                             <List component="nav">
                                 {Blogs.map(blog => (
-                                    <a href={blog.link} key={blog.description}>
+                                    <Link color="inherit" href={blog.link} key={blog.description}>
                                         <ListItem button>
                                             <ListItemText primary={blog.description} />
                                         </ListItem>
-                                    </a>
+                                    </Link>
                                 ))}
                             </List>
                         </Grid>
@@ -124,11 +124,11 @@ export default function StickyFooter() {
                             <Divider />
                             <List component="nav">
                                 {Community.map(community => (
-                                    <a href={community.link} key={community.description}>
+                                    <Link color="inherit" href={community.link} key={community.description}>
                                         <ListItem button>
                                             <ListItemText primary={community.description} />
                                         </ListItem>
-                                    </a>
+                                    </Link>
                                 ))}
                             </List>
                         </Grid>

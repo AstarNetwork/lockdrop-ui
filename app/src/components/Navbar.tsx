@@ -7,19 +7,27 @@ import Typography from '@material-ui/core/Typography';
 import Badge from '@material-ui/core/Badge';
 import MenuItem from '@material-ui/core/MenuItem';
 import Menu from '@material-ui/core/Menu';
-import MenuIcon from '@material-ui/icons/Menu';
 import MoreIcon from '@material-ui/icons/MoreVert';
 import { Button } from '@material-ui/core';
 import TwitterIcon from '@material-ui/icons/Twitter';
 import GitHubIcon from '@material-ui/icons/GitHub';
+import plasmLogo from '../resources/plasm-logo.png';
+import DescriptionIcon from '@material-ui/icons/Description';
+import NoteIcon from '@material-ui/icons/Note';
+import ForumIcon from '@material-ui/icons/Forum';
+import AnnouncementIcon from '@material-ui/icons/Announcement';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
         grow: {
             flexGrow: 1,
         },
+        navbar: {
+            backgroundColor: 'black',
+        },
         logoIcon: {
             marginRight: theme.spacing(2),
+            maxHeight: 46,
         },
         title: {
             display: 'none',
@@ -70,20 +78,36 @@ export default function Navbar() {
         setMobileMoreAnchorEl(event.currentTarget);
     };
 
-    const menuId = 'primary-see-whitepaper-menu';
+    const wpMenuId = 'primary-see-whitepaper-menu';
+    //const communityMenuId = 'primary-see-community-menu';
     const renderMenu = (
-        <Menu
-            anchorEl={anchorEl}
-            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            id={menuId}
-            keepMounted
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            open={isMenuOpen}
-            onClose={handleMenuClose}
-        >
-            <MenuItem onClick={handleMenuClose}>English</MenuItem>
-            <MenuItem onClick={handleMenuClose}>Japanese</MenuItem>
-        </Menu>
+        <>
+            <Menu
+                anchorEl={anchorEl}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                id={wpMenuId}
+                keepMounted
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                open={isMenuOpen}
+                onClose={handleMenuClose}
+            >
+                <MenuItem onClick={handleMenuClose}>English</MenuItem>
+                <MenuItem onClick={handleMenuClose}>Japanese</MenuItem>
+            </Menu>
+
+            {/* <Menu
+                anchorEl={anchorEl}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                id={communityMenuId}
+                keepMounted
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                open={isMenuOpen}
+                onClose={handleMenuClose}
+            >
+                <MenuItem onClick={handleMenuClose}>Discord</MenuItem>
+                <MenuItem onClick={handleMenuClose}>Telegram</MenuItem>
+            </Menu> */}
+        </>
     );
 
     const mobileMenuId = 'primary-see-whitepaper-menu-mobile';
@@ -100,20 +124,25 @@ export default function Navbar() {
             <MenuItem onClick={handleProfileMenuOpen}>
                 <IconButton
                     aria-label="account of current user"
-                    aria-controls="primary-see-whitepaper-menu-mobile"
+                    aria-controls="primary-see-whitepaper-menu"
                     aria-haspopup="true"
                     color="inherit"
                 >
                     <Badge badgeContent={4} color="secondary">
-                        <TwitterIcon />
+                        <NoteIcon />
                     </Badge>
                 </IconButton>
                 <p>Whitepaper</p>
             </MenuItem>
             <MenuItem onClick={handleProfileMenuOpen}>
-                <IconButton aria-label="show 11 new github" color="inherit">
+                <IconButton
+                    aria-label="account of current user"
+                    aria-controls="primary-see-community-menu"
+                    aria-haspopup="true"
+                    color="inherit"
+                >
                     <Badge badgeContent={11} color="secondary">
-                        <GitHubIcon />
+                        <DescriptionIcon />
                     </Badge>
                 </IconButton>
                 <p>Docs</p>
@@ -121,7 +150,7 @@ export default function Navbar() {
             <MenuItem>
                 <IconButton aria-label="show 11 new github" color="inherit">
                     <Badge badgeContent={11} color="secondary">
-                        <GitHubIcon />
+                        <ForumIcon />
                     </Badge>
                 </IconButton>
                 <p>Community</p>
@@ -129,31 +158,20 @@ export default function Navbar() {
             <MenuItem>
                 <IconButton aria-label="show 11 new github" color="inherit">
                     <Badge badgeContent={11} color="secondary">
-                        <GitHubIcon />
+                        <AnnouncementIcon />
                     </Badge>
                 </IconButton>
                 <p>Blog</p>
             </MenuItem>
-            {/* <MenuItem onClick={handleProfileMenuOpen}>
-                <IconButton
-                    aria-label="account of current user"
-                    aria-controls="primary-see-whitepaper-menu"
-                    aria-haspopup="true"
-                    color="inherit"
-                >
-                    <AccountCircle />
-                </IconButton>
-                <p>Profile</p>
-            </MenuItem> */}
         </Menu>
     );
 
     return (
         <div className={classes.grow}>
-            <AppBar position="static">
+            <AppBar position="static" className={classes.navbar}>
                 <Toolbar>
-                    <IconButton edge="start" className={classes.logoIcon} color="inherit" aria-label="open drawer">
-                        <MenuIcon />
+                    <IconButton edge="start" color="inherit" aria-label="open drawer">
+                        <img className={classes.logoIcon} src={plasmLogo} />
                     </IconButton>
                     <Typography className={classes.title} variant="h6" noWrap>
                         Plasm Network
@@ -163,10 +181,10 @@ export default function Navbar() {
                         <Button color="inherit" onClick={handleProfileMenuOpen}>
                             Whitepaper
                         </Button>
+                        <Button color="inherit">Docs</Button>
                         <Button color="inherit" onClick={handleProfileMenuOpen}>
-                            Docs
+                            Community
                         </Button>
-                        <Button color="inherit">Community</Button>
                         <Button color="inherit">Blog</Button>
                         <IconButton aria-label="show twitter" color="inherit">
                             <TwitterIcon />
@@ -174,7 +192,7 @@ export default function Navbar() {
                         <IconButton
                             edge="end"
                             aria-label="account of current user"
-                            aria-controls={menuId}
+                            aria-controls={wpMenuId}
                             aria-haspopup="true"
                             color="inherit"
                         >
