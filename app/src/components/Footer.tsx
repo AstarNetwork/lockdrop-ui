@@ -1,5 +1,4 @@
 import React from 'react';
-import CssBaseline from '@material-ui/core/CssBaseline';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
@@ -26,9 +25,7 @@ function Copyright() {
 
 const useStyles = makeStyles(theme => ({
     root: {
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
+        marginTop: theme.spacing(10),
     },
     socialIcon: {
         color: 'white',
@@ -37,14 +34,13 @@ const useStyles = makeStyles(theme => ({
     },
     footer: {
         padding: theme.spacing(2),
-        marginTop: 'auto',
         backgroundColor: 'white',
-        textAlign: 'center',
         color: 'black',
     },
     footerHeader: {
         color: ThemeColors.darkBlue,
     },
+    siteMap: {},
 }));
 
 export default function StickyFooter() {
@@ -52,10 +48,9 @@ export default function StickyFooter() {
 
     return (
         <div className={classes.root}>
-            <CssBaseline />
             <footer className={classes.footer}>
-                <Container maxWidth="md">
-                    <Grid container spacing={4}>
+                <Container maxWidth="lg">
+                    <Grid container spacing={4} justify="center" className={classes.siteMap}>
                         <Grid item>
                             <Typography variant="body1" component="h1" align="center" className={classes.footerHeader}>
                                 Company
@@ -64,7 +59,13 @@ export default function StickyFooter() {
 
                             <List component="nav">
                                 {Company.map(company => (
-                                    <Link color="inherit" href={company.link} key={company.description}>
+                                    <Link
+                                        color="inherit"
+                                        href={company.link}
+                                        key={company.description}
+                                        rel="noopener noreferrer"
+                                        target="_blank"
+                                    >
                                         <ListItem button>
                                             <ListItemText primary={company.description} />
                                         </ListItem>
@@ -79,7 +80,13 @@ export default function StickyFooter() {
                             <Divider />
                             <List component="nav">
                                 {Products.map(product => (
-                                    <Link color="inherit" href={product.link} key={product.description}>
+                                    <Link
+                                        color="inherit"
+                                        href={product.link}
+                                        key={product.description}
+                                        rel="noopener noreferrer"
+                                        target="_blank"
+                                    >
                                         <ListItem button>
                                             <ListItemText primary={product.description} />
                                         </ListItem>
@@ -94,7 +101,13 @@ export default function StickyFooter() {
                             <Divider />
                             <List component="nav">
                                 {Collaboration.map(collaboration => (
-                                    <Link color="inherit" href={collaboration.link} key={collaboration.description}>
+                                    <Link
+                                        color="inherit"
+                                        href={collaboration.link}
+                                        key={collaboration.description}
+                                        rel="noopener noreferrer"
+                                        target="_blank"
+                                    >
                                         <ListItem button>
                                             <ListItemText primary={collaboration.description} />
                                         </ListItem>
@@ -109,7 +122,13 @@ export default function StickyFooter() {
                             <Divider />
                             <List component="nav">
                                 {Blogs.map(blog => (
-                                    <Link color="inherit" href={blog.link} key={blog.description}>
+                                    <Link
+                                        color="inherit"
+                                        href={blog.link}
+                                        key={blog.description}
+                                        rel="noopener noreferrer"
+                                        target="_blank"
+                                    >
                                         <ListItem button>
                                             <ListItemText primary={blog.description} />
                                         </ListItem>
@@ -124,7 +143,13 @@ export default function StickyFooter() {
                             <Divider />
                             <List component="nav">
                                 {Community.map(community => (
-                                    <Link color="inherit" href={community.link} key={community.description}>
+                                    <Link
+                                        color="inherit"
+                                        href={community.link}
+                                        key={community.description}
+                                        rel="noopener noreferrer"
+                                        target="_blank"
+                                    >
                                         <ListItem button>
                                             <ListItemText primary={community.description} />
                                         </ListItem>

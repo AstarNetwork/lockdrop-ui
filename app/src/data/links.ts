@@ -7,6 +7,7 @@ export const Links = {
     discord: 'https://discordapp.com/invite/Dnfn5eT',
     email: 'info@stake.co.jp',
     home: 'https://stake.co.jp/',
+    plasmHome: 'https://plasmnet.io/',
 };
 
 export const SponsorLinks = {

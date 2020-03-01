@@ -6,15 +6,10 @@ import {
     IonCardTitle,
     IonContent,
     IonPage,
-    IonTitle,
-    IonToolbar,
-    IonHeader,
     IonButton,
     IonCol,
     IonGrid,
     IonRow,
-    IonButtons,
-    IonIcon,
     IonChip,
     IonItem,
     IonLabel,
@@ -23,6 +18,7 @@ import React, { useState } from 'react';
 import './LandingPage.css';
 import CountdownTimer from '../components/CountdownTimer';
 import { DropdownOption, OptionItem } from '../components/DropdownOption';
+import Footer from '../components/Footer';
 
 const endDate = '2020-02-29';
 
@@ -66,17 +62,6 @@ const LandingPage: React.FC = () => {
     }
     return (
         <IonPage>
-            <IonHeader translucent>
-                <IonToolbar>
-                    <IonTitle>Plasm Network</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton slot="primary" href="https://github.com/staketechnologies/Plasm.git">
-                            <IonIcon slot="icon-only" name="logo-github" />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
-
             <IonContent>
                 <IonGrid>
                     <IonRow>
@@ -141,6 +126,7 @@ const LandingPage: React.FC = () => {
                         <IonCol></IonCol>
                     </IonRow>
                 </IonGrid>
+                <Footer />
             </IonContent>
         </IonPage>
     );
