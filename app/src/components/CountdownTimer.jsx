@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 
 function CountdownTimer({ deadline }) {
-
-    const calculateTimeLeft = (date) => {
+    const calculateTimeLeft = date => {
         const difference = +new Date(date) - +new Date();
         let timeLeft = {};
 
@@ -11,7 +10,7 @@ function CountdownTimer({ deadline }) {
                 days: Math.floor(difference / (1000 * 60 * 60 * 24)),
                 hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
                 minutes: Math.floor((difference / 1000 / 60) % 60),
-                seconds: Math.floor((difference / 1000) % 60)
+                seconds: Math.floor((difference / 1000) % 60),
             };
         }
 
@@ -35,16 +34,14 @@ function CountdownTimer({ deadline }) {
 
         timerComponents.push(
             <span>
-                {timeLeft[interval]} {interval}{" "}
-            </span>
+                {timeLeft[interval]} {interval}{' '}
+            </span>,
         );
     });
 
     return (
         <>
-            <div className='countdown'>
-                {timerComponents.length ? timerComponents : <span>Time's up!</span>}
-            </div>
+            <div className="countdown">{timerComponents.length ? timerComponents : <span>Time's up!</span>}</div>
         </>
     );
 }

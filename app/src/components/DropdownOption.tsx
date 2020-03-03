@@ -1,7 +1,4 @@
-import {
-    IonSelect,
-    IonSelectOption
-} from '@ionic/react';
+import { IonSelect, IonSelectOption } from '@ionic/react';
 import React from 'react';
 
 // option data is the type that is going to be passed to the component
@@ -20,18 +17,14 @@ export type OptionItem = {
 export const DropdownOption = (props: OptionData) => {
     const items = props.dataSets.map(x => {
         return (
-            <IonSelectOption
-                className='dropdown-item'
-                key={props.dataSets.indexOf(x)}
-                value={x.value}
-            >
+            <IonSelectOption className="dropdown-item" key={props.dataSets.indexOf(x)} value={x.value}>
                 {x.label}
             </IonSelectOption>
         );
     });
 
     return (
-        <IonSelect interface='popover' onIonChange={e => props.onChoose(e)}>
+        <IonSelect interface="popover" onIonChange={e => props.onChoose(e)}>
             {items}
         </IonSelect>
     );
