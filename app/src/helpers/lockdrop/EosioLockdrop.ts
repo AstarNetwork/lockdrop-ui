@@ -1,3 +1,3 @@
 export function lockEos() {
-	console.log('implement this!');
+    console.log('implement this!');
 }

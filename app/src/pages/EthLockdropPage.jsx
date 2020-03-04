@@ -68,12 +68,6 @@ class EthLockdropPage extends React.Component {
     render() {
         return (
             <IonPage>
-                {/* <IonHeader translucent>
-                    <IonToolbar>
-                        <IonTitle>Lockdrop Form</IonTitle>
-                    </IonToolbar>
-                </IonHeader> */}
-
                 <IonContent>
                     <Navbar />
                     {!this.state.web3 && !this.state.accounts && !this.state.contract ? (
@@ -94,13 +88,23 @@ export default EthLockdropPage;
 
 // component that displays the number of tokens and the duration for the lock via Web3
 const LockedEth = ({ web3 }) => {
-    const [lockEvents] = useState(getLockEvents(web3));
+    const [lockEvents, setEvents] = useState([]);
+
+    useEffect(() => {
+        setTimeout(async () => {
+            setEvents(await getLockEvents(web3));
+            console.log(lockEvents);
+        }, 5000);
+    });
 
     return (
         <>
             <SectionCard maxWidth="lg">
                 <div className="lockdrop-result">
                     <IonLabel>Hello World</IonLabel>
+                    {lockEvents.map(eventItem => (
+                        <IonLabel key={eventItem.transactionHash}>{eventItem.transactionHash}</IonLabel>
+                    ))}
                 </div>
             </SectionCard>
         </>

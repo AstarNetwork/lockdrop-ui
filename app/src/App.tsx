@@ -1,9 +1,6 @@
 import React from 'react';
 import { Redirect, Route } from 'react-router-dom';
-import {
-  IonApp,
-  IonRouterOutlet
-} from '@ionic/react';
+import { IonApp, IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import LandingPage from './pages/LandingPage';
 import EthLockdropPage from './pages/EthLockdropPage';
@@ -30,16 +27,15 @@ import './theme/variables.css';
 const landingPageUrl = '/eth-lockdrop';
 
 const App: React.FC = () => (
-  <IonApp>
-
-    <IonReactRouter>
-      <IonRouterOutlet>
-        <Route path='/welcome' component={LandingPage} exact={true} />
-        <Route path='/eth-lockdrop' component={EthLockdropPage} exact={true} />
-        <Route path='/' render={() => <Redirect to={landingPageUrl} />} exact={true} />
-      </IonRouterOutlet>
-    </IonReactRouter>
-  </IonApp >
+    <IonApp>
+        <IonReactRouter>
+            <IonRouterOutlet>
+                <Route path="/welcome" component={LandingPage} exact={true} />
+                <Route path="/eth-lockdrop" component={EthLockdropPage} exact={true} />
+                <Route path="/" render={() => <Redirect to={landingPageUrl} />} exact={true} />
+            </IonRouterOutlet>
+        </IonReactRouter>
+    </IonApp>
 );
 
 export default App;
