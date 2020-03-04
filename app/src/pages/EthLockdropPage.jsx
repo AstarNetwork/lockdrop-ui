@@ -1,11 +1,12 @@
-import { IonContent, IonPage, IonLoading } from '@ionic/react';
-import React from 'react';
+import { IonContent, IonPage, IonLoading, IonLabel } from '@ionic/react';
+import React, { useState, useEffect } from 'react';
 import LockdropForm from '../components/LockdropForm';
-import { connectWeb3, defaultAffiliation } from '../helpers/lockdrop/EthereumLockdrop';
+import { connectWeb3, defaultAffiliation, getLockEvents } from '../helpers/lockdrop/EthereumLockdrop';
 import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import SectionCard from '../components/SectionCard';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -22,6 +23,10 @@ class EthLockdropPage extends React.Component {
     componentDidMount = async () => {
         const web3State = await connectWeb3();
         this.setState(web3State);
+    };
+
+    componentWillUnmount = async () => {
+        // unsubscribe
     };
 
     handleSubmit = async formInputVal => {
@@ -44,9 +49,12 @@ class EthLockdropPage extends React.Component {
                     const amountToSend = Web3.utils.toWei(formInputVal.amount, 'ether');
 
                     // communicate with the smart contract
-                    await contract.methods
-                        .lock(formInputVal.duration, introducer)
-                        .send({ from: accounts[0], value: amountToSend });
+                    await contract.methods.lock(formInputVal.duration, introducer).send({
+                        from: accounts[0],
+                        value: amountToSend,
+                    });
+
+                    alert(`Locked ${formInputVal.amount} tokens for ${formInputVal.duration} days!`);
                 }
             } catch (error) {
                 alert('error!\n' + error.message);
@@ -71,7 +79,10 @@ class EthLockdropPage extends React.Component {
                     {!this.state.web3 && !this.state.accounts && !this.state.contract ? (
                         <IonLoading isOpen={true} message={'Connecting to Metamask...'} />
                     ) : (
-                        <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
+                        <>
+                            <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
+                            <LockedEth web3={this.state.web3} />
+                        </>
                     )}
                     <Footer />
                 </IonContent>
@@ -80,3 +91,18 @@ class EthLockdropPage extends React.Component {
     }
 }
 export default EthLockdropPage;
+
+// component that displays the number of tokens and the duration for the lock via Web3
+const LockedEth = ({ web3 }) => {
+    const [lockEvents] = useState(getLockEvents(web3));
+
+    return (
+        <>
+            <SectionCard maxWidth="lg">
+                <div className="lockdrop-result">
+                    <IonLabel>Hello World</IonLabel>
+                </div>
+            </SectionCard>
+        </>
+    );
+};

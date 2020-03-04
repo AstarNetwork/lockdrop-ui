@@ -1,7 +1,7 @@
 import { IonLabel, IonButton, IonItem, IonInput, IonCard, IonCardContent, IonChip } from '@ionic/react';
 import React, { useState } from 'react';
 import { LockInput } from '../models/LockdropModels';
-import SectionCard from '../components/SectionCard';
+import SectionCard from './SectionCard';
 import { DropdownOption, OptionItem } from '../components/DropdownOption';
 import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';

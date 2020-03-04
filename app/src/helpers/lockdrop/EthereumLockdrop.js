@@ -19,23 +19,6 @@ export function defaultAffiliation(aff) {
 	}
 }
 
-// locks the given token
-export function lockEthereum(duration, amount, rate, affAccount) {
-	console.log(
-		'locking ' +
-			amount +
-			' ETH for ' +
-			duration +
-			' days with the rate of ' +
-			rate
-	);
-	if (affAccount) {
-		console.log('Affiliation from ' + affAccount);
-	} else {
-		console.log('no friends for this poor account');
-	}
-}
-
 // this function will authenticate if the client has metamask installed and can communicate with the blockchain
 export async function connectWeb3() {
 	try {
@@ -53,7 +36,11 @@ export async function connectWeb3() {
 			deployedNetwork && deployedNetwork.address
 		);
 
-		return { web3: web3, accounts: accounts, contract: instance };
+		return {
+			web3: web3,
+			accounts: accounts,
+			contract: instance
+		};
 	} catch (error) {
 		// Catch any errors for any of the above operations.
 		//todo: display a graphical error message
@@ -61,6 +48,37 @@ export async function connectWeb3() {
 			'Failed to load web3, accounts, or contract. Check console for details.'
 		);
 		console.error(error);
-		return { web3: null, accounts: null, contract: null };
+		return {
+			web3: null,
+			accounts: null,
+			contract: null
+		};
 	}
+}
+
+export async function getLockEvents(web3) {
+
+	const networkId = await web3.eth.net.getId();
+	const deployedNetwork = Lockdrop.networks[networkId];
+	const instance = new web3.eth.Contract(
+		Lockdrop.abi,
+		deployedNetwork && deployedNetwork.address
+	);
+
+	let lockEvent = {
+		eth: null,
+		duration: null,
+		lockAddress: null,
+		introducer: null,
+	}
+
+	const START_BLOCK = 0;
+	instance.getPastEvents("allEvents", {
+			fromBlock: START_BLOCK,
+			toBlock: 'latest' // You can also specify 'latest'          
+		})
+		.then(events => console.log(events))
+		.catch((err) => console.error(err));
+
+	return (lockEvent);
 }
