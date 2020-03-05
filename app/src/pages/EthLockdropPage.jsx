@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { IonContent, IonPage, IonLoading, IonLabel } from '@ionic/react';
 import React, { useState, useEffect } from 'react';
 import LockdropForm from '../components/LockdropForm';
@@ -13,11 +14,14 @@ This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet
 If you find any errors or find issues with this form, please contact the Plasm team.`;
 
 class EthLockdropPage extends React.Component {
-    state = {
-        web3: null,
-        accounts: null,
-        contract: null,
-    };
+    constructor(props) {
+        super(props);
+        this.state = {
+            web3: null,
+            accounts: null,
+            contract: null,
+        };
+    }
 
     // get and set the web3 state when the component is mounted
     componentDidMount = async () => {
@@ -93,8 +97,8 @@ const LockedEth = ({ web3 }) => {
     useEffect(() => {
         setTimeout(async () => {
             setEvents(await getLockEvents(web3));
-            console.log(lockEvents);
-        }, 5000);
+            //console.log(lockEvents);
+        }, 1000);
     });
 
     return (
@@ -102,8 +106,10 @@ const LockedEth = ({ web3 }) => {
             <SectionCard maxWidth="lg">
                 <div className="lockdrop-result">
                     <IonLabel>Hello World</IonLabel>
+                    <br />
+                    <IonLabel>Events: {lockEvents.length}</IonLabel>
                     {lockEvents.map(eventItem => (
-                        <IonLabel key={eventItem.transactionHash}>{eventItem.transactionHash}</IonLabel>
+                        <IonLabel key={eventItem.transactionHash}>{eventItem.returnValues.lock}</IonLabel>
                     ))}
                 </div>
             </SectionCard>
