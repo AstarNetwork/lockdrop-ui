@@ -1,14 +1,12 @@
 // This module is used for communicating with the Ethereum smart contract
-
+//todo: make everything type-safe if possible
 import Lockdrop from '../../contracts/Lockdrop.json';
-
 import getWeb3 from '../getWeb3';
 
 // the default introducer address when none is provided by the user
-//todo: change this to the Plasm team's ethereum address
 const defaultAff = '0x0000000000000000000000000000000000000000';
 
-export function defaultAffiliation(aff) {
+export function defaultAffiliation(aff: string) {
     // check if affiliation address is not empty and is not themselves
     if (aff) {
         // return itself when it is a valid address
@@ -23,7 +21,7 @@ export function defaultAffiliation(aff) {
 export async function connectWeb3() {
     try {
         // Get network provider and web3 instance.
-        const web3 = await getWeb3();
+        const web3: any = await getWeb3();
 
         // Use web3 to get the user's accounts.
         const accounts = await web3.eth.getAccounts();
@@ -51,12 +49,12 @@ export async function connectWeb3() {
     }
 }
 
-export async function getLockEvents(web3) {
+export async function getLockEvents(web3: any) {
     const networkId = await web3.eth.net.getId();
     const deployedNetwork = Lockdrop.networks[networkId];
     const instance = new web3.eth.Contract(Lockdrop.abi, deployedNetwork && deployedNetwork.address);
 
-    const lockEvents = [];
+    const lockEvents: any[] = [];
 
     const START_BLOCK = 0;
     instance
@@ -64,16 +62,16 @@ export async function getLockEvents(web3) {
             fromBlock: START_BLOCK,
             toBlock: 'latest', // You can also specify 'latest'
         })
-        .then(events => {
+        .then((events: any) => {
             //lockEvents = events;
             //console.log(events);
-            events.forEach(function(i) {
+            events.forEach(function(i: any) {
                 lockEvents.push(i);
             });
             //console.log(lockEvents);
             //return (lockEvents);
         })
-        .catch(err => console.error(err));
+        .catch((err: Error) => console.error(err));
 
     return lockEvents;
 }

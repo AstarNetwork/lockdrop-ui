@@ -1,7 +1,9 @@
-export type LockInput = {
+import BN from 'bn.js';
+
+export interface LockInput {
     duration: number;
-    amount: number;
-    affiliation?: string;
+    amount: BN;
+    affiliation: string;
     txMethod?: string;
     rate: number;
-};
+}

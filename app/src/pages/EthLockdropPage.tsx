@@ -3,18 +3,26 @@ import { IonContent, IonPage, IonLoading, IonLabel } from '@ionic/react';
 import React, { useState, useEffect } from 'react';
 import LockdropForm from '../components/LockdropForm';
 import { connectWeb3, defaultAffiliation, getLockEvents } from '../helpers/lockdrop/EthereumLockdrop';
-import * as ethAddress from 'ethereum-address';
+//import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SectionCard from '../components/SectionCard';
 
+import { LockInput } from '../models/LockdropModels';
+
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
 If you find any errors or find issues with this form, please contact the Plasm team.`;
 
-class EthLockdropPage extends React.Component {
-    constructor(props) {
+interface States {
+    web3: Web3;
+    accounts: string;
+    contract: any;
+}
+
+class EthLockdropPage extends React.Component<States> {
+    constructor(props: States) {
         super(props);
         this.state = {
             web3: null,
@@ -33,17 +41,17 @@ class EthLockdropPage extends React.Component {
         // unsubscribe
     };
 
-    handleSubmit = async formInputVal => {
+    handleSubmit = async (formInputVal: LockInput) => {
         // checks user input
         if (formInputVal.amount && formInputVal.duration) {
             console.log(formInputVal);
 
-            const { accounts, contract } = this.state;
+            const { accounts, contract } = this.props;
             try {
                 // check user input
                 if (formInputVal.affiliation === accounts[0]) {
                     alert('You cannot affiliate yourself');
-                } else if (formInputVal.affiliation && !ethAddress.isAddress(formInputVal.affiliation)) {
+                } else if (formInputVal.affiliation && !Web3.utils.isAddress(formInputVal.affiliation)) {
                     alert('Please input a proper Ethereum address');
                 } else {
                     // return a default address if user input is empty
@@ -90,9 +98,12 @@ class EthLockdropPage extends React.Component {
 }
 export default EthLockdropPage;
 
+interface LockHistroyProps {
+    web3: Web3;
+}
 // component that displays the number of tokens and the duration for the lock via Web3
-const LockedEth = ({ web3 }) => {
-    const [lockEvents, setEvents] = useState([]);
+const LockedEth: React.FC<LockHistroyProps> = ({ web3 }) => {
+    const [lockEvents, setEvents] = useState<any>([]);
 
     useEffect(() => {
         setTimeout(async () => {
