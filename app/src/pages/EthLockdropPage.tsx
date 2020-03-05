@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
 import { IonContent, IonPage, IonLoading, IonLabel } from '@ionic/react';
 import React, { useState, useEffect } from 'react';
@@ -8,6 +9,7 @@ import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SectionCard from '../components/SectionCard';
+import { Contract } from 'web3-eth-contract';
 
 import { LockInput } from '../models/LockdropModels';
 
@@ -15,30 +17,34 @@ const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
 If you find any errors or find issues with this form, please contact the Plasm team.`;
 
-interface States {
+interface PageStates {
     web3: Web3;
     accounts: string[];
-    contract: any;
+    contract: Contract;
+    isLoading: boolean;
 }
 
 // need an empty interface to use states (React's generic positioning)
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface Props {}
+interface PageProps {}
 
-class EthLockdropPage extends React.PureComponent<Props, States> {
-    // constructor(props: Props) {
-    //     super(props);
-    //     this.state = {
-    //         web3: null,
-    //         accounts: null,
-    //         contract: null,
-    //     };
-    // }
+class EthLockdropPage extends React.Component<PageProps, PageStates> {
+    constructor(props: PageProps) {
+        super(props);
+        // initialize with null values
+        this.state = {
+            web3: {} as Web3,
+            accounts: [''],
+            contract: {} as Contract,
+            isLoading: true,
+        };
+    }
 
     // get and set the web3 state when the component is mounted
     componentDidMount = async () => {
         const web3State = await connectWeb3();
         this.setState(web3State);
+        this.setState({ isLoading: false });
     };
 
     componentWillUnmount = async () => {
@@ -86,12 +92,11 @@ class EthLockdropPage extends React.PureComponent<Props, States> {
             <IonPage>
                 <IonContent>
                     <Navbar />
-                    {!this.state.web3 && !this.state.accounts && !this.state.contract ? (
+                    {this.state.isLoading ? (
                         <IonLoading isOpen={true} message={'Connecting to Metamask...'} />
                     ) : (
                         <>
                             <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
-                            <LockedEth web3={this.state.web3} />
                         </>
                     )}
                     <Footer />
@@ -106,7 +111,8 @@ interface LockHistroyProps {
     web3: Web3;
 }
 // component that displays the number of tokens and the duration for the lock via Web3
-const LockedEth: React.FC<LockHistroyProps> = ({ web3 }) => {
+export const LockedEth: React.FC<LockHistroyProps> = ({ web3 }) => {
+    // we use type any because we don't know the contract event type
     const [lockEvents, setEvents] = useState<any>([]);
 
     useEffect(() => {
