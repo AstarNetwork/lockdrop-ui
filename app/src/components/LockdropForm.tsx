@@ -5,6 +5,7 @@ import SectionCard from './SectionCard';
 import { DropdownOption, OptionItem } from '../components/DropdownOption';
 import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
+import BN from 'bn.js';
 
 type InputProps = {
     token: string;
@@ -33,7 +34,7 @@ const rates = [
 // the main component function
 const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
     // states used in this component
-    const [lockAmount, setAmount] = useState(0);
+    const [lockAmount, setAmount] = useState<BN>(new BN(0));
     const [lockDuration, setDuration] = useState(0);
     const [affAccount, setAff] = useState('');
     const [txType] = useState('');
@@ -86,7 +87,7 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
                         <IonLabel position="floating">Number of {token}</IonLabel>
                         <IonInput
                             placeholder={'ex: 0.64646 ' + token}
-                            onIonInput={e => setAmount(((e.target as HTMLInputElement).value as unknown) as number)}
+                            onIonInput={e => setAmount(((e.target as HTMLInputElement).value as unknown) as BN)}
                         ></IonInput>
                     </IonItem>
                     <IonLabel className={classes.formLabel}>Lock Duration</IonLabel>

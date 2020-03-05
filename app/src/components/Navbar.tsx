@@ -121,7 +121,7 @@ export default function Navbar() {
                         rel="noopener noreferrer"
                         target="_blank"
                     >
-                        <img className={classes.logoIcon} src={plasmLogo} />
+                        <img className={classes.logoIcon} src={plasmLogo} alt="" />
                     </IconButton>
                     <Typography className={classes.title} variant="h6" noWrap>
                         Plasm Network

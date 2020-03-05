@@ -17,19 +17,23 @@ If you find any errors or find issues with this form, please contact the Plasm t
 
 interface States {
     web3: Web3;
-    accounts: string;
+    accounts: string[];
     contract: any;
 }
 
-class EthLockdropPage extends React.Component<States> {
-    constructor(props: States) {
-        super(props);
-        this.state = {
-            web3: null,
-            accounts: null,
-            contract: null,
-        };
-    }
+// need an empty interface to use states (React's generic positioning)
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface Props {}
+
+class EthLockdropPage extends React.PureComponent<Props, States> {
+    // constructor(props: Props) {
+    //     super(props);
+    //     this.state = {
+    //         web3: null,
+    //         accounts: null,
+    //         contract: null,
+    //     };
+    // }
 
     // get and set the web3 state when the component is mounted
     componentDidMount = async () => {
@@ -46,7 +50,7 @@ class EthLockdropPage extends React.Component<States> {
         if (formInputVal.amount && formInputVal.duration) {
             console.log(formInputVal);
 
-            const { accounts, contract } = this.props;
+            const { accounts, contract } = this.state;
             try {
                 // check user input
                 if (formInputVal.affiliation === accounts[0]) {
@@ -119,7 +123,7 @@ const LockedEth: React.FC<LockHistroyProps> = ({ web3 }) => {
                     <IonLabel>Hello World</IonLabel>
                     <br />
                     <IonLabel>Events: {lockEvents.length}</IonLabel>
-                    {lockEvents.map(eventItem => (
+                    {lockEvents.map((eventItem: any) => (
                         <IonLabel key={eventItem.transactionHash}>{eventItem.returnValues.lock}</IonLabel>
                     ))}
                 </div>
