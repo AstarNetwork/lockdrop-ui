@@ -7,3 +7,10 @@ export interface LockInput {
     txMethod?: string;
     rate: number;
 }
+
+export interface LockEvent {
+    eth: BN;
+    duration: number;
+    lock: string;
+    introducer: string;
+}

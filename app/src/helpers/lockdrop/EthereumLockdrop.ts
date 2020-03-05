@@ -5,6 +5,8 @@ import Lockdrop from '../../contracts/Lockdrop.json';
 import getWeb3 from '../getWeb3';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
+import { LockEvent } from '../../models/LockdropModels';
+import BN from 'bn.js';
 
 // the default introducer address when none is provided by the user
 export const defaultAddress = '0x0000000000000000000000000000000000000000';
@@ -58,26 +60,35 @@ export async function connectWeb3() {
     };
 }
 
+// returns an array of the entire list of locked events for the contract only once
 export async function getLockEvents(web3: Web3) {
     const networkId = await web3.eth.net.getId();
     const deployedNetwork = (Lockdrop as any).networks[networkId];
     const instance = new web3.eth.Contract(Lockdrop.abi as any, deployedNetwork && deployedNetwork.address);
 
     // this will hold all the event log JSON with an arbitrary structure
-    const lockEvents: any[] = [];
+    const lockEvents: LockEvent[] = [];
 
     // this value can be set as the block number of where the contract was deployed
     const startBlock = 0;
+
     instance
         .getPastEvents('allEvents', {
             fromBlock: startBlock,
             toBlock: 'latest',
         })
-        .then((events: any) => {
+        .then(events => {
             //lockEvents = events;
             //console.log(events);
-            events.forEach(function(i: any) {
-                lockEvents.push(i);
+            events.forEach(function(i) {
+                const e = i.returnValues;
+                // getting key value pairs from the event value
+                lockEvents.push({
+                    eth: e['eth'] as BN,
+                    duration: e['duration'] as number,
+                    lock: e['lock'] as string,
+                    introducer: e['introducer'] as string,
+                });
             });
             //console.log(lockEvents);
             //return (lockEvents);

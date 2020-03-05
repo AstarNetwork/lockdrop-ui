@@ -10,8 +10,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SectionCard from '../components/SectionCard';
 import { Contract } from 'web3-eth-contract';
-
-import { LockInput } from '../models/LockdropModels';
+import { LockInput, LockEvent } from '../models/LockdropModels';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -97,6 +96,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                     ) : (
                         <>
                             <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
+                            <LockedEth web3={this.state.web3} />
                         </>
                     )}
                     <Footer />
@@ -111,22 +111,22 @@ interface LockHistroyProps {
     web3: Web3;
 }
 // component that displays the number of tokens and the duration for the lock via Web3
-export const LockedEth: React.FC<LockHistroyProps> = ({ web3 }) => {
+const LockedEth: React.FC<LockHistroyProps> = ({ web3 }) => {
     // we use type any because we don't know the contract event type
-    const [lockEvents, setEvents] = useState<any>([]);
+    const [lockEvents, setEvents] = useState<LockEvent[]>([]);
 
     useEffect(() => {
         setTimeout(async () => {
             setEvents(await getLockEvents(web3));
-            //console.log(lockEvents);
+            console.log(lockEvents);
         }, 1000);
     });
 
     return (
         <>
             <SectionCard maxWidth="lg">
-                <div className="lockdrop-result">
-                    <IonLabel>Hello World</IonLabel>
+                <div className="lockdrop-history">
+                    <h1>Hello World</h1>
                     <br />
                     <IonLabel>Events: {lockEvents.length}</IonLabel>
                     {lockEvents.map((eventItem: any) => (
