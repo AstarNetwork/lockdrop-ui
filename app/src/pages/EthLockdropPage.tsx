@@ -1,23 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
-import { IonContent, IonPage, IonLoading, IonLabel } from '@ionic/react';
-import React, { useState, useEffect } from 'react';
+import { IonContent, IonPage, IonLoading } from '@ionic/react';
+import React from 'react';
 import LockdropForm from '../components/LockdropForm';
-import { connectWeb3, defaultAffiliation, getLockEvents, defaultAddress } from '../helpers/lockdrop/EthereumLockdrop';
+import { connectWeb3, defaultAffiliation } from '../helpers/lockdrop/EthereumLockdrop';
 //import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import SectionCard from '../components/SectionCard';
 import { Contract } from 'web3-eth-contract';
-import { LockInput, LockEvent } from '../models/LockdropModels';
-import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
-import ListSubheader from '@material-ui/core/ListSubheader';
-import { Divider } from '@material-ui/core';
-
+import { LockInput } from '../models/LockdropModels';
+import LockedEthList from '../components/LockedEthList';
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
 If you find any errors or find issues with this form, please contact the Plasm team.`;
@@ -82,6 +75,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                     });
 
                     alert(`Locked ${formInputVal.amount} tokens for ${formInputVal.duration} days!`);
+                    //todo: refresh lock history list
                 }
             } catch (error) {
                 alert('error!\n' + error.message);
@@ -97,12 +91,13 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             <IonPage>
                 <IonContent>
                     <Navbar />
+                    {/*We use this pattern to prevent undefined Web3 from mounting*/}
                     {this.state.isLoading ? (
                         <IonLoading isOpen={true} message={'Connecting to Metamask...'} />
                     ) : (
                         <>
                             <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
-                            <LockedEth web3={this.state.web3} />
+                            <LockedEthList web3={this.state.web3} />
                         </>
                     )}
                     <Footer />
@@ -112,85 +107,3 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
     }
 }
 export default EthLockdropPage;
-
-const useStyles = makeStyles((theme: Theme) =>
-    createStyles({
-        root: {
-            width: '100%',
-            maxWidth: 'auto',
-            backgroundColor: theme.palette.background.paper,
-            position: 'relative',
-            overflow: 'auto',
-            maxHeight: 360,
-        },
-        listSection: {
-            backgroundColor: 'inherit',
-        },
-        ul: {
-            backgroundColor: 'inherit',
-            padding: 0,
-        },
-    }),
-);
-
-interface LockHistroyProps {
-    web3: Web3;
-}
-// component that displays the number of tokens and the duration for the lock via Web3
-const LockedEth: React.FC<LockHistroyProps> = ({ web3 }) => {
-    const classes = useStyles();
-    // we use type any because we don't know the contract event type
-    const [lockEvents, setEvents] = useState<LockEvent[]>([]);
-
-    const updateList = () => {
-        getLockEvents(web3).then(setEvents);
-    };
-
-    useEffect(() => {
-        updateList();
-    }, []);
-
-    return (
-        <>
-            <SectionCard maxWidth="md">
-                <div className="lockdrop-history">
-                    {lockEvents.length > 0 ? (
-                        <>
-                            <h1>Lockdrop</h1>
-                            <List className={classes.root} subheader={<li />}>
-                                <li className={classes.listSection}>
-                                    <ul className={classes.ul}>
-                                        <ListSubheader>You have locked {lockEvents.length} times</ListSubheader>
-                                        <Divider />
-                                        {lockEvents.map(eventItem => (
-                                            <>
-                                                <ListItem key={eventItem.lock}>
-                                                    <ListItemText>
-                                                        <h4>Lock address: {eventItem.lock}</h4>
-                                                        <h5>Locked in block no. {eventItem.blockNo}</h5>
-                                                        <p>
-                                                            Locked {web3.utils.fromWei(eventItem.eth, 'ether')} ETH for{' '}
-                                                            {eventItem.duration} days
-                                                        </p>
-                                                        {eventItem.introducer !== defaultAddress ? (
-                                                            <p>Introducer: {eventItem.introducer}</p>
-                                                        ) : (
-                                                            <p>No introducer</p>
-                                                        )}
-                                                    </ListItemText>
-                                                </ListItem>
-                                                <Divider />
-                                            </>
-                                        ))}
-                                    </ul>
-                                </li>
-                            </List>
-                        </>
-                    ) : (
-                        <IonLabel>No Locks</IonLabel>
-                    )}
-                </div>
-            </SectionCard>
-        </>
-    );
-};

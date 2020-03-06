@@ -71,23 +71,28 @@ export async function getLockEvents(web3: Web3): Promise<LockEvent[]> {
 
     // this value can be set as the block number of where the contract was deployed
     const startBlock = 0;
-    const ev = await instance.getPastEvents('allEvents', {
-        //todo: filter by locker address (who is the current selected metaMask account)
-        filter: { event: 'Locked' },
-        fromBlock: startBlock,
-        toBlock: 'latest',
-    });
-    ev.forEach(function(i) {
-        const e = i.returnValues;
-        // getting key value pairs from the event value
-        lockEvents.push({
-            eth: e['eth'] as BN,
-            duration: e['duration'] as number,
-            lock: e['lock'] as string,
-            introducer: e['introducer'] as string,
-            blockNo: i.blockNumber,
-            txHash: i.transactionHash,
+    try {
+        const ev = await instance.getPastEvents('allEvents', {
+            //todo: filter by locker address (who is the current selected metaMask account)
+            filter: { event: 'Locked' },
+            fromBlock: startBlock,
+            toBlock: 'latest',
         });
-    });
+        ev.forEach(function(i) {
+            const e = i.returnValues;
+            // getting key value pairs from the event value
+            lockEvents.push({
+                eth: e['eth'] as BN,
+                duration: e['duration'] as number,
+                lock: e['lock'] as string,
+                introducer: e['introducer'] as string,
+                blockNo: i.blockNumber,
+                txHash: i.transactionHash,
+            });
+        });
+    } catch (error) {
+        console.log(error);
+    }
+
     return lockEvents;
 }
