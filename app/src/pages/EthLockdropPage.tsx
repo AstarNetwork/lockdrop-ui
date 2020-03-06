@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
-import { IonContent, IonPage, IonLoading, IonLabel } from '@ionic/react';
+import { IonContent, IonPage, IonLoading, IonLabel, IonList, IonItem, IonListHeader } from '@ionic/react';
 import React, { useState, useEffect } from 'react';
 import LockdropForm from '../components/LockdropForm';
-import { connectWeb3, defaultAffiliation, getLockEvents } from '../helpers/lockdrop/EthereumLockdrop';
+import { connectWeb3, defaultAffiliation, getLockEvents, defaultAddress } from '../helpers/lockdrop/EthereumLockdrop';
 //import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
 import Navbar from '../components/Navbar';
@@ -11,6 +11,7 @@ import Footer from '../components/Footer';
 import SectionCard from '../components/SectionCard';
 import { Contract } from 'web3-eth-contract';
 import { LockInput, LockEvent } from '../models/LockdropModels';
+import { Divider } from '@material-ui/core';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -115,29 +116,39 @@ const LockedEth: React.FC<LockHistroyProps> = ({ web3 }) => {
     // we use type any because we don't know the contract event type
     const [lockEvents, setEvents] = useState<LockEvent[]>([]);
 
-    useEffect(() => {
+    const updateList = () => {
         getLockEvents(web3).then(setEvents);
-        getLockEvents(web3).then(console.log);
-        console.log(lockEvents);
+    };
+
+    useEffect(() => {
+        updateList();
     }, []);
 
     return (
         <>
-            <SectionCard maxWidth="lg">
+            <SectionCard maxWidth="md">
                 <div className="lockdrop-history">
-                    <h1>Your Locked ETH</h1>
-                    <br />
                     {lockEvents.length > 0 ? (
                         <>
                             <IonLabel>Events: {lockEvents.length}</IonLabel>
-                            {lockEvents.map(eventItem => (
-                                <>
-                                    <br />
-                                    <IonLabel key={eventItem.lock}>
-                                        Locked {eventItem.eth} Wei for {eventItem.duration} days
-                                    </IonLabel>
-                                </>
-                            ))}
+                            <IonList>
+                                <IonListHeader>Locked ETH</IonListHeader>
+                                <Divider />
+                                {lockEvents.map(eventItem => (
+                                    <IonItem key={eventItem.lock}>
+                                        <IonLabel>
+                                            <h2>Lock address: {eventItem.lock}</h2>
+                                            <h3>Locked {eventItem.eth} Wei</h3>
+                                            <p>for {eventItem.duration} days</p>
+                                            {eventItem.introducer !== defaultAddress ? (
+                                                <p>Introducer: {eventItem.introducer}</p>
+                                            ) : (
+                                                <p>No introducer</p>
+                                            )}
+                                        </IonLabel>
+                                    </IonItem>
+                                ))}
+                            </IonList>
                         </>
                     ) : (
                         <IonLabel>No Locks</IonLabel>

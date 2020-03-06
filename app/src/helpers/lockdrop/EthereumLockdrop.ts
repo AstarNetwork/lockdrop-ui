@@ -72,6 +72,7 @@ export async function getLockEvents(web3: Web3): Promise<LockEvent[]> {
     // this value can be set as the block number of where the contract was deployed
     const startBlock = 0;
     const ev = await instance.getPastEvents('allEvents', {
+        //todo: filter by locker address (who is the current selected metaMask account)
         filter: { event: 'Locked' },
         fromBlock: startBlock,
         toBlock: 'latest',
