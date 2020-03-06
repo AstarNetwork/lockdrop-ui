@@ -42,11 +42,18 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
     componentDidMount = async () => {
         const web3State = await connectWeb3();
         this.setState(web3State);
+        // checks if account has changed
+        (window as any).ethereum.on('accountsChanged', this.handleAccountChange);
         this.setState({ isLoading: false });
     };
 
     componentWillUnmount = async () => {
         // unsubscribe
+    };
+
+    handleAccountChange = () => {
+        // refresh the page
+        window.location.reload(false);
     };
 
     handleSubmit = async (formInputVal: LockInput) => {
