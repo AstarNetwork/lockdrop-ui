@@ -61,7 +61,7 @@ export async function connectWeb3() {
 }
 
 // returns an array of the entire list of locked events for the contract only once
-export async function getLockEvents(web3: Web3) {
+export async function getLockEvents(web3: Web3): Promise<LockEvent[]> {
     const networkId = await web3.eth.net.getId();
     const deployedNetwork = (Lockdrop as any).networks[networkId];
     const instance = new web3.eth.Contract(Lockdrop.abi as any, deployedNetwork && deployedNetwork.address);
@@ -71,29 +71,20 @@ export async function getLockEvents(web3: Web3) {
 
     // this value can be set as the block number of where the contract was deployed
     const startBlock = 0;
-
-    instance
-        .getPastEvents('allEvents', {
-            fromBlock: startBlock,
-            toBlock: 'latest',
-        })
-        .then(events => {
-            //lockEvents = events;
-            //console.log(events);
-            events.forEach(function(i) {
-                const e = i.returnValues;
-                // getting key value pairs from the event value
-                lockEvents.push({
-                    eth: e['eth'] as BN,
-                    duration: e['duration'] as number,
-                    lock: e['lock'] as string,
-                    introducer: e['introducer'] as string,
-                });
-            });
-            //console.log(lockEvents);
-            //return (lockEvents);
-        })
-        .catch((err: Error) => console.error(err));
-
+    const ev = await instance.getPastEvents('allEvents', {
+        filter: { event: 'Locked' },
+        fromBlock: startBlock,
+        toBlock: 'latest',
+    });
+    ev.forEach(function(i) {
+        const e = i.returnValues;
+        // getting key value pairs from the event value
+        lockEvents.push({
+            eth: e['eth'] as BN,
+            duration: e['duration'] as number,
+            lock: e['lock'] as string,
+            introducer: e['introducer'] as string,
+        });
+    });
     return lockEvents;
 }

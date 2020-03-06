@@ -116,22 +116,32 @@ const LockedEth: React.FC<LockHistroyProps> = ({ web3 }) => {
     const [lockEvents, setEvents] = useState<LockEvent[]>([]);
 
     useEffect(() => {
-        setTimeout(async () => {
-            setEvents(await getLockEvents(web3));
-            console.log(lockEvents);
-        }, 1000);
-    });
+        getLockEvents(web3).then(setEvents);
+        getLockEvents(web3).then(console.log);
+        console.log(lockEvents);
+    }, []);
 
     return (
         <>
             <SectionCard maxWidth="lg">
                 <div className="lockdrop-history">
-                    <h1>Hello World</h1>
+                    <h1>Your Locked ETH</h1>
                     <br />
-                    <IonLabel>Events: {lockEvents.length}</IonLabel>
-                    {lockEvents.map((eventItem: any) => (
-                        <IonLabel key={eventItem.transactionHash}>{eventItem.returnValues.lock}</IonLabel>
-                    ))}
+                    {lockEvents.length > 0 ? (
+                        <>
+                            <IonLabel>Events: {lockEvents.length}</IonLabel>
+                            {lockEvents.map(eventItem => (
+                                <>
+                                    <br />
+                                    <IonLabel key={eventItem.lock}>
+                                        Locked {eventItem.eth} Wei for {eventItem.duration} days
+                                    </IonLabel>
+                                </>
+                            ))}
+                        </>
+                    ) : (
+                        <IonLabel>No Locks</IonLabel>
+                    )}
                 </div>
             </SectionCard>
         </>
