@@ -85,6 +85,8 @@ export async function getLockEvents(web3: Web3): Promise<LockEvent[]> {
             duration: e['duration'] as number,
             lock: e['lock'] as string,
             introducer: e['introducer'] as string,
+            blockNo: i.blockNumber,
+            txHash: i.transactionHash,
         });
     });
     return lockEvents;

@@ -13,4 +13,6 @@ export interface LockEvent {
     duration: number;
     lock: string;
     introducer: string;
+    blockNo: number;
+    txHash: string;
 }
