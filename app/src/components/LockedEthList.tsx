@@ -12,6 +12,7 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListSubheader from '@material-ui/core/ListSubheader';
 import { Divider } from '@material-ui/core';
+import BigNumber from 'bignumber.js';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -38,19 +39,38 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface LockHistroyProps {
     web3: Web3;
+    accounts: string[];
 }
 // component that displays the number of tokens and the duration for the lock via Web3
-const LockedEthList: React.FC<LockHistroyProps> = ({ web3 }) => {
+const LockedEthList: React.FC<LockHistroyProps> = ({ web3, accounts }) => {
     const classes = useStyles();
     const [lockEvents, setEvents] = useState<LockEvent[]>([]);
 
     const updateList = () => {
-        getLockEvents(web3).then(setEvents);
+        getLockEvents(web3, accounts[0]).then(setEvents);
     };
 
+    const getTotalLockVal = (locks: LockEvent[]): string => {
+        let totalVal = new BigNumber(0);
+        if (locks.length > 0) {
+            locks.forEach(i => {
+                const currentEth = new BigNumber(i.eth.toString());
+                totalVal = totalVal.plus(currentEth);
+            });
+        }
+        return web3.utils.fromWei(totalVal.toString(), 'ether');
+    };
+
+    // update list when the component mounts
+    // useEffect(() => {
+    //     updateList();
+    // }, []);
+
     useEffect(() => {
-        updateList();
-    }, []);
+        setTimeout(() => {
+            updateList();
+        }, 1000);
+    });
 
     return (
         <>
@@ -58,11 +78,12 @@ const LockedEthList: React.FC<LockHistroyProps> = ({ web3 }) => {
                 <div className={classes.lockListPage}>
                     {lockEvents.length > 0 ? (
                         <>
-                            <h1>Your Lock History</h1>
+                            <h1>Global Locks</h1>
+                            <h3>{getTotalLockVal(lockEvents)} ETH locked</h3>
                             <List className={classes.listRoot} subheader={<li />}>
                                 <li className={classes.listSection}>
                                     <ul className={classes.ul}>
-                                        <ListSubheader>You have locked {lockEvents.length} time(s)</ListSubheader>
+                                        <ListSubheader>There are {lockEvents.length} locks</ListSubheader>
                                         <Divider />
                                         {lockEvents.map(eventItem => (
                                             <>

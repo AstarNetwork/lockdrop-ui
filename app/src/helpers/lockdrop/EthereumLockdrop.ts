@@ -32,8 +32,6 @@ export async function connectWeb3() {
             // Use web3 to get the user's accounts.
             const accounts = await web3.eth.getAccounts();
 
-            console.log(accounts[0]);
-
             // Get the contract instance.
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = (Lockdrop as any).networks[networkId];
@@ -63,7 +61,7 @@ export async function connectWeb3() {
 }
 
 // returns an array of the entire list of locked events for the contract only once
-export async function getLockEvents(web3: Web3): Promise<LockEvent[]> {
+export async function getLockEvents(web3: Web3, fromAccount: string): Promise<LockEvent[]> {
     const networkId = await web3.eth.net.getId();
     const deployedNetwork = (Lockdrop as any).networks[networkId];
     const instance = new web3.eth.Contract(Lockdrop.abi as any, deployedNetwork && deployedNetwork.address);
@@ -76,11 +74,12 @@ export async function getLockEvents(web3: Web3): Promise<LockEvent[]> {
     try {
         const ev = await instance.getPastEvents('allEvents', {
             //todo: filter by locker address (who is the current selected metaMask account)
-            filter: { event: 'Locked' },
+            filter: { event: 'Locked', from: fromAccount },
             fromBlock: startBlock,
             toBlock: 'latest',
         });
         ev.forEach(function(i) {
+            //console.log(i);
             const e = i.returnValues;
             // getting key value pairs from the event value
             lockEvents.push({

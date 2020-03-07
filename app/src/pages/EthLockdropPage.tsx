@@ -4,13 +4,15 @@ import { IonContent, IonPage, IonLoading } from '@ionic/react';
 import React from 'react';
 import LockdropForm from '../components/LockdropForm';
 import { connectWeb3, defaultAffiliation } from '../helpers/lockdrop/EthereumLockdrop';
-//import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
 import { LockInput } from '../models/LockdropModels';
 import LockedEthList from '../components/LockedEthList';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
 If you find any errors or find issues with this form, please contact the Plasm team.`;
@@ -25,6 +27,15 @@ interface PageStates {
 // need an empty interface to use states (React's generic positioning)
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface PageProps {}
+
+toast.configure({
+    position: 'top-right',
+    autoClose: 5000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+});
 
 class EthLockdropPage extends React.Component<PageProps, PageStates> {
     constructor(props: PageProps) {
@@ -51,6 +62,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
         // unsubscribe
     };
 
+    // called when the user changes MetaMask account
     handleAccountChange = () => {
         // refresh the page
         window.location.reload(false);
@@ -65,9 +77,9 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             try {
                 // check user input
                 if (formInputVal.affiliation === accounts[0]) {
-                    alert('You cannot affiliate yourself');
+                    toast.error('You cannot affiliate yourself');
                 } else if (formInputVal.affiliation && !Web3.utils.isAddress(formInputVal.affiliation)) {
-                    alert('Please input a proper Ethereum address');
+                    toast.error('Please input a valid Ethereum address');
                 } else {
                     // return a default address if user input is empty
                     const introducer = defaultAffiliation(formInputVal.affiliation);
@@ -81,15 +93,14 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                         value: amountToSend,
                     });
 
-                    alert(`Locked ${formInputVal.amount} tokens for ${formInputVal.duration} days!`);
+                    toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
                     //todo: refresh lock history list
                 }
             } catch (error) {
-                alert('error!\n' + error.message);
+                toast.error('error!\n' + error.message);
             }
         } else {
-            //todo: display warning if there is a problem with the input
-            alert("you're missing an input!");
+            toast.error('You are missing an input!');
         }
     };
 
@@ -104,7 +115,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                     ) : (
                         <>
                             <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
-                            <LockedEthList web3={this.state.web3} />
+                            <LockedEthList web3={this.state.web3} accounts={this.state.accounts} />
                         </>
                     )}
                     <Footer />
