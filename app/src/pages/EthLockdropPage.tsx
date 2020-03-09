@@ -11,6 +11,7 @@ import { Contract } from 'web3-eth-contract';
 import { LockInput } from '../models/LockdropModels';
 import LockedEthList from '../components/LockedEthList';
 import { toast } from 'react-toastify';
+import { isRegisteredEthAddress } from '../data/affiliationProgram';
 import 'react-toastify/dist/ReactToastify.css';
 
 const formInfo = `This is the lockdrop form for Ethereum.
@@ -72,18 +73,18 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
         // checks user input
         if (formInputVal.amount && formInputVal.duration) {
             console.log(formInputVal);
-
+            // return a default address if user input is empty
+            const introducer = defaultAffiliation(formInputVal.affiliation);
             const { accounts, contract } = this.state;
             try {
                 // check user input
-                if (formInputVal.affiliation === accounts[0]) {
+                if (introducer === accounts[0]) {
                     toast.error('You cannot affiliate yourself');
-                } else if (formInputVal.affiliation && !Web3.utils.isAddress(formInputVal.affiliation)) {
+                } else if (introducer && !Web3.utils.isAddress(introducer)) {
                     toast.error('Please input a valid Ethereum address');
+                } else if (!isRegisteredEthAddress(introducer)) {
+                    toast.error('The given introducer is not registered in the affiliation program!');
                 } else {
-                    // return a default address if user input is empty
-                    const introducer = defaultAffiliation(formInputVal.affiliation);
-
                     // convert user input to Wei
                     const amountToSend = Web3.utils.toWei(formInputVal.amount, 'ether');
 
