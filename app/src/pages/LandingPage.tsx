@@ -17,6 +17,10 @@ import React, { useState } from 'react';
 import './LandingPage.css';
 import { DropdownOption, OptionItem } from '../components/DropdownOption';
 import Footer from '../components/Footer';
+import Navbar from '../components/Navbar';
+import LockdropPanel from '../components/LockdropPanel';
+import { LockdropEnd, LockdropStart } from '../data/lockInfo';
+import { Links } from '../data/links';
 
 const tokenTypes: OptionItem[] = [
     { label: 'ETH', value: 'eth' },
@@ -29,6 +33,13 @@ const LandingPage: React.FC = () => {
     const [canLock, setLockState] = useState(true);
     const [redirect, setRedirect] = useState('');
 
+    function inLockSchedule(): boolean {
+        const now = Date.now();
+        const start = +new Date(LockdropStart);
+        const end = +new Date(LockdropEnd);
+        return start <= now && now < end;
+    }
+
     function handleTokenChoose(dropdownItem: string) {
         try {
             // check if the client meets the requirements for transaction
@@ -37,7 +48,7 @@ const LandingPage: React.FC = () => {
                     setTokenType(dropdownItem);
 
                     setRedirect('/eth-lockdrop');
-                    setLockState(false);
+                    setLockState(!inLockSchedule());
                     break;
                 //todo: add auth check for other tokens
                 case 'btc':
@@ -58,13 +69,15 @@ const LandingPage: React.FC = () => {
     return (
         <IonPage>
             <IonContent>
+                <Navbar />
                 <IonGrid>
                     <IonRow>
                         <IonCol></IonCol>
                         <IonCol size="auto">
                             <div className="main-content">
                                 <IonCard>
-                                    <img src="/assets/plasm-logo.png" alt=""></img>
+                                    {/* <img src="/assets/plasm-logo.png" alt=""></img> */}
+                                    <LockdropPanel endTime={LockdropEnd} startTime={LockdropStart} />
                                     <IonCardHeader>
                                         <IonCardTitle>Plasm Network Lockdrop</IonCardTitle>
                                         <IonCardSubtitle>Lockdrop form for PLM</IonCardSubtitle>
@@ -76,9 +89,7 @@ const LandingPage: React.FC = () => {
                                         Lightning Network. It aims at improving smart contract performance and the main
                                         platform for developing layer2 applications. For details regarding the specs for
                                         the Plasm Network, please refer to our{' '}
-                                        <a href="https://github.com/staketechnologies/plasmdocs/blob/master/wp/en.pdf">
-                                            white paper
-                                        </a>
+                                        <a href={Links.docs}>official documentation</a>
                                         .
                                         <br />
                                     </IonCardContent>
