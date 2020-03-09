@@ -10,23 +10,18 @@ import {
     IonCol,
     IonGrid,
     IonRow,
-    IonChip,
     IonItem,
     IonLabel,
 } from '@ionic/react';
 import React, { useState } from 'react';
 import './LandingPage.css';
-import CountdownTimer from '../components/CountdownTimer';
 import { DropdownOption, OptionItem } from '../components/DropdownOption';
 import Footer from '../components/Footer';
-
-const endDate = '2020-02-29';
 
 const tokenTypes: OptionItem[] = [
     { label: 'ETH', value: 'eth' },
     //{ label: 'BTC', value: 'btc' },
     //{ label: 'DOT', value: 'dot' },
-    //{ label: 'EOS', value: 'eos' }
 ];
 
 const LandingPage: React.FC = () => {
@@ -86,10 +81,6 @@ const LandingPage: React.FC = () => {
                                         </a>
                                         .
                                         <br />
-                                        <IonChip>
-                                            <CountdownTimer deadline={endDate}></CountdownTimer>
-                                        </IonChip>
-                                        until closing.
                                     </IonCardContent>
                                 </IonCard>
                             </div>
