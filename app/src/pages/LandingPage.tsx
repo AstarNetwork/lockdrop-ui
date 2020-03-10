@@ -18,7 +18,7 @@ import './LandingPage.css';
 import { DropdownOption, OptionItem } from '../components/DropdownOption';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
-import LockdropPanel from '../components/LockdropPanel';
+import LockdropCountdownPanel from '../components/LockdropCountdownPanel';
 import { LockdropEnd, LockdropStart } from '../data/lockInfo';
 import { Links } from '../data/links';
 
@@ -77,7 +77,7 @@ const LandingPage: React.FC = () => {
                             <div className="main-content">
                                 <IonCard>
                                     {/* <img src="/assets/plasm-logo.png" alt=""></img> */}
-                                    <LockdropPanel endTime={LockdropEnd} startTime={LockdropStart} />
+                                    <LockdropCountdownPanel endTime={LockdropEnd} startTime={LockdropStart} />
                                     <IonCardHeader>
                                         <IonCardTitle>Plasm Network Lockdrop</IonCardTitle>
                                         <IonCardSubtitle>Lockdrop form for PLM</IonCardSubtitle>

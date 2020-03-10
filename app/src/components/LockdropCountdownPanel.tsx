@@ -5,7 +5,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
-import { LockValue } from '../helpers/lockToDollar';
+//import { LockValue } from '../helpers/lockToDollar';
 
 interface TimeFormat {
     days: number;
@@ -25,7 +25,7 @@ enum LockState {
     end,
 }
 
-const LockdropPanel: React.FC<Props> = ({ startTime, endTime }) => {
+const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime }) => {
     const calculateTimeLeft = () => {
         const tillStart = +new Date(startTime) - +Date.now();
         const tillEnd = +new Date(endTime) - +Date.now();
@@ -127,7 +127,7 @@ const LockdropPanel: React.FC<Props> = ({ startTime, endTime }) => {
     }
 };
 
-export default LockdropPanel;
+export default LockdropCountdownPanel;
 
 const PanelWrapper: React.FC = ({ children }) => {
     const useStyles = makeStyles(theme => ({
@@ -146,9 +146,9 @@ const PanelWrapper: React.FC = ({ children }) => {
         <>
             <Container maxWidth="lg" className={classes.container}>
                 {children}
-                <Typography variant="h5" className={classes.lockedVal}>
+                {/* <Typography variant="h5" className={classes.lockedVal}>
                     Total Lock Value is {LockValue} USD
-                </Typography>
+                </Typography> */}
             </Container>
         </>
     );
