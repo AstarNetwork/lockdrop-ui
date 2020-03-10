@@ -1,3 +1,3 @@
 export function lockDots() {
-	console.log('implement this!');
+    console.log('implement this!');
 }

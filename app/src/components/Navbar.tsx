@@ -113,15 +113,8 @@ export default function Navbar() {
         <div className={classes.grow}>
             <AppBar position="static" className={classes.navbar}>
                 <Toolbar>
-                    <IconButton
-                        edge="start"
-                        color="inherit"
-                        aria-label="open homepage"
-                        href={Links.plasmHome}
-                        rel="noopener noreferrer"
-                        target="_blank"
-                    >
-                        <img className={classes.logoIcon} src={plasmLogo} />
+                    <IconButton edge="start" color="inherit" aria-label="open homepage" href="/welcome">
+                        <img className={classes.logoIcon} src={plasmLogo} alt="" />
                     </IconButton>
                     <Typography className={classes.title} variant="h6" noWrap>
                         Plasm Network
