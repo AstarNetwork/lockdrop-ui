@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // This module is used for communicating with the Ethereum smart contract
-//todo: make everything type-safe if possible
 import Lockdrop from '../../contracts/Lockdrop.json';
 import getWeb3 from '../getWeb3';
 import Web3 from 'web3';
@@ -60,6 +59,7 @@ export async function connectWeb3() {
     };
 }
 
+// returns a list of Lock events for the given account
 export function getAccountLocks(web3: Web3, fromAccount: string, contractInstance: Contract): LockEvent[] {
     const lockEvents: LockEvent[] = [];
     try {
@@ -103,7 +103,6 @@ export async function getLockEvents(instance: Contract): Promise<LockEvent[]> {
     const startBlock = 0;
     try {
         const ev = await instance.getPastEvents('allEvents', {
-            //todo: filter by locker address (who is the current selected metaMask account)
             filter: { event: 'Locked' },
             fromBlock: startBlock,
             toBlock: 'latest',

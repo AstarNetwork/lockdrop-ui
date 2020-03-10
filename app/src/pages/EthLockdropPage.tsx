@@ -95,7 +95,6 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                     });
 
                     toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
-                    //todo: refresh lock history list
                 }
             } catch (error) {
                 toast.error('error!\n' + error.message);
@@ -116,7 +115,11 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                     ) : (
                         <>
                             <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
-                            <LockedEthList web3={this.state.web3} contractInstance={this.state.contract} />
+                            <LockedEthList
+                                web3={this.state.web3}
+                                contractInstance={this.state.contract}
+                                accounts={this.state.accounts}
+                            />
                         </>
                     )}
                     <Footer />
