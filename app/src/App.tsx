@@ -4,6 +4,7 @@ import { IonApp, IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import LandingPage from './pages/LandingPage';
 import EthLockdropPage from './pages/EthLockdropPage';
+import TestEthLockdropPage from './pages/TestEthLockdropPage';
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
 
@@ -29,7 +30,8 @@ const App: React.FC = () => (
             <IonRouterOutlet>
                 <Route path="/welcome" component={LandingPage} exact={true} />
                 <Route path="/eth-lockdrop" component={EthLockdropPage} exact={true} />
-                <Route path="/" render={() => <Redirect to={'/eth-lockdrop'} />} exact={true} />
+                <Route path="/eth-lockdrop-testnet" component={TestEthLockdropPage} exact={true} />
+                <Route path="/" render={() => <Redirect to={'/eth-lockdrop-testnet'} />} exact={true} />
             </IonRouterOutlet>
         </IonReactRouter>
     </IonApp>

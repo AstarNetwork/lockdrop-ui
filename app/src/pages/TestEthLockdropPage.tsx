@@ -13,11 +13,8 @@ import LockedEthList from '../components/LockedEthList';
 import { toast } from 'react-toastify';
 import { isRegisteredEthAddress } from '../data/affiliationProgram';
 import 'react-toastify/dist/ReactToastify.css';
-import SectionCard from '../components/SectionCard';
-import LockdropCountdownPanel from '../components/LockdropCountdownPanel';
-import { LockdropEnd, LockdropStart } from '../data/lockInfo';
 
-const formInfo = `This is the lockdrop form for Ethereum main network.
+const formInfo = `This is the lockdrop form for Ethereum Ropsten testnet.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
 If you find any errors or find issues with this form, please contact the Plasm team.`;
 
@@ -41,14 +38,7 @@ toast.configure({
     draggable: true,
 });
 
-const hasLockdropStarted = () => {
-    const now = Date.now();
-    const start = +new Date(LockdropStart);
-    const end = +new Date(LockdropEnd);
-    return start <= now && now < end;
-};
-
-class EthLockdropPage extends React.Component<PageProps, PageStates> {
+class TestEthLockdropPage extends React.Component<PageProps, PageStates> {
     constructor(props: PageProps) {
         super(props);
         // initialize with null values
@@ -119,25 +109,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             <IonPage>
                 <IonContent>
                     <Navbar />
-                    {hasLockdropStarted() ? (
-                        this.state.isLoading ? (
-                            <IonLoading isOpen={true} message={'Connecting to Wallet...'} />
-                        ) : (
-                            <>
-                                <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
-                                <LockedEthList
-                                    web3={this.state.web3}
-                                    contractInstance={this.state.contract}
-                                    accounts={this.state.accounts}
-                                />
-                            </>
-                        )
-                    ) : (
-                        <SectionCard maxWidth="lg">
-                            <LockdropCountdownPanel endTime={LockdropEnd} startTime={LockdropStart} />
-                        </SectionCard>
-                    )}
-                    {/* {this.state.isLoading ? (
+                    {this.state.isLoading ? (
                         <IonLoading isOpen={true} message={'Connecting to Wallet...'} />
                     ) : (
                         <>
@@ -148,11 +120,11 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                 accounts={this.state.accounts}
                             />
                         </>
-                    )} */}
+                    )}
                     <Footer />
                 </IonContent>
             </IonPage>
         );
     }
 }
-export default EthLockdropPage;
+export default TestEthLockdropPage;
