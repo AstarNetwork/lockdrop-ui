@@ -116,7 +116,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                     ) : (
                         <>
                             <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
-                            <LockedEthList web3={this.state.web3} accounts={this.state.accounts} />
+                            <LockedEthList web3={this.state.web3} contractInstance={this.state.contract} />
                         </>
                     )}
                     <Footer />

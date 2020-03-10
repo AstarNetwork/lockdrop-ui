@@ -60,12 +60,42 @@ export async function connectWeb3() {
     };
 }
 
-// returns an array of the entire list of locked events for the contract only once
-export async function getLockEvents(web3: Web3, fromAccount: string): Promise<LockEvent[]> {
-    const networkId = await web3.eth.net.getId();
-    const deployedNetwork = (Lockdrop as any).networks[networkId];
-    const instance = new web3.eth.Contract(Lockdrop.abi as any, deployedNetwork && deployedNetwork.address);
+export function getAccountLocks(web3: Web3, fromAccount: string, contractInstance: Contract): LockEvent[] {
+    const lockEvents: LockEvent[] = [];
+    try {
+        const getLockEvents = contractInstance.getPastEvents('Locked', { fromBlock: 0 });
 
+        getLockEvents
+            .then(events =>
+                Promise.all(
+                    events.map(e =>
+                        Promise.all([Promise.resolve(e.returnValues), web3.eth.getTransaction(e.transactionHash)]),
+                    ),
+                ),
+            )
+            .then(events => {
+                events
+                    .filter(e => e[1]['from'] === fromAccount)
+                    .map((e, index) =>
+                        lockEvents.push({
+                            eth: e[0].eth as BN,
+                            duration: e[0].duration as number,
+                            lock: e[0].lock as string,
+                            introducer: e[0].introducer as string,
+                            blockNo: index, // temp value
+                            txHash: index.toString(), // temp value
+                        }),
+                    );
+            });
+    } catch (error) {
+        console.log(error);
+    }
+
+    return lockEvents;
+}
+
+// returns an array of the entire list of locked events for the contract only once
+export async function getLockEvents(instance: Contract): Promise<LockEvent[]> {
     // this will hold all the event log JSON with an arbitrary structure
     const lockEvents: LockEvent[] = [];
 
@@ -74,7 +104,7 @@ export async function getLockEvents(web3: Web3, fromAccount: string): Promise<Lo
     try {
         const ev = await instance.getPastEvents('allEvents', {
             //todo: filter by locker address (who is the current selected metaMask account)
-            filter: { event: 'Locked', from: fromAccount },
+            filter: { event: 'Locked' },
             fromBlock: startBlock,
             toBlock: 'latest',
         });

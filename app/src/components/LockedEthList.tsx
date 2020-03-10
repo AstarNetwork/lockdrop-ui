@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { getLockEvents, defaultAddress } from '../helpers/lockdrop/EthereumLockdrop';
 //import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
+import { Contract } from 'web3-eth-contract';
 import SectionCard from '../components/SectionCard';
 import { LockEvent } from '../models/LockdropModels';
 import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
@@ -39,15 +40,15 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface LockHistroyProps {
     web3: Web3;
-    accounts: string[];
+    contractInstance: Contract;
 }
 // component that displays the number of tokens and the duration for the lock via Web3
-const LockedEthList: React.FC<LockHistroyProps> = ({ web3, accounts }) => {
+const LockedEthList: React.FC<LockHistroyProps> = ({ web3, contractInstance }) => {
     const classes = useStyles();
     const [lockEvents, setEvents] = useState<LockEvent[]>([]);
 
     const updateList = () => {
-        getLockEvents(web3, accounts[0]).then(setEvents);
+        getLockEvents(contractInstance).then(i => setEvents(i));
     };
 
     const getTotalLockVal = (locks: LockEvent[]): string => {
