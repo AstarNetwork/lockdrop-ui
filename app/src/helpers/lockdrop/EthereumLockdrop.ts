@@ -90,7 +90,7 @@ export function getAccountLocks(web3: Web3, fromAccount: string, contractInstanc
     } catch (error) {
         console.log(error);
     }
-
+    console.log(lockEvents);
     return lockEvents;
 }
 

@@ -111,7 +111,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                     <Navbar />
                     {/*We use this pattern to prevent undefined Web3 from mounting*/}
                     {this.state.isLoading ? (
-                        <IonLoading isOpen={true} message={'Connecting to Metamask...'} />
+                        <IonLoading isOpen={true} message={'Connecting to Wallet...'} />
                     ) : (
                         <>
                             <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
