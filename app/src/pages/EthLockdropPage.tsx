@@ -26,6 +26,7 @@ interface PageStates {
     accounts: string[];
     contract: Contract;
     isLoading: boolean;
+    networkType: string;
 }
 
 // need an empty interface to use states (React's generic positioning)
@@ -57,6 +58,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             accounts: [''],
             contract: {} as Contract,
             isLoading: true,
+            networkType: '',
         };
     }
 
@@ -67,6 +69,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
         // checks if account has changed
         (window as any).ethereum.on('accountsChanged', this.handleAccountChange);
         this.setState({ isLoading: false });
+        this.state.web3.eth.net.getNetworkType().then(i => this.setState({ networkType: i }));
     };
 
     componentWillUnmount = async () => {
@@ -82,7 +85,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
     handleSubmit = async (formInputVal: LockInput) => {
         // checks user input
         if (formInputVal.amount && formInputVal.duration) {
-            console.log(formInputVal);
+            //console.log(formInputVal);
             // return a default address if user input is empty
             const introducer = defaultAffiliation(formInputVal.affiliation);
             const { accounts, contract } = this.state;
@@ -119,7 +122,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             <IonPage>
                 <IonContent>
                     <Navbar />
-                    {hasLockdropStarted() ? (
+                    {this.state.networkType !== 'main' || hasLockdropStarted() ? (
                         this.state.isLoading ? (
                             <IonLoading isOpen={true} message={'Connecting to Wallet...'} />
                         ) : (
@@ -137,18 +140,6 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                             <LockdropCountdownPanel endTime={LockdropEnd} startTime={LockdropStart} />
                         </SectionCard>
                     )}
-                    {/* {this.state.isLoading ? (
-                        <IonLoading isOpen={true} message={'Connecting to Wallet...'} />
-                    ) : (
-                        <>
-                            <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
-                            <LockedEthList
-                                web3={this.state.web3}
-                                contractInstance={this.state.contract}
-                                accounts={this.state.accounts}
-                            />
-                        </>
-                    )} */}
                     <Footer />
                 </IonContent>
             </IonPage>

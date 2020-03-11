@@ -85,7 +85,7 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime }) => {
                             <Grid item>
                                 {lockState === LockState.notStart ? (
                                     <Typography variant="h4" component="h2">
-                                        Lockdrop Starting in:
+                                        Main Network Lockdrop Starting in:
                                     </Typography>
                                 ) : (
                                     <Typography variant="h4" component="h2">

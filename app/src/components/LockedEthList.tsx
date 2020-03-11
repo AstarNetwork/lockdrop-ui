@@ -41,17 +41,15 @@ const useStyles = makeStyles((theme: Theme) =>
 interface LockHistoryProps {
     web3: Web3;
     contractInstance: Contract;
-    accounts: string[];
+    accounts?: string[]; // this will be used to get locks for a certain account
 }
 // component that displays the number of tokens and the duration for the lock via Web3
-const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance, accounts }) => {
+const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance }) => {
     const classes = useStyles();
     const [lockEvents, setEvents] = useState<LockEvent[]>([]);
 
     const updateList = () => {
         getLockEvents(contractInstance).then(i => setEvents(i));
-        //setEvents(getAccountLocks(web3, accounts[0], contractInstance));
-        console.log(accounts);
     };
 
     const getTotalLockVal = (locks: LockEvent[]): string => {

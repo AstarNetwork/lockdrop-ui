@@ -31,7 +31,7 @@ const App: React.FC = () => (
                 <Route path="/welcome" component={LandingPage} exact={true} />
                 <Route path="/eth-lockdrop" component={EthLockdropPage} exact={true} />
                 <Route path="/eth-lockdrop-testnet" component={TestEthLockdropPage} exact={true} />
-                <Route path="/" render={() => <Redirect to={'/eth-lockdrop-testnet'} />} exact={true} />
+                <Route path="/" render={() => <Redirect to={'/eth-lockdrop'} />} exact={true} />
             </IonRouterOutlet>
         </IonReactRouter>
     </IonApp>
