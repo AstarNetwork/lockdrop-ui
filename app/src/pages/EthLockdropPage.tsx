@@ -127,6 +127,13 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                             <IonLoading isOpen={true} message={'Connecting to Wallet...'} />
                         ) : (
                             <>
+                                {this.state.networkType === 'main' ? (
+                                    <SectionCard maxWidth="lg">
+                                        <LockdropCountdownPanel endTime={LockdropEnd} startTime={LockdropStart} />
+                                    </SectionCard>
+                                ) : (
+                                    <></>
+                                )}
                                 <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
                                 <LockedEthList
                                     web3={this.state.web3}

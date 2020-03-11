@@ -89,7 +89,7 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime }) => {
                                     </Typography>
                                 ) : (
                                     <Typography variant="h4" component="h2">
-                                        Ending in:
+                                        Lockdrop Ending in:
                                     </Typography>
                                 )}
                             </Grid>
