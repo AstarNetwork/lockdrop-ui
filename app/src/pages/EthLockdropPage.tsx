@@ -17,7 +17,7 @@ import SectionCard from '../components/SectionCard';
 import LockdropCountdownPanel from '../components/LockdropCountdownPanel';
 import { LockdropEnd, LockdropStart } from '../data/lockInfo';
 
-const formInfo = `This is the lockdrop form for Ethereum main network.
+const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
 If you find any errors or find issues with this form, please contact the Plasm team.`;
 
