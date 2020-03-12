@@ -27,6 +27,7 @@ interface PageStates {
     contract: Contract;
     isLoading: boolean;
     networkType: string;
+    isProcessing: boolean;
 }
 
 // need an empty interface to use states (React's generic positioning)
@@ -59,6 +60,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             contract: {} as Contract,
             isLoading: true,
             networkType: '',
+            isProcessing: false,
         };
     }
 
@@ -85,6 +87,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
     handleSubmit = async (formInputVal: LockInput) => {
         // checks user input
         if (formInputVal.amount && formInputVal.duration) {
+            this.setState({ isProcessing: true });
             //console.log(formInputVal);
             // return a default address if user input is empty
             const introducer = defaultAffiliation(formInputVal.affiliation);
@@ -115,6 +118,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
         } else {
             toast.error('You are missing an input!');
         }
+        this.setState({ isProcessing: false });
     };
 
     render() {
@@ -127,6 +131,15 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                             <IonLoading isOpen={true} message={'Connecting to Wallet...'} />
                         ) : (
                             <>
+                                {this.state.isProcessing ? (
+                                    <IonLoading
+                                        isOpen={this.state.isProcessing}
+                                        message={'Processing Transaction...'}
+                                    />
+                                ) : (
+                                    <></>
+                                )}
+
                                 {this.state.networkType === 'main' ? (
                                     <SectionCard maxWidth="lg">
                                         <LockdropCountdownPanel endTime={LockdropEnd} startTime={LockdropStart} />
