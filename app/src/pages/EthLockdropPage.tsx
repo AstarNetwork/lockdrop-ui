@@ -16,6 +16,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import SectionCard from '../components/SectionCard';
 import LockdropCountdownPanel from '../components/LockdropCountdownPanel';
 import { LockdropEnd, LockdropStart } from '../data/lockInfo';
+import BN from 'bn.js';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -86,7 +87,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
 
     handleSubmit = async (formInputVal: LockInput) => {
         // checks user input
-        if (formInputVal.amount && formInputVal.duration) {
+        if (formInputVal.amount > new BN(0) && formInputVal.duration) {
             this.setState({ isProcessing: true });
             //console.log(formInputVal);
             // return a default address if user input is empty
