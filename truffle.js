@@ -78,11 +78,12 @@ module.exports = {
     mainnet: {
       provider: () => {
         const mnemonic = fs.readFileSync(path.join(__dirname, '.secret')).toString().trim();
-        return new HDWalletProvider(mnemonic, 'https://ropsten.infura.io/v3/'+infuraKey)
+        return new HDWalletProvider(mnemonic, 'https://mainnet.infura.io/v3/'+infuraKey)
       },
       network_id: 1,       // Ethereum mainnet id
       confirmations: 2,    // # of confs to wait between deployments. (default: 0)
       timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
+      gasPrice: 12000000000,
       skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
     },
 
