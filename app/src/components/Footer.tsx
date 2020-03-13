@@ -13,13 +13,26 @@ import { ThemeColors } from '../theme/themes';
 
 function Copyright() {
     return (
-        <Typography variant="body2">
-            {'© 2019-' + new Date().getFullYear() + ' '}
-            <Link color="inherit" href="https://stake.co.jp/">
-                Stake Technologies, Inc.
-            </Link>{' '}
-            {'All Rights Reserved.'}
-        </Typography>
+        <>
+            <Typography variant="body2">
+                {'© 2019-' + new Date().getFullYear() + ' '}
+                <Link color="inherit" href="https://stake.co.jp/" rel="noopener noreferrer" target="_blank">
+                    Stake Technologies, Inc.
+                </Link>{' '}
+                {'All Rights Reserved.'}
+            </Typography>
+            <Typography>
+                Smart Contract Audited by{' '}
+                <Link
+                    color="inherit"
+                    href="https://github.com/staketechnologies/lockdrop-ui/blob/16a2d495d85f2d311957b9cf366204fbfabadeaa/audit/quantstamp-audit.pdf"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                >
+                    Quantstamp
+                </Link>
+            </Typography>
+        </>
     );
 }
 
