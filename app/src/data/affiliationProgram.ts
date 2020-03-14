@@ -1,6 +1,5 @@
 import { defaultAddress } from '../helpers/lockdrop/EthereumLockdrop';
 
-//todo: currently this is just a mock list. Replace this with actual addresses from the affiliation form
 export const validEthAddressList = [
     '0xd8de1f6764e442b8763d313722e9eaee3779707e',
     '0x1d32750e8a03443f008236f7c344fc84821cf690',
