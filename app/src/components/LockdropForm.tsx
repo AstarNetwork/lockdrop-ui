@@ -3,9 +3,12 @@ import React, { useState } from 'react';
 import { LockInput } from '../models/LockdropModels';
 import SectionCard from './SectionCard';
 import { DropdownOption, OptionItem } from '../components/DropdownOption';
-import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import BN from 'bn.js';
+import { Typography } from '@material-ui/core';
+import quantstampLogo from '../resources/quantstamp-logo.png';
+import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import Link from '@material-ui/core/Link';
 
 type InputProps = {
     token: string;
@@ -39,14 +42,22 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
     const [affAccount, setAff] = useState('');
     const [txType] = useState('');
 
-    const useStyles = makeStyles(theme => ({
-        txButton: {
-            margin: theme.spacing(3),
-        },
-        formLabel: {
-            margin: theme.spacing(2),
-        },
-    }));
+    const useStyles = makeStyles((theme: Theme) =>
+        createStyles({
+            txButton: {
+                margin: theme.spacing(3),
+            },
+            formLabel: {
+                margin: theme.spacing(2),
+            },
+            quantLogo: {
+                marginRight: theme.spacing(2),
+                maxHeight: 20,
+                height: '100%',
+                verticalAlign: 'middle',
+            },
+        }),
+    );
 
     const classes = useStyles();
 
@@ -74,6 +85,20 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
         <>
             <SectionCard maxWidth="lg">
                 <div className="main-content">
+                    <Typography variant="h4" component="h1" align="center">
+                        Plasm Network Ethereum Lockdrop
+                    </Typography>
+                    <Typography variant="body2" component="h2" align="center">
+                        Audited by{' '}
+                        <Link
+                            color="inherit"
+                            href="https://github.com/staketechnologies/lockdrop-ui/blob/16a2d495d85f2d311957b9cf366204fbfabadeaa/audit/quantstamp-audit.pdf"
+                            rel="noopener noreferrer"
+                            target="_blank"
+                        >
+                            <img src={quantstampLogo} alt="" className={classes.quantLogo} />
+                        </Link>
+                    </Typography>
                     <IonLabel className={classes.formLabel}>Form Inputs</IonLabel>
                     {description ? (
                         <IonCard>
