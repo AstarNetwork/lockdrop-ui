@@ -40,5 +40,5 @@ export const validEthAddressList = [
 ];
 
 export function isRegisteredEthAddress(introducer: string) {
-    return validEthAddressList.includes(introducer);
+    return validEthAddressList.includes(introducer.toLowerCase());
 }
