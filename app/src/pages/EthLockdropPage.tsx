@@ -20,7 +20,15 @@ import BN from 'bn.js';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
-If you find any errors or find issues with this form, please contact the Plasm team.`;
+If you find any errors or find issues with this form, please contact the Plasm team.
+Regarding the audit by Quantstamp, click <a
+                            color="inherit"
+                            href="https://github.com/staketechnologies/lockdrop-ui/blob/16a2d495d85f2d311957b9cf366204fbfabadeaa/audit/quantstamp-audit.pdf"
+                            rel="noopener noreferrer"
+                            target="_blank"
+                        >
+                            here
+                        </a> to see the details`;
 
 interface PageStates {
     web3: Web3;
@@ -91,7 +99,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             this.setState({ isProcessing: true });
             //console.log(formInputVal);
             // return a default address if user input is empty
-            const introducer = defaultAffiliation(formInputVal.affiliation);
+            const introducer = defaultAffiliation(formInputVal.affiliation).toLowerCase();
             const { accounts, contract } = this.state;
             try {
                 // check user input

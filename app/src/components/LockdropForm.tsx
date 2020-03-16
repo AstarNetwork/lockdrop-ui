@@ -9,6 +9,7 @@ import { Typography } from '@material-ui/core';
 import quantstampLogo from '../resources/quantstamp-logo.png';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import Link from '@material-ui/core/Link';
+import parse from 'html-react-parser';
 
 type InputProps = {
     token: string;
@@ -56,6 +57,10 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
                 height: '100%',
                 verticalAlign: 'middle',
             },
+            textBox: {
+                marginLeft: 'auto',
+                marginRight: 'auto',
+            },
         }),
     );
 
@@ -101,8 +106,8 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
                     </Typography>
                     <IonLabel className={classes.formLabel}>Form Inputs</IonLabel>
                     {description ? (
-                        <IonCard>
-                            <IonCardContent>{description}</IonCardContent>
+                        <IonCard className={classes.textBox}>
+                            <IonCardContent>{parse(description)}</IonCardContent>
                         </IonCard>
                     ) : (
                         <div></div>
@@ -131,11 +136,11 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
                     </IonItem>
 
                     <IonItem>
-                        <IonCard>
+                        <IonCard className={classes.textBox}>
                             <IonCardContent>
-                                If you have a friend who is also participating in the lockdrop, please input the
-                                address. Both parties will be able to receive a bonus rate of 1% of what the friend is
-                                receiving. Checkout this{' '}
+                                If you have a friend who is also participating in the lockdrop and is part of our
+                                affiliation program, please input the address. Both parties will be able to receive a
+                                bonus rate of 1% of what the friend is receiving. Checkout this{' '}
                                 <a href="https://medium.com/stake-technologies/lockdrop-with-friends-the-plasm-network-affiliation-program-b385c1cd800d">
                                     article
                                 </a>{' '}
