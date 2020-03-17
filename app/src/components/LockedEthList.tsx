@@ -60,7 +60,7 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance }) =
                 totalVal = totalVal.plus(currentEth);
             });
         }
-        return web3.utils.fromWei(totalVal.toString(), 'ether');
+        return web3.utils.fromWei(totalVal.toFixed(), 'ether');
     };
 
     // update list when the component mounts
