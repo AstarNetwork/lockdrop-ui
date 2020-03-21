@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect } from 'react';
-import { defaultAddress, getLockEvents } from '../helpers/lockdrop/EthereumLockdrop';
+import {
+    defaultAddress,
+    getAllLockEvents,
+    getCurrentAccountLocks,
+    getTotalLockVal,
+} from '../helpers/lockdrop/EthereumLockdrop';
 //import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
@@ -13,7 +18,6 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListSubheader from '@material-ui/core/ListSubheader';
 import { Divider } from '@material-ui/core';
-import BigNumber from 'bignumber.js';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
 import AppBar from '@material-ui/core/AppBar';
@@ -86,9 +90,8 @@ interface LockHistoryProps {
     accounts?: string[]; // this will be used to get locks for a certain account
 }
 // component that displays the number of tokens and the duration for the lock via Web3
-const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance }) => {
+const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance, accounts }) => {
     const classes = useStyles();
-    const [lockEvents, setEvents] = useState<LockEvent[]>([]);
     const theme = useTheme();
     const [value, setValue] = React.useState(0);
 
@@ -100,29 +103,6 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance }) =
         setValue(index);
     };
 
-    const updateList = async () => {
-        await getLockEvents(web3, contractInstance).then(i => {
-            setEvents(i);
-            console.log(i);
-        });
-    };
-
-    const getTotalLockVal = (locks: LockEvent[]): string => {
-        let totalVal = new BigNumber(0);
-        if (locks.length > 0) {
-            locks.forEach(i => {
-                const currentEth = new BigNumber(i.eth.toString());
-                totalVal = totalVal.plus(currentEth);
-            });
-        }
-        return web3.utils.fromWei(totalVal.toFixed(), 'ether');
-    };
-
-    useEffect(() => {
-        setTimeout(async () => {
-            await updateList();
-        }, 1000);
-    });
     return (
         <>
             <SectionCard maxWidth="lg">
@@ -146,93 +126,10 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance }) =
                         onChangeIndex={handleChangeIndex}
                     >
                         <TabPanel value={value} index={0} dir={theme.direction}>
-                            <div className={classes.lockListPage}>
-                                {lockEvents.length > 0 ? (
-                                    <>
-                                        <h1>Global Locks</h1>
-                                        <h3>{getTotalLockVal(lockEvents)} ETH locked</h3>
-                                        <List className={classes.listRoot} subheader={<li />}>
-                                            <li className={classes.listSection}>
-                                                <ul className={classes.ul}>
-                                                    <ListSubheader>There are {lockEvents.length} locks</ListSubheader>
-                                                    <Divider />
-                                                    {lockEvents.map(eventItem => (
-                                                        <>
-                                                            <ListItem key={eventItem.lock}>
-                                                                <ListItemText>
-                                                                    <h4>Lock address: {eventItem.lock}</h4>
-                                                                    <h5>Locked in block no. {eventItem.blockNo}</h5>
-                                                                    <p>
-                                                                        Locked{' '}
-                                                                        {web3.utils.fromWei(eventItem.eth, 'ether')} ETH
-                                                                        for {eventItem.duration} days
-                                                                    </p>
-                                                                    {eventItem.introducer !== defaultAddress ? (
-                                                                        <p>Introducer: {eventItem.introducer}</p>
-                                                                    ) : (
-                                                                        <p>No introducer</p>
-                                                                    )}
-                                                                </ListItemText>
-                                                            </ListItem>
-                                                            <Divider />
-                                                        </>
-                                                    ))}
-                                                </ul>
-                                            </li>
-                                        </List>
-                                    </>
-                                ) : (
-                                    <>
-                                        <h1>No Locks</h1>
-                                        <h4>Please lock some ETH!</h4>
-                                    </>
-                                )}
-                            </div>
+                            <GlobalLocks web3={web3} contractInstance={contractInstance} />
                         </TabPanel>
                         <TabPanel value={value} index={1} dir={theme.direction}>
-                            <div className={classes.lockListPage}>
-                                {lockEvents.length > 0 ? (
-                                    <>
-                                        <h1>Your Locks</h1>
-                                        <h3>{getTotalLockVal(lockEvents)} ETH locked</h3>
-                                        <List className={classes.listRoot} subheader={<li />}>
-                                            <li className={classes.listSection}>
-                                                <ul className={classes.ul}>
-                                                    <ListSubheader>There are {lockEvents.length} locks</ListSubheader>
-                                                    <Divider />
-                                                    {lockEvents.map(eventItem => (
-                                                        <>
-                                                            <ListItem key={eventItem.lock}>
-                                                                <ListItemText>
-                                                                    <h4>Lock address: {eventItem.lock}</h4>
-                                                                    <h5>Locked in block no. {eventItem.blockNo}</h5>
-                                                                    <p>
-                                                                        Locked{' '}
-                                                                        {web3.utils.fromWei(eventItem.eth, 'ether')} ETH
-                                                                        for {eventItem.duration} days
-                                                                    </p>
-                                                                    {eventItem.introducer !== defaultAddress ? (
-                                                                        <p>Introducer: {eventItem.introducer}</p>
-                                                                    ) : (
-                                                                        <p>No introducer</p>
-                                                                    )}
-                                                                </ListItemText>
-                                                                <IonButton>Unlock</IonButton>
-                                                            </ListItem>
-                                                            <Divider />
-                                                        </>
-                                                    ))}
-                                                </ul>
-                                            </li>
-                                        </List>
-                                    </>
-                                ) : (
-                                    <>
-                                        <h1>No Locks</h1>
-                                        <h4>Please lock some ETH!</h4>
-                                    </>
-                                )}
-                            </div>
+                            <CurrentLocks web3={web3} contractInstance={contractInstance} accounts={accounts} />
                         </TabPanel>
                     </SwipeableViews>
                 </div>
@@ -242,3 +139,143 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance }) =
 };
 
 export default LockedEthList;
+
+const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance }) => {
+    const classes = useStyles();
+    const [lockEvents, setEvents] = useState<LockEvent[]>([]);
+
+    const updateList = async () => {
+        await getAllLockEvents(web3, contractInstance).then(i => {
+            setEvents(i);
+        });
+    };
+
+    useEffect(() => {
+        const abortController = new AbortController();
+        // update list every second
+        setTimeout(async () => {
+            await updateList();
+        }, 1000);
+
+        // cleanup async hook
+        return () => {
+            abortController.abort();
+        };
+    }, [lockEvents]);
+
+    return (
+        <div className={classes.lockListPage}>
+            {lockEvents.length > 0 ? (
+                <>
+                    <h1>Global Locks</h1>
+                    <h3>{getTotalLockVal(lockEvents, web3)} ETH locked</h3>
+                    <List className={classes.listRoot} subheader={<li />}>
+                        <li className={classes.listSection}>
+                            <ul className={classes.ul}>
+                                <ListSubheader>There are {lockEvents.length} locks</ListSubheader>
+                                <Divider />
+                                {lockEvents.map(eventItem => (
+                                    <>
+                                        <ListItem key={eventItem.lock}>
+                                            <ListItemText>
+                                                <h4>Lock address: {eventItem.lock}</h4>
+                                                <h5>Locked in block no. {eventItem.blockNo}</h5>
+                                                <p>
+                                                    Locked {web3.utils.fromWei(eventItem.eth, 'ether')} ETH for{' '}
+                                                    {eventItem.duration} days
+                                                </p>
+                                                {eventItem.introducer !== defaultAddress ? (
+                                                    <p>Introducer: {eventItem.introducer}</p>
+                                                ) : (
+                                                    <p>No introducer</p>
+                                                )}
+                                            </ListItemText>
+                                        </ListItem>
+                                        <Divider />
+                                    </>
+                                ))}
+                            </ul>
+                        </li>
+                    </List>
+                </>
+            ) : (
+                <>
+                    <h1>No Locks</h1>
+                    <h4>Please lock some ETH!</h4>
+                </>
+            )}
+        </div>
+    );
+};
+
+const CurrentLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance, accounts }) => {
+    const classes = useStyles();
+    const [lockEvents, setEvents] = useState<LockEvent[]>([]);
+
+    const updateList = async () => {
+        // type check accounts
+        if (accounts instanceof Array) {
+            await getCurrentAccountLocks(web3, accounts[0], contractInstance).then(i => {
+                setEvents(i);
+            });
+        }
+    };
+
+    useEffect(() => {
+        const abortController = new AbortController();
+        // update list every second
+        setTimeout(async () => {
+            await updateList();
+        }, 1000);
+
+        // cleanup async hook
+        return () => {
+            abortController.abort();
+        };
+    }, [lockEvents]);
+
+    return (
+        <div className={classes.lockListPage}>
+            {lockEvents.length > 0 ? (
+                <>
+                    <h1>Your Locks</h1>
+                    <h3>{getTotalLockVal(lockEvents, web3)} ETH locked</h3>
+                    <List className={classes.listRoot} subheader={<li />}>
+                        <li className={classes.listSection}>
+                            <ul className={classes.ul}>
+                                <ListSubheader>There are {lockEvents.length} locks</ListSubheader>
+                                <Divider />
+                                {lockEvents.map(eventItem => (
+                                    <>
+                                        <ListItem key={eventItem.lock}>
+                                            <ListItemText>
+                                                <h4>Lock address: {eventItem.lock}</h4>
+                                                <h5>Locked in block no. {eventItem.blockNo}</h5>
+                                                <p>
+                                                    Locked {web3.utils.fromWei(eventItem.eth, 'ether')} ETH for{' '}
+                                                    {eventItem.duration} days
+                                                </p>
+                                                {eventItem.introducer !== defaultAddress ? (
+                                                    <p>Introducer: {eventItem.introducer}</p>
+                                                ) : (
+                                                    <p>No introducer</p>
+                                                )}
+                                            </ListItemText>
+                                            <IonButton>Unlock</IonButton>
+                                        </ListItem>
+                                        <Divider />
+                                    </>
+                                ))}
+                            </ul>
+                        </li>
+                    </List>
+                </>
+            ) : (
+                <>
+                    <h1>No Locks</h1>
+                    <h4>Please lock some ETH!</h4>
+                </>
+            )}
+        </div>
+    );
+};
