@@ -100,8 +100,11 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance }) =
         setValue(index);
     };
 
-    const updateList = () => {
-        getLockEvents(web3, contractInstance).then(i => setEvents(i));
+    const updateList = async () => {
+        await getLockEvents(web3, contractInstance).then(i => {
+            setEvents(i);
+            console.log(i);
+        });
     };
 
     const getTotalLockVal = (locks: LockEvent[]): string => {
@@ -116,8 +119,8 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance }) =
     };
 
     useEffect(() => {
-        setTimeout(() => {
-            updateList();
+        setTimeout(async () => {
+            await updateList();
         }, 1000);
     });
     return (

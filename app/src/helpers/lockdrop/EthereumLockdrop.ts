@@ -47,7 +47,6 @@ export async function connectWeb3() {
         }
     } catch (error) {
         // Catch any errors for any of the above operations.
-        //todo: display a graphical error message
         alert('Failed to load web3, accounts, or contract. Check console for details.');
         console.error(error);
     }
@@ -105,42 +104,29 @@ export async function getLockEvents(web3: Web3, instance: Contract): Promise<Loc
     // this value can be set as the block number of where the contract was deployed
     const startBlock = 0;
     try {
-        const ev = await instance.getPastEvents('allEvents', {
-            filter: { event: 'Locked' },
-            fromBlock: startBlock,
-            toBlock: 'latest',
-        });
-        ev.map(i => {
-            //console.log(i);
-            const e = i.returnValues;
+        const ev = await instance.getPastEvents('Locked', { fromBlock: startBlock });
 
-            web3.eth.getBlock(i.transactionHash).then(x => {
-                // getting key value pairs from the event value
-                lockEvents.push({
+        return Promise.all(
+            ev.map(async i => {
+                const transactionString = await Promise.resolve(web3.eth.getBlock(i.blockNumber));
+                const time = transactionString.timestamp.toString();
+
+                const e = i.returnValues;
+                return {
                     eth: e['eth'] as BN,
                     duration: e['duration'] as number,
                     lock: e['lock'] as string,
                     introducer: e['introducer'] as string,
                     blockNo: i.blockNumber,
                     txHash: i.transactionHash,
-                    timestamp: x.timestamp,
-                });
-            });
-
-            // getting key value pairs from the event value
-            // lockEvents.push({
-            //     eth: e['eth'] as BN,
-            //     duration: e['duration'] as number,
-            //     lock: e['lock'] as string,
-            //     introducer: e['introducer'] as string,
-            //     blockNo: i.blockNumber,
-            //     txHash: i.transactionHash,
-            //     timestamp: lockedTime,
-            // });
-        });
+                    timestamp: time,
+                } as LockEvent;
+            }),
+        );
     } catch (error) {
         console.log(error);
+        return lockEvents;
     }
 
-    return lockEvents;
+    //return lockEvents;
 }
