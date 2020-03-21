@@ -17,14 +17,15 @@ import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListSubheader from '@material-ui/core/ListSubheader';
-import { Divider, Grid } from '@material-ui/core';
+import { Divider, Grid, ListItemSecondaryAction, IconButton } from '@material-ui/core';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
 import AppBar from '@material-ui/core/AppBar';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import SwipeableViews from 'react-swipeable-views';
-import { IonButton } from '@ionic/react';
+import LockIcon from '@material-ui/icons/Lock';
+import LockOpenIcon from '@material-ui/icons/LockOpen';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -107,7 +108,7 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance, acc
         <>
             <SectionCard maxWidth="lg">
                 <div className={classes.tabMenu}>
-                    <AppBar position="static" color="default">
+                    <AppBar position="static" color="inherit">
                         <Tabs
                             value={value}
                             onChange={handleChange}
@@ -332,6 +333,11 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
                     <p>
                         Locked {web3.utils.fromWei(lockInfo.eth, 'ether')} ETH for {lockInfo.duration} days
                     </p>
+                    {lockInfo.introducer !== defaultAddress ? (
+                        <p>Introducer: {lockInfo.introducer}</p>
+                    ) : (
+                        <p>No introducer</p>
+                    )}
                     {!canUnlock ? (
                         <Grid container spacing={1}>
                             <Grid item>
@@ -351,17 +357,21 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
                             </Grid>
                         </Grid>
                     ) : (
-                        <></>
-                    )}
-                    {lockInfo.introducer !== defaultAddress ? (
-                        <p>Introducer: {lockInfo.introducer}</p>
-                    ) : (
-                        <p>No introducer</p>
+                        <p>Lock Ended!</p>
                     )}
                 </ListItemText>
-                <IonButton onClick={() => handleClick()} disabled={!canUnlock}>
+                {/* <IonButton onClick={() => handleClick()} disabled={!canUnlock}>
                     Unlock
-                </IonButton>
+                </IonButton> */}
+                <ListItemSecondaryAction>
+                    {!canUnlock ? (
+                        <IconButton edge="end" aria-label="unlock" onClick={() => handleClick()} color="primary">
+                            <LockOpenIcon />
+                        </IconButton>
+                    ) : (
+                        <LockIcon color="inherit" />
+                    )}
+                </ListItemSecondaryAction>
             </ListItem>
         </>
     );
