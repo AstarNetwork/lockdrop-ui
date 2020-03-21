@@ -15,4 +15,5 @@ export interface LockEvent {
     introducer: string;
     blockNo: number;
     txHash: string;
+    timestamp: string | number; // in Unix epoch
 }

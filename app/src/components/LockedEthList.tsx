@@ -101,7 +101,7 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance }) =
     };
 
     const updateList = () => {
-        getLockEvents(contractInstance).then(i => setEvents(i));
+        getLockEvents(web3, contractInstance).then(i => setEvents(i));
     };
 
     const getTotalLockVal = (locks: LockEvent[]): string => {

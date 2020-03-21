@@ -76,7 +76,9 @@ export function getAccountLocks(web3: Web3, fromAccount: string, contractInstanc
             .then(events => {
                 events
                     .filter(e => e[1]['from'] === fromAccount)
-                    .map((e, index) =>
+                    .map((e, index) => {
+                        console.log(e);
+
                         lockEvents.push({
                             eth: e[0].eth as BN,
                             duration: e[0].duration as number,
@@ -84,8 +86,9 @@ export function getAccountLocks(web3: Web3, fromAccount: string, contractInstanc
                             introducer: e[0].introducer as string,
                             blockNo: index, // temp value
                             txHash: index.toString(), // temp value
-                        }),
-                    );
+                            timestamp: index.toString(),
+                        });
+                    });
             });
     } catch (error) {
         console.log(error);
@@ -95,7 +98,7 @@ export function getAccountLocks(web3: Web3, fromAccount: string, contractInstanc
 }
 
 // returns an array of the entire list of locked events for the contract only once
-export async function getLockEvents(instance: Contract): Promise<LockEvent[]> {
+export async function getLockEvents(web3: Web3, instance: Contract): Promise<LockEvent[]> {
     // this will hold all the event log JSON with an arbitrary structure
     const lockEvents: LockEvent[] = [];
 
@@ -107,18 +110,33 @@ export async function getLockEvents(instance: Contract): Promise<LockEvent[]> {
             fromBlock: startBlock,
             toBlock: 'latest',
         });
-        ev.forEach(function(i) {
+        ev.map(i => {
             //console.log(i);
             const e = i.returnValues;
-            // getting key value pairs from the event value
-            lockEvents.push({
-                eth: e['eth'] as BN,
-                duration: e['duration'] as number,
-                lock: e['lock'] as string,
-                introducer: e['introducer'] as string,
-                blockNo: i.blockNumber,
-                txHash: i.transactionHash,
+
+            web3.eth.getBlock(i.transactionHash).then(x => {
+                // getting key value pairs from the event value
+                lockEvents.push({
+                    eth: e['eth'] as BN,
+                    duration: e['duration'] as number,
+                    lock: e['lock'] as string,
+                    introducer: e['introducer'] as string,
+                    blockNo: i.blockNumber,
+                    txHash: i.transactionHash,
+                    timestamp: x.timestamp,
+                });
             });
+
+            // getting key value pairs from the event value
+            // lockEvents.push({
+            //     eth: e['eth'] as BN,
+            //     duration: e['duration'] as number,
+            //     lock: e['lock'] as string,
+            //     introducer: e['introducer'] as string,
+            //     blockNo: i.blockNumber,
+            //     txHash: i.transactionHash,
+            //     timestamp: lockedTime,
+            // });
         });
     } catch (error) {
         console.log(error);
