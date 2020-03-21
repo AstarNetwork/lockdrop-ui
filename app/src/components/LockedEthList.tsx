@@ -241,7 +241,7 @@ const CurrentLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance, acco
                     <List className={classes.listRoot} subheader={<li />}>
                         <li className={classes.listSection}>
                             <ul className={classes.ul}>
-                                <ListSubheader>There are {lockEvents.length} locks</ListSubheader>
+                                <ListSubheader>You have {lockEvents.length} locks</ListSubheader>
                                 <Divider />
                                 {lockEvents.map(eventItem => (
                                     <>
