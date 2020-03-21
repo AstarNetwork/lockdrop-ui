@@ -8,6 +8,13 @@ export interface LockInput {
     rate: number;
 }
 
+export interface TimeFormat {
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+}
+
 export interface LockEvent {
     eth: BN;
     duration: number;
