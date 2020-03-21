@@ -364,7 +364,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
                     Unlock
                 </IonButton> */}
                 <ListItemSecondaryAction>
-                    {!canUnlock ? (
+                    {canUnlock ? (
                         <IconButton edge="end" aria-label="unlock" onClick={() => handleClick()} color="primary">
                             <LockOpenIcon />
                         </IconButton>
