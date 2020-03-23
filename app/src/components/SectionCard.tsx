@@ -13,7 +13,7 @@ const SectionCard: React.FC<Props> = ({ maxWidth, children }) => {
     const useStyles = makeStyles(theme => ({
         paper: {
             backgroundColor: ThemeColors.white,
-            padding: theme.spacing(8, 0, 6),
+            padding: theme.spacing(0, 0, 4),
             margin: theme.spacing(1),
         },
     }));

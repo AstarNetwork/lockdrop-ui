@@ -45,6 +45,9 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
 
     const useStyles = makeStyles((theme: Theme) =>
         createStyles({
+            formRoot: {
+                padding: theme.spacing(4, 0, 0),
+            },
             txButton: {
                 margin: theme.spacing(3),
             },
@@ -89,7 +92,7 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
     return (
         <>
             <SectionCard maxWidth="lg">
-                <div className="main-content">
+                <div className={classes.formRoot}>
                     <Typography variant="h4" component="h1" align="center">
                         Plasm Network Ethereum Lockdrop
                     </Typography>
@@ -104,7 +107,7 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
                             <img src={quantstampLogo} alt="" className={classes.quantLogo} />
                         </Link>
                     </Typography>
-                    <IonLabel className={classes.formLabel}>Form Inputs</IonLabel>
+                    {/* <IonLabel className={classes.formLabel}>About</IonLabel> */}
                     {description ? (
                         <IonCard className={classes.textBox}>
                             <IonCardContent>{parse(description)}</IonCardContent>

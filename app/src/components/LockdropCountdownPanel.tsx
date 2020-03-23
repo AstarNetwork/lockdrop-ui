@@ -5,14 +5,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
-//import { LockValue } from '../helpers/lockToDollar';
-
-interface TimeFormat {
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
-}
+import { TimeFormat } from '../models/LockdropModels';
 
 interface Props {
     startTime: string;

@@ -8,11 +8,18 @@ export interface LockInput {
     rate: number;
 }
 
+export interface TimeFormat {
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+}
+
 export interface LockEvent {
     eth: BN;
     duration: number;
     lock: string;
     introducer: string;
     blockNo: number;
-    txHash: string;
+    timestamp: string; // in Unix epoch
 }
