@@ -115,7 +115,7 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance, acc
                             indicatorColor="primary"
                             textColor="primary"
                             variant="fullWidth"
-                            aria-label="full width tabs example"
+                            aria-label="full width tabs"
                         >
                             <Tab label="Locked Tokens" {...a11yProps(0)} />
                             <Tab label="Unlock Tokens" {...a11yProps(1)} />
