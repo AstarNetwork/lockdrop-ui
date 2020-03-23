@@ -1,6 +1,5 @@
 .secret
 node_modules/
-package-lock.json
 app/node_modules/
 app/package-lock.json
 .DS_Store
