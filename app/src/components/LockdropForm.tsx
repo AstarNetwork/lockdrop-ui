@@ -2,7 +2,7 @@ import { IonLabel, IonButton, IonItem, IonInput, IonCard, IonCardContent, IonChi
 import React, { useState } from 'react';
 import { LockInput } from '../models/LockdropModels';
 import SectionCard from './SectionCard';
-import { DropdownOption, OptionItem } from '../components/DropdownOption';
+import { DropdownOption } from '../components/DropdownOption';
 import Container from '@material-ui/core/Container';
 import BN from 'bn.js';
 import { Typography } from '@material-ui/core';
@@ -10,31 +10,13 @@ import quantstampLogo from '../resources/quantstamp-logo.png';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import Link from '@material-ui/core/Link';
 import parse from 'html-react-parser';
+import { durations, rates } from '../data/lockInfo';
 
 type InputProps = {
     token: string;
     onSubmit: Function;
     description?: string;
 };
-
-// used to define the content of the dropdown menu
-const durations: OptionItem[] = [
-    { label: '30 Days', value: 30 },
-    { label: '100 Days', value: 100 },
-    { label: '300 Days', value: 300 },
-    { label: '1000 Days', value: 1000 },
-];
-
-//const txTypes: OptionItem[] = [{ label: 'Web3 Wallet', value: 'web3' }];
-
-// the token increase rate for lock durations
-const rates = [
-    { key: 30, value: 24 },
-    { key: 100, value: 100 },
-    { key: 300, value: 360 },
-    { key: 1000, value: 1600 },
-];
-
 // the main component function
 const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
     // states used in this component

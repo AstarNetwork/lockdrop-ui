@@ -15,12 +15,13 @@ import {
 } from '@ionic/react';
 import React, { useState } from 'react';
 import './LandingPage.css';
-import { DropdownOption, OptionItem } from '../components/DropdownOption';
+import { DropdownOption } from '../components/DropdownOption';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 import LockdropCountdownPanel from '../components/LockdropCountdownPanel';
 import { LockdropEnd, LockdropStart } from '../data/lockInfo';
 import { Links } from '../data/links';
+import { OptionItem } from '../models/LockdropModels';
 
 const tokenTypes: OptionItem[] = [
     { label: 'ETH', value: 'eth' },
