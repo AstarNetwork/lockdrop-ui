@@ -3,8 +3,8 @@
 import { OptionItem } from '../models/LockdropModels';
 
 // the time zone is set to UTC as default
-export const LockdropEnd = '2020-04-12';
-export const LockdropStart = '2020-03-15';
+export const LockdropEnd = '2020-04-13 00:00:00';
+export const LockdropStart = '2020-03-15 00:00:00';
 
 // used to define the content of the dropdown menu
 export const durations: OptionItem[] = [
