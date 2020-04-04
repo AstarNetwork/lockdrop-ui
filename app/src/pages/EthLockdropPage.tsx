@@ -17,6 +17,7 @@ import SectionCard from '../components/SectionCard';
 import LockdropCountdownPanel from '../components/LockdropCountdownPanel';
 import { LockdropEnd, LockdropStart } from '../data/lockInfo';
 import BN from 'bn.js';
+import moment from 'moment';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -53,10 +54,12 @@ toast.configure({
 });
 
 const hasLockdropStarted = () => {
-    const now = Date.now();
-    const start = +new Date(LockdropStart);
-    const end = +new Date(LockdropEnd);
-    return start <= now && now < end;
+    const now = moment()
+        .utc()
+        .valueOf();
+    const start = LockdropStart.valueOf();
+    //const end = LockdropEnd.valueOf();
+    return start <= now;
 };
 
 class EthLockdropPage extends React.Component<PageProps, PageStates> {

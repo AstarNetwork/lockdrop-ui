@@ -6,10 +6,11 @@ import Container from '@material-ui/core/Container';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
 import { TimeFormat } from '../models/LockdropModels';
+import moment, { Moment, duration } from 'moment';
 
 interface Props {
-    startTime: string;
-    endTime: string;
+    startTime: Moment;
+    endTime: Moment;
 }
 
 enum LockState {
@@ -19,14 +20,17 @@ enum LockState {
 }
 
 const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime }) => {
-    const calculateTimeLeft = () => {
-        const tillStart = +new Date(startTime) - +Date.now();
-        const tillEnd = +new Date(endTime) - +Date.now();
+    const now = moment().utc();
 
-        let difference = tillStart;
-        // if it has already started
+    const calculateTimeLeft = (): TimeFormat => {
+        const tillStart = moment(startTime).valueOf() - now.valueOf();
+
+        //let difference = tillStart;
+        let difference = duration(startTime.diff(now));
+
+        // if the lockdrop has already started
         if (tillStart < 0) {
-            difference = tillEnd;
+            difference = duration(endTime.diff(now));
         }
 
         let timeLeft: TimeFormat = {
@@ -36,22 +40,24 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime }) => {
             seconds: 0,
         };
 
-        if (difference > 0) {
+        const tillEnd = moment(endTime).valueOf() - now.valueOf();
+        // check if the duration has ended
+        if (tillEnd > 0) {
             timeLeft = {
-                days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-                hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-                minutes: Math.floor((difference / 1000 / 60) % 60),
-                seconds: Math.floor((difference / 1000) % 60),
+                days: difference.days(),
+                hours: difference.hours(),
+                minutes: difference.minutes(),
+                seconds: difference.seconds(),
             };
         }
         return timeLeft;
     };
 
-    const getLockState = () => {
-        const tillStart = +new Date(startTime) - +Date.now();
+    const getLockState = (): LockState => {
+        const tillStart = moment(startTime).valueOf() - now.valueOf();
         if (tillStart > 0) {
             return LockState.notStart;
-        } else if (tillStart <= 0 && !(+new Date(endTime) - +Date.now() < 0)) {
+        } else if (tillStart <= 0 && !(moment(endTime).valueOf() - now.valueOf() < 0)) {
             return LockState.start;
         } else {
             return LockState.end;
@@ -112,7 +118,7 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime }) => {
             <>
                 <PanelWrapper>
                     <Typography variant="h2" align="center">
-                        Lockdrop has ended
+                        Main Network Lockdrop has ended
                     </Typography>
                 </PanelWrapper>
             </>

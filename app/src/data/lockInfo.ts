@@ -1,10 +1,13 @@
-// this is just a temporary date
-
 import { OptionItem } from '../models/LockdropModels';
+import moment from 'moment';
 
 // the time zone is set to UTC as default
-export const LockdropEnd = '2020-04-13 00:00:00';
-export const LockdropStart = '2020-03-15 00:00:00';
+//export const LockdropStart = moment.utc('2020-03-15 00:00:00');
+// lockdrop starts from 1584230400 epoch time
+export const LockdropStart = moment.utc('2020-03-15 00:00:00');
+// the 1st lockdrop will last for 30 days
+// lockdrop ends in 1586822400
+export const LockdropEnd = moment.utc('2020-04-13 00:00:00');
 
 // used to define the content of the dropdown menu
 export const durations: OptionItem[] = [

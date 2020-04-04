@@ -22,6 +22,7 @@ import LockdropCountdownPanel from '../components/LockdropCountdownPanel';
 import { LockdropEnd, LockdropStart } from '../data/lockInfo';
 import { Links } from '../data/links';
 import { OptionItem } from '../models/LockdropModels';
+import moment from 'moment';
 
 const tokenTypes: OptionItem[] = [
     { label: 'ETH', value: 'eth' },
@@ -35,9 +36,11 @@ const LandingPage: React.FC = () => {
     const [redirect, setRedirect] = useState('');
 
     function inLockSchedule(): boolean {
-        const now = Date.now();
-        const start = +new Date(LockdropStart);
-        const end = +new Date(LockdropEnd);
+        const now = moment()
+            .utc()
+            .valueOf();
+        const start = LockdropStart.valueOf();
+        const end = LockdropEnd.valueOf();
         return start <= now && now < end;
     }
 
