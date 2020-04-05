@@ -7,7 +7,7 @@ import moment from 'moment';
 export const LockdropStart = moment.utc('2020-03-15 00:00:00');
 // the 1st lockdrop will last for 30 days
 // lockdrop ends in 1586822400
-export const LockdropEnd = moment.utc('2020-04-13 00:00:00');
+export const LockdropEnd = moment.utc('2020-04-14 00:00:00');
 
 // used to define the content of the dropdown menu
 export const durations: OptionItem[] = [
