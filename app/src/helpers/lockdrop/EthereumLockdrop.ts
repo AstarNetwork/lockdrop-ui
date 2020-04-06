@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // This module is used for communicating with the Ethereum smart contract
 import Lockdrop from '../../contracts/Lockdrop.json';
-import getWeb3 from '../getWeb3';
+import { getEthInst } from '../getWeb3';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 import { LockEvent } from '../../models/LockdropModels';
@@ -37,7 +37,8 @@ export function getTotalLockVal(locks: LockEvent[], web3: Web3): string {
 export async function connectWeb3() {
     try {
         // Get network provider and web3 instance.
-        const web3 = await getWeb3();
+        //const web3 = await getWeb3();
+        const web3 = getEthInst();
 
         if (web3 instanceof Web3) {
             // Use web3 to get the user's accounts.
