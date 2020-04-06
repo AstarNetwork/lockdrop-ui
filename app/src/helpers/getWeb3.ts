@@ -2,6 +2,7 @@
 import Web3 from 'web3';
 import * as cryptoauth from 'cryptoauth';
 
+// getting Web3 instance via CryptOAuth. This is used for possible expandability
 export function getEthInst() {
     const ethProvider = cryptoauth.getDappBrowserProvider();
     if (!ethProvider) {
@@ -20,6 +21,7 @@ const getWeb3: any = () =>
                 try {
                     // Request account access if needed
                     await (window as any).ethereum.enable();
+                    console.log('modern Dapp browser detected');
                     // Acccounts now exposed
                     resolve(web3);
                 } catch (error) {
