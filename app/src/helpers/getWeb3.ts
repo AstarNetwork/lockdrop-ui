@@ -1,15 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Web3 from 'web3';
-import * as cryptoauth from 'cryptoauth';
-
-// getting Web3 instance via CryptOAuth. This is used for possible expandability
-export function getEthInst() {
-    const ethProvider = cryptoauth.getDappBrowserProvider();
-    if (!ethProvider) {
-        throw 'no available provider';
-    }
-    return new Web3(ethProvider);
-}
 
 const getWeb3: any = () =>
     new Promise((resolve, reject) => {

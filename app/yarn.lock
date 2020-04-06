@@ -3566,11 +3566,6 @@ crypto-js@^3.1.4, crypto-js@^3.1.6, crypto-js@^3.1.9-1:
   resolved "https://registry.yarnpkg.com/crypto-js/-/crypto-js-3.3.0.tgz#846dd1cce2f68aacfa156c8578f926a609b7976b"
   integrity sha512-DIT51nX0dCfKltpRiXV+/TVZq+Qq2NgF4644+K7Ttnla7zEzqc+kjJyiB96BHNyUTBxyjzRcZYpUdZa+QAqi6Q==
 
-cryptoauth@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/cryptoauth/-/cryptoauth-2.0.0.tgz#ab00111ec440967032a8b247686afe026390da5b"
-  integrity sha512-wUE6l43281BfrlDQTlvyogvsjkjjFAbI98oMD+VxXHgQLdqVY3fE9HNseVQbL6azSE0juiUgz1Y5XZWxM5zBGw==
-
 css-blank-pseudo@^0.1.4:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/css-blank-pseudo/-/css-blank-pseudo-0.1.4.tgz#dfdefd3254bf8a82027993674ccf35483bfcb3c5"

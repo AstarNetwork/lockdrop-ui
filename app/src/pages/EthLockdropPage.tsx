@@ -90,10 +90,6 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
         this.state.web3.eth.net.getNetworkType().then(i => this.setState({ networkType: i }));
     };
 
-    componentWillUnmount = async () => {
-        // unsubscribe
-    };
-
     // called when the user changes MetaMask account
     handleAccountChange = () => {
         // refresh the page
