@@ -11,6 +11,7 @@ const getWeb3: any = () =>
                 try {
                     // Request account access if needed
                     await (window as any).ethereum.enable();
+                    console.log('modern Dapp browser detected');
                     // Acccounts now exposed
                     resolve(web3);
                 } catch (error) {

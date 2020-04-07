@@ -80,14 +80,14 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
     componentDidMount = async () => {
         const web3State = await connectWeb3();
         this.setState(web3State);
-        // checks if account has changed
-        (window as any).ethereum.on('accountsChanged', this.handleAccountChange);
+
+        // checks if account has changed in MetaMask
+        if ((window as any).ethereum.on) {
+            (window as any).ethereum.on('accountsChanged', this.handleAccountChange);
+        }
+
         this.setState({ isLoading: false });
         this.state.web3.eth.net.getNetworkType().then(i => this.setState({ networkType: i }));
-    };
-
-    componentWillUnmount = async () => {
-        // unsubscribe
     };
 
     // called when the user changes MetaMask account

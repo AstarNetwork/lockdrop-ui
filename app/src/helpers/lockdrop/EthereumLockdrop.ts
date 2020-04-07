@@ -38,6 +38,7 @@ export async function connectWeb3() {
     try {
         // Get network provider and web3 instance.
         const web3 = await getWeb3();
+        //const web3 = getEthInst();
 
         if (web3 instanceof Web3) {
             // Use web3 to get the user's accounts.
