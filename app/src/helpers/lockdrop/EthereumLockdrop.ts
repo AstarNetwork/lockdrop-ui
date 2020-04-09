@@ -11,6 +11,8 @@ import BigNumber from 'bignumber.js';
 // the default introducer address when none is provided by the user
 export const defaultAddress = '0x0000000000000000000000000000000000000000';
 
+const ethMarketApi = 'https://api.coingecko.com/api/v3/coins/ethereum';
+
 export function defaultAffiliation(aff: string) {
     // check if affiliation address is not empty and is not themselves
     if (aff) {
@@ -20,6 +22,18 @@ export function defaultAffiliation(aff: string) {
         // if it is an invalid address, return the default affiliation address
         return defaultAddress;
     }
+}
+
+export async function getCurrentUsdRate() {
+    let usdRate = 0;
+    try {
+        const res = await fetch(ethMarketApi);
+        const data = await res.json();
+        usdRate = data.market_data.current_price.usd;
+    } catch (error) {
+        console.log(error);
+    }
+    return usdRate;
 }
 
 export function getTotalLockVal(locks: LockEvent[], web3: Web3): string {
