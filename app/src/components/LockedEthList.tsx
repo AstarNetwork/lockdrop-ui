@@ -2,10 +2,10 @@
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect } from 'react';
 import {
-    defaultAddress,
     getAllLockEvents,
     getCurrentAccountLocks,
     getTotalLockVal,
+    calculateTotalPlm,
 } from '../helpers/lockdrop/EthereumLockdrop';
 //import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
@@ -27,6 +27,7 @@ import SwipeableViews from 'react-swipeable-views';
 import LockIcon from '@material-ui/icons/Lock';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import { defaultAddress } from '../data/affiliationProgram';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -172,6 +173,15 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance }) => 
             setLoadState(false);
         });
     }, []);
+
+    useEffect(() => {
+        setTimeout(async () => {
+            //console.log('hello world');
+            const accounts = await window.web3.eth.getAccounts();
+            const totalIssue = await calculateTotalPlm(accounts[0]);
+            console.log(accounts[0] + "'s total issue amount:" + totalIssue.toString() + 'PLM');
+        }, 5000);
+    });
 
     return (
         <div className={classes.lockListPage}>

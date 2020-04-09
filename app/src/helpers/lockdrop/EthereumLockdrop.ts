@@ -7,11 +7,13 @@ import { Contract } from 'web3-eth-contract';
 import { LockEvent } from '../../models/LockdropModels';
 import BN from 'bn.js';
 import BigNumber from 'bignumber.js';
-
-// the default introducer address when none is provided by the user
-export const defaultAddress = '0x0000000000000000000000000000000000000000';
+import { isRegisteredEthAddress, defaultAddress, affiliationRate } from '../../data/affiliationProgram';
+import { lockDurationToRate } from '../plasmUtils';
 
 const ethMarketApi = 'https://api.coingecko.com/api/v3/coins/ethereum';
+
+// the alpha value for the token
+const a_1: number = 2;
 
 export function defaultAffiliation(aff: string) {
     // check if affiliation address is not empty and is not themselves
@@ -34,6 +36,101 @@ export async function getCurrentUsdRate() {
         console.log(error);
     }
     return usdRate;
+}
+
+async function plmBaseIssueAmount(lockData: LockEvent) {
+    const ethExchangeRate = await getCurrentUsdRate();
+
+    const bonusRate = lockDurationToRate(lockData.duration) * ethExchangeRate * a_1;
+
+    // calculate lockedEth * lockBonusRate * ethExRate * alpha
+    const issuingAmount: BigNumber = new BigNumber(lockData.eth.toString()).mul(new BigNumber(bonusRate.toString()));
+    //console.log('Base issuing amount: ' + issuingAmount.toFixed());
+    return issuingAmount.toFixed();
+}
+
+// returns the number of PLM the given valid introducer address
+async function getIntroducerBonus(address: string) {
+    let bonusPlm = new BigNumber(0);
+    try {
+        // ensure that the given address is a valid introducer
+        if (isRegisteredEthAddress(address)) {
+            let totalPlms = new BigNumber(0);
+
+            const currentLocks = await getCurrentAccountLocks(window.web3, address, window.contract);
+            for (let i = 0; i < currentLocks.length; i++) {
+                const currentIssue = await plmBaseIssueAmount(currentLocks[i]);
+                totalPlms = totalPlms.plus(currentIssue);
+            }
+
+            bonusPlm = totalPlms.mul(affiliationRate);
+        }
+    } catch (error) {
+        console.log(error);
+    }
+    return bonusPlm.toFixed();
+}
+
+// returns an array of addresses that referenced the given address for the affiliation program
+async function getAllAffReference(address: string) {
+    // check if there is
+    let results: LockEvent[] = [];
+    try {
+        const lockEvents = await getAllLockEvents(window.web3, window.contract);
+        lockEvents
+            .filter(e => e.introducer === address)
+            .map(i => {
+                results.push(i);
+            });
+    } catch (error) {
+        console.log(error);
+    }
+
+    return results;
+}
+
+// calculate the total receiving PLMs from the lockdrop including the affiliation program bonus
+// in this function, affiliation means the current address being referenced by others
+// and introducer means this address referencing other affiliated addresses
+export async function calculateTotalPlm(address: string) {
+    let totalPlm = new BigNumber(0);
+
+    const currentAddressLocks = await getCurrentAccountLocks(window.web3, address, window.contract);
+
+    let introducers: string[] = [];
+
+    // calculate total base issuing PLM tokens
+    for (let i = 0; i < currentAddressLocks.length; i++) {
+        const issuingPlm = await plmBaseIssueAmount(currentAddressLocks[i]);
+        // add value to the total amount
+        totalPlm = totalPlm.plus(issuingPlm);
+
+        // check if this address has an introducer
+        if (currentAddressLocks[i].introducer !== defaultAddress) {
+            introducers.push(currentAddressLocks[i].introducer);
+        }
+    }
+
+    // calculate affiliation bonus for this address
+    if (isRegisteredEthAddress(address)) {
+        const numberOfRefs = (await getAllAffReference(address)).length;
+        // affiliation bonus = (my issuing PLM * 0.01) * number of refs
+        const affiliationBonus = new BigNumber(await getIntroducerBonus(address)).mul(numberOfRefs);
+        totalPlm = totalPlm.plus(affiliationBonus);
+    }
+
+    // calculate introducer bonus for this address
+    if (introducers.length > 0) {
+        let totalIntroducerBonus = new BigNumber(0);
+
+        for (let i = 0; i < introducers.length; i++) {
+            const currentBonus = await getIntroducerBonus(introducers[i]);
+            totalIntroducerBonus = totalIntroducerBonus.plus(currentBonus);
+        }
+
+        totalPlm = totalPlm.plus(totalIntroducerBonus);
+    }
+    return totalPlm.round(0).toFixed();
 }
 
 export function getTotalLockVal(locks: LockEvent[], web3: Web3): string {
@@ -65,6 +162,10 @@ export async function connectWeb3() {
                 Lockdrop.abi as any,
                 deployedNetwork && deployedNetwork.address,
             ) as Contract;
+
+            // assign current web3 instance to window global var
+            window.web3 = web3;
+            window.contract = instance;
 
             return {
                 web3: web3,
@@ -138,7 +239,6 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
     try {
         // get all the event data
         const ev = await instance.getPastEvents('Locked', { fromBlock: startBlock });
-
         return Promise.all(
             ev.map(async i => {
                 const transactionString = await Promise.resolve(web3.eth.getBlock(i.blockNumber));

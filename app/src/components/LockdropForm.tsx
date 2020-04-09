@@ -23,7 +23,6 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
     const [lockAmount, setAmount] = useState<BN>(new BN(0));
     const [lockDuration, setDuration] = useState(0);
     const [affAccount, setAff] = useState('');
-    const [txType] = useState('');
 
     const useStyles = makeStyles((theme: Theme) =>
         createStyles({
@@ -64,7 +63,6 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
             duration: lockDuration,
             amount: lockAmount,
             affiliation: affAccount,
-            txMethod: txType,
             rate: getTokenRate(),
         };
         onSubmit(inputs);

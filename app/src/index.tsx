@@ -5,6 +5,18 @@ import App from './App';
 import * as serviceWorker from './serviceWorker';
 import { createMuiTheme } from '@material-ui/core/styles';
 import { MuiThemeProvider } from '@material-ui/core/styles';
+import Web3 from 'web3';
+import { Contract } from 'web3-eth-contract';
+
+// define web3 instance as a global variable
+declare global {
+    interface Window {
+        web3: Web3;
+        contract: Contract;
+    }
+}
+window.contract = window.contract || {};
+window.web3 = window.web3 || {};
 
 const theme = createMuiTheme({
     typography: {
