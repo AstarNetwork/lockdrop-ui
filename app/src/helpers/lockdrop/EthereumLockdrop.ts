@@ -9,7 +9,7 @@ import BN from 'bn.js';
 import BigNumber from 'bignumber.js';
 import { isRegisteredEthAddress, defaultAddress, affiliationRate } from '../../data/affiliationProgram';
 import { lockDurationToRate } from '../plasmUtils';
-import { PlasmDrop } from '../../models/PlasmDrop';
+import { PlmDrop } from '../../models/PlasmDrop';
 
 const ethMarketApi = 'https://api.coingecko.com/api/v3/coins/ethereum';
 
@@ -170,7 +170,7 @@ async function getAllAffReference(address: string) {
 // in this function, affiliation means the current address being referenced by others
 // and introducer means this address referencing other affiliated addresses
 export async function calculateTotalPlm(address: string) {
-    const receivingPlm = new PlasmDrop(new BigNumber(0), [new BigNumber(0)], ['']);
+    const receivingPlm = new PlmDrop(new BigNumber(0), [new BigNumber(0)], ['']);
 
     const currentAddressLocks = await getCurrentAccountLocks(window.web3, address, window.contract);
 

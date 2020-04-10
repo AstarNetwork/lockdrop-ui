@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
+import { femtoToPlm } from '../helpers/plasmUtils';
 
-export class PlasmDrop {
+export class PlmDrop {
     basePlm: BigNumber;
     introducerBonuses: BigNumber[];
     affiliationRefs: string[];
@@ -24,5 +25,9 @@ export class PlasmDrop {
             .add(totalIntroBonuses)
             .add(affBonus)
             .toFixed();
+    }
+
+    getTotalPlm() {
+        return femtoToPlm(new BigNumber(this.getTotalToken())).toFixed();
     }
 }

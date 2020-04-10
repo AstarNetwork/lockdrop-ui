@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 export function femtoToPlm(femto: BigNumber) {
-    console.log(femto);
+    const plmDenominator = new BigNumber(10).pow(-15);
+    return femto.mul(plmDenominator);
 }
 
 export function lockDurationToRate(duration: number) {
