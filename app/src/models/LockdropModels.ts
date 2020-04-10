@@ -15,7 +15,7 @@ export interface TimeFormat {
 }
 
 export interface LockEvent {
-    eth: BN;
+    eth: BN; // this uses BN.js instead of BigNumber.js because that is what eth helper uses
     duration: number;
     lock: string;
     introducer: string;

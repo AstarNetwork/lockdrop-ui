@@ -179,7 +179,7 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance }) => 
             //console.log('hello world');
             const accounts = await window.web3.eth.getAccounts();
             const totalIssue = await calculateTotalPlm(accounts[0]);
-            console.log(accounts[0] + "'s total issue amount:" + totalIssue.toString() + 'PLM');
+            console.log(accounts[0] + "'s base issue amount:" + totalIssue.getTotalToken() + 'PLM');
         }, 5000);
     });
 
