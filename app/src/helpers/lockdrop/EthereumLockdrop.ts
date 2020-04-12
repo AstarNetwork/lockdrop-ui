@@ -170,11 +170,13 @@ async function getAllAffReference(address: string) {
 // in this function, affiliation means the current address being referenced by others
 // and introducer means this address referencing other affiliated addresses
 export async function calculateTotalPlm(address: string) {
-    const receivingPlm = new PlmDrop(new BigNumber(0), [new BigNumber(0)], ['']);
+    const receivingPlm = new PlmDrop(new BigNumber(0), [], [], []);
 
     const currentAddressLocks = await getCurrentAccountLocks(window.web3, address, window.contract);
 
     const introducers: string[] = [];
+
+    receivingPlm.locks = currentAddressLocks;
 
     // calculate total base issuing PLM tokens
     for (let i = 0; i < currentAddressLocks.length; i++) {
@@ -191,9 +193,8 @@ export async function calculateTotalPlm(address: string) {
     // calculate affiliation bonus for this address
     if (isRegisteredEthAddress(address)) {
         const allRefs = await getAllAffReference(address);
-        const numberOfRefs = allRefs.length;
 
-        for (let i = 0; i < numberOfRefs; i++) {
+        for (let i = 0; i < allRefs.length; i++) {
             receivingPlm.affiliationRefs.push(allRefs[i].lock);
         }
     }

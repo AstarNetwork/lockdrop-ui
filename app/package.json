@@ -17,6 +17,7 @@
         "ionicons": "^4.6.3",
         "moment": "^2.24.0",
         "react": "^16.12.0",
+        "react-countup": "^4.3.3",
         "react-dom": "^16.12.0",
         "react-router": "^5.1.2",
         "react-router-dom": "^5.1.2",

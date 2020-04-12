@@ -18,6 +18,7 @@ import LockdropCountdownPanel from '../components/LockdropCountdownPanel';
 import { LockdropEnd, LockdropStart } from '../data/lockInfo';
 import BN from 'bn.js';
 import moment from 'moment';
+import LockdropResult from '../components/LockdropResult';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -165,12 +166,17 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                     contractInstance={this.state.contract}
                                     accounts={this.state.accounts}
                                 />
+                                <SectionCard maxWidth="lg">
+                                    <LockdropResult />
+                                </SectionCard>
                             </>
                         )
                     ) : (
-                        <SectionCard maxWidth="lg">
-                            <LockdropCountdownPanel endTime={LockdropEnd} startTime={LockdropStart} />
-                        </SectionCard>
+                        <>
+                            <SectionCard maxWidth="lg">
+                                <LockdropCountdownPanel endTime={LockdropEnd} startTime={LockdropStart} />
+                            </SectionCard>
+                        </>
                     )}
                     <Footer />
                 </IonContent>

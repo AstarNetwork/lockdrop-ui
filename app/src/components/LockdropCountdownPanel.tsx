@@ -145,9 +145,6 @@ const PanelWrapper: React.FC = ({ children }) => {
         <>
             <Container maxWidth="lg" className={classes.container}>
                 {children}
-                {/* <Typography variant="h5" className={classes.lockedVal}>
-                    Total Lock Value is {LockValue} USD
-                </Typography> */}
             </Container>
         </>
     );

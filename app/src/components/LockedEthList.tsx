@@ -1,12 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect } from 'react';
-import {
-    getAllLockEvents,
-    getCurrentAccountLocks,
-    getTotalLockVal,
-    calculateTotalPlm,
-} from '../helpers/lockdrop/EthereumLockdrop';
+import { getAllLockEvents, getCurrentAccountLocks, getTotalLockVal } from '../helpers/lockdrop/EthereumLockdrop';
 //import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
@@ -173,15 +168,6 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance }) => 
             setLoadState(false);
         });
     }, []);
-
-    useEffect(() => {
-        setTimeout(async () => {
-            //console.log('hello world');
-            const accounts = await window.web3.eth.getAccounts();
-            const totalIssue = await calculateTotalPlm(accounts[0]);
-            console.log(accounts[0] + "'s issue amount:" + totalIssue.getTotalPlm() + 'PLM');
-        }, 5000);
-    });
 
     return (
         <div className={classes.lockListPage}>
