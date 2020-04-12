@@ -11,7 +11,7 @@
         "@types/react-scroll": "^1.5.4",
         "@types/react-swipeable-views": "^0.13.0",
         "@types/styled-components": "^5.0.1",
-        "bignumber.js": "^4.1.0",
+        "bignumber.js": "^9.0.0",
         "ethereum-address": "0.0.4",
         "html-react-parser": "^0.10.2",
         "ionicons": "^4.6.3",

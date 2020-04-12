@@ -27,7 +27,7 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
     const useStyles = makeStyles((theme: Theme) =>
         createStyles({
             formRoot: {
-                padding: theme.spacing(4, 0, 0),
+                padding: theme.spacing(4, 3, 0),
             },
             txButton: {
                 margin: theme.spacing(3),

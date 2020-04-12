@@ -121,12 +121,12 @@ async function plmBaseIssueAmount(lockData: LockEvent) {
     const bonusRate = lockDurationToRate(lockData.duration) * ethExchangeRate * alphaOne;
 
     // calculate lockedEth * lockBonusRate * ethExRate * alpha
-    const issuingAmount: BigNumber = new BigNumber(lockData.eth.toString()).mul(new BigNumber(bonusRate.toString()));
-    //console.log('Base issuing amount: ' + issuingAmount.toFixed());
-    return issuingAmount.round(0).toFixed();
+    const issuingAmount: BigNumber = new BigNumber(lockData.eth.toString()).times(new BigNumber(bonusRate));
+    return issuingAmount;
 }
 
-// returns the number of PLM the given valid introducer address
+// returns the number of PLM the given valid introducer address has received from the lockdrop
+// and multiply it by the affiliation bonus rate
 async function getIntroducerBonus(address: string) {
     let bonusPlm = new BigNumber(0);
     try {
@@ -137,19 +137,19 @@ async function getIntroducerBonus(address: string) {
             const currentLocks = await getCurrentAccountLocks(window.web3, address, window.contract);
             for (let i = 0; i < currentLocks.length; i++) {
                 const currentIssue = await plmBaseIssueAmount(currentLocks[i]);
-                totalPlms = totalPlms.plus(currentIssue);
+                totalPlms = totalPlms.plus(currentIssue.toFixed());
             }
 
-            bonusPlm = totalPlms.mul(affiliationRate);
+            bonusPlm = totalPlms.times(affiliationRate);
         }
     } catch (error) {
         console.log(error);
     }
-    return bonusPlm.round(0).toFixed();
+    return bonusPlm;
 }
 
 // returns an array of addresses that referenced the given address for the affiliation program
-async function getAllAffReference(address: string) {
+async function getAllAffReferences(address: string) {
     // check if there is
     const results: LockEvent[] = [];
     try {
@@ -192,7 +192,7 @@ export async function calculateTotalPlm(address: string) {
 
     // calculate affiliation bonus for this address
     if (isRegisteredEthAddress(address)) {
-        const allRefs = await getAllAffReference(address);
+        const allRefs = await getAllAffReferences(address);
 
         for (let i = 0; i < allRefs.length; i++) {
             receivingPlm.affiliationRefs.push(allRefs[i].lock);
@@ -201,16 +201,14 @@ export async function calculateTotalPlm(address: string) {
 
     // calculate introducer bonus for this address
     if (introducers.length > 0) {
-        let totalIntroducerBonus = new BigNumber(0);
-
         for (let i = 0; i < introducers.length; i++) {
             const currentBonus = await getIntroducerBonus(introducers[i]);
-            receivingPlm.introducerBonuses.push(new BigNumber(currentBonus));
-
-            totalIntroducerBonus = totalIntroducerBonus.plus(currentBonus);
+            // check if the bonus is greater than 0
+            if (currentBonus > new BigNumber(0)) {
+                receivingPlm.introducerBonuses.push(currentBonus);
+            }
         }
     }
-    //return totalPlm.round(0).toFixed();
     return receivingPlm;
 }
 

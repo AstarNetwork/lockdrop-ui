@@ -15,35 +15,35 @@ export class PlmDrop {
         this.locks = locks;
     }
 
-    getTotalToken() {
+    getTotalFemto() {
         let totalIntroBonuses = new BigNumber(0);
 
         for (let i = 0; i < this.introducerBonuses.length; i++) {
-            totalIntroBonuses = totalIntroBonuses.add(this.introducerBonuses[i]);
+            totalIntroBonuses = totalIntroBonuses.plus(this.introducerBonuses[i]);
         }
 
-        const affBonus = this.basePlm.mul(0.01).mul(this.affiliationRefs.length);
+        const affBonus = this.basePlm.times(0.01).times(this.affiliationRefs.length);
 
         return this.basePlm
-            .add(totalIntroBonuses)
-            .add(affBonus)
+            .plus(totalIntroBonuses)
+            .plus(affBonus)
             .toFixed();
     }
 
     getTotalPlm() {
-        return femtoToPlm(new BigNumber(this.getTotalToken())).toFixed();
+        return femtoToPlm(new BigNumber(this.getTotalFemto())).toFixed();
     }
 
     // calculate the number of PLM you get for being affiliated
     calculateAffBonus() {
-        return this.basePlm.mul(this.affiliationRefs.length).mul(0.01);
+        return this.basePlm.times(this.affiliationRefs.length).times(0.01);
     }
 
     // the number of PLM you get for referencing an affiliate
     calculateIntroBonus() {
         const introVal = new BigNumber(0);
         for (let i = 0; i < this.introducerBonuses.length; i++) {
-            introVal.add(this.introducerBonuses[i]);
+            introVal.plus(this.introducerBonuses[i]);
         }
         return introVal;
     }
