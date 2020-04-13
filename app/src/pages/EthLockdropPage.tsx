@@ -65,6 +65,7 @@ const hasLockdropStarted = () => {
 };
 
 const hasLockdropEnded = () => {
+    return true;
     const now = moment()
         .utc()
         .valueOf();
