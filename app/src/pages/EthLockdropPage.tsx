@@ -65,7 +65,6 @@ const hasLockdropStarted = () => {
 };
 
 const hasLockdropEnded = () => {
-    return true;
     const now = moment()
         .utc()
         .valueOf();
@@ -150,7 +149,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             <IonPage>
                 <IonContent>
                     <Navbar />
-                    {this.state.networkType !== 'main' || hasLockdropStarted() ? (
+                    {hasLockdropStarted() ? (
                         this.state.isLoading ? (
                             <IonLoading isOpen={true} message={'Connecting to Wallet...'} />
                         ) : (
@@ -163,23 +162,22 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                 ) : (
                                     <></>
                                 )}
-
-                                {this.state.networkType === 'main' ? (
-                                    <SectionCard maxWidth="lg">
-                                        <LockdropCountdownPanel endTime={LockdropEnd} startTime={LockdropStart} />
-                                        {hasLockdropEnded() ? (
-                                            <>
-                                                <Divider />
-                                                <LockdropResult />
-                                            </>
-                                        ) : (
-                                            <></>
-                                        )}
-                                    </SectionCard>
-                                ) : (
+                                <SectionCard maxWidth="lg">
+                                    <LockdropCountdownPanel endTime={LockdropEnd} startTime={LockdropStart} />
+                                    {hasLockdropEnded() ? (
+                                        <>
+                                            <Divider />
+                                            <LockdropResult />
+                                        </>
+                                    ) : (
+                                        <></>
+                                    )}
+                                </SectionCard>
+                                {hasLockdropEnded() ? (
                                     <></>
+                                ) : (
+                                    <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
                                 )}
-                                <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
                                 <LockedEthList
                                     web3={this.state.web3}
                                     contractInstance={this.state.contract}
