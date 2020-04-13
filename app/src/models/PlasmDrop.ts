@@ -7,7 +7,12 @@ export class PlmDrop {
     affiliationRefsBonuses: [string, BigNumber][];
     locks: LockEvent[];
 
-    constructor(basePlm: BigNumber, introducerAndBonuses: [string, BigNumber][], affiliationRefsBonuses: [string, BigNumber][], locks: LockEvent[]) {
+    constructor(
+        basePlm: BigNumber,
+        introducerAndBonuses: [string, BigNumber][],
+        affiliationRefsBonuses: [string, BigNumber][],
+        locks: LockEvent[],
+    ) {
         this.basePlm = basePlm;
         this.introducerAndBonuses = introducerAndBonuses;
         this.affiliationRefsBonuses = affiliationRefsBonuses;
@@ -21,8 +26,7 @@ export class PlmDrop {
             totalIntroBonuses = totalIntroBonuses.plus(this.introducerAndBonuses[i][1]);
         }
 
-        
-        const affBonus = this.calculateAffBonus()
+        const affBonus = this.calculateAffBonus();
 
         return this.basePlm
             .plus(totalIntroBonuses)
@@ -44,13 +48,17 @@ export class PlmDrop {
 
     // calculate the number of PLM you get for being affiliated
     calculateAffBonus() {
-        return this.affiliationRefsBonuses
-                .reduce((sum: BigNumber, bonus: [string, BigNumber]): BigNumber => sum.plus(bonus[1]), new BigNumber(0));
+        return this.affiliationRefsBonuses.reduce(
+            (sum: BigNumber, bonus: [string, BigNumber]): BigNumber => sum.plus(bonus[1]),
+            new BigNumber(0),
+        );
     }
 
     // the number of PLM you get for referencing an affiliate
     calculateIntroBonus() {
-        return this.introducerAndBonuses
-                    .reduce((sum: BigNumber, bonus: [string, BigNumber]): BigNumber => sum.plus(bonus[1]), new BigNumber(0));
+        return this.introducerAndBonuses.reduce(
+            (sum: BigNumber, bonus: [string, BigNumber]): BigNumber => sum.plus(bonus[1]),
+            new BigNumber(0),
+        );
     }
 }
