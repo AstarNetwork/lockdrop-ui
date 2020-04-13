@@ -18,6 +18,8 @@ import LockdropCountdownPanel from '../components/LockdropCountdownPanel';
 import { LockdropEnd, LockdropStart } from '../data/lockInfo';
 import BN from 'bn.js';
 import moment from 'moment';
+import LockdropResult from '../components/LockdropResult';
+import { Divider } from '@material-ui/core';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -60,6 +62,15 @@ const hasLockdropStarted = () => {
     const start = LockdropStart.valueOf();
     //const end = LockdropEnd.valueOf();
     return start <= now;
+};
+
+const hasLockdropEnded = () => {
+    const now = moment()
+        .utc()
+        .valueOf();
+    const end = LockdropEnd.valueOf();
+    //const end = LockdropEnd.valueOf();
+    return end <= now;
 };
 
 class EthLockdropPage extends React.Component<PageProps, PageStates> {
@@ -138,7 +149,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             <IonPage>
                 <IonContent>
                     <Navbar />
-                    {this.state.networkType !== 'main' || hasLockdropStarted() ? (
+                    {hasLockdropStarted() ? (
                         this.state.isLoading ? (
                             <IonLoading isOpen={true} message={'Connecting to Wallet...'} />
                         ) : (
@@ -151,15 +162,22 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                 ) : (
                                     <></>
                                 )}
-
-                                {this.state.networkType === 'main' ? (
-                                    <SectionCard maxWidth="lg">
-                                        <LockdropCountdownPanel endTime={LockdropEnd} startTime={LockdropStart} />
-                                    </SectionCard>
-                                ) : (
+                                <SectionCard maxWidth="lg">
+                                    <LockdropCountdownPanel endTime={LockdropEnd} startTime={LockdropStart} />
+                                    {hasLockdropEnded() ? (
+                                        <>
+                                            <Divider />
+                                            <LockdropResult />
+                                        </>
+                                    ) : (
+                                        <></>
+                                    )}
+                                </SectionCard>
+                                {hasLockdropEnded() ? (
                                     <></>
+                                ) : (
+                                    <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
                                 )}
-                                <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
                                 <LockedEthList
                                     web3={this.state.web3}
                                     contractInstance={this.state.contract}
@@ -168,9 +186,11 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                             </>
                         )
                     ) : (
-                        <SectionCard maxWidth="lg">
-                            <LockdropCountdownPanel endTime={LockdropEnd} startTime={LockdropStart} />
-                        </SectionCard>
+                        <>
+                            <SectionCard maxWidth="lg">
+                                <LockdropCountdownPanel endTime={LockdropEnd} startTime={LockdropStart} />
+                            </SectionCard>
+                        </>
                     )}
                     <Footer />
                 </IonContent>

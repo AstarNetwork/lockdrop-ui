@@ -1,12 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect } from 'react';
-import {
-    defaultAddress,
-    getAllLockEvents,
-    getCurrentAccountLocks,
-    getTotalLockVal,
-} from '../helpers/lockdrop/EthereumLockdrop';
+import { getAllLockEvents, getCurrentAccountLocks, getTotalLockVal } from '../helpers/lockdrop/EthereumLockdrop';
 //import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
@@ -27,6 +22,7 @@ import SwipeableViews from 'react-swipeable-views';
 import LockIcon from '@material-ui/icons/Lock';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import { defaultAddress } from '../data/affiliationProgram';
 
 interface TabPanelProps {
     children?: React.ReactNode;

@@ -23,12 +23,11 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
     const [lockAmount, setAmount] = useState<BN>(new BN(0));
     const [lockDuration, setDuration] = useState(0);
     const [affAccount, setAff] = useState('');
-    const [txType] = useState('');
 
     const useStyles = makeStyles((theme: Theme) =>
         createStyles({
             formRoot: {
-                padding: theme.spacing(4, 0, 0),
+                padding: theme.spacing(4, 3, 0),
             },
             txButton: {
                 margin: theme.spacing(3),
@@ -64,7 +63,6 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
             duration: lockDuration,
             amount: lockAmount,
             affiliation: affAccount,
-            txMethod: txType,
             rate: getTokenRate(),
         };
         onSubmit(inputs);

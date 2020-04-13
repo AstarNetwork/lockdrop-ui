@@ -1,12 +1,14 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState } from 'react';
-//import Paper from '@material-ui/core/Paper';
 import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
 import { TimeFormat } from '../models/LockdropModels';
 import moment, { Moment, duration } from 'moment';
+import BigNumber from 'bignumber.js';
+import Web3Utils from 'web3-utils';
+import { LockTxArray } from '../models/LockdropModels';
 
 interface Props {
     startTime: Moment;
@@ -66,12 +68,45 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime }) => {
 
     const [timeLeft, setTimeLeft] = useState<TimeFormat>(calculateTimeLeft());
     const [lockState, setLockState] = useState(getLockState());
+    const [totalLockVal, setTotalLockVal] = useState<number>(0);
 
+    const getLockValue = async (): Promise<void> => {
+        const url =
+            'https://api.etherscan.io/api?module=account&action=txlist&address=0x458dabf1eff8fcdfbf0896a6bd1f457c01e2ffd6&startblock=0&endblock=latest&sort=asc';
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            const result: LockTxArray = data.result;
+            let totalVal = new BigNumber(0);
+
+            // Memo: forEach will occur `forEach Is Not a Function` error sometime
+            for (let i = 0; i < result.length; i++) {
+                const txVal = new BigNumber(result[i].value);
+                totalVal = totalVal.plus(txVal);
+            }
+
+            // Memo: Recursion
+            if (totalVal.s !== null) {
+                setTotalLockVal(
+                    Number(new BigNumber(Web3Utils.fromWei(totalVal.toFixed(), 'ether')).decimalPlaces(1).toFixed()),
+                );
+            } else {
+                getLockValue();
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
     // update time value every second
     useEffect(() => {
         setTimeout(() => {
             setTimeLeft(calculateTimeLeft());
             setLockState(getLockState());
+        }, 1000);
+
+        setTimeout(async () => {
+            await getLockValue();
         }, 1000);
     });
 
@@ -117,8 +152,11 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime }) => {
         return (
             <>
                 <PanelWrapper>
-                    <Typography variant="h2" align="center">
+                    <Typography variant="h2" component="h1" align="center">
                         Main Network Lockdrop has ended
+                    </Typography>
+                    <Typography variant="h3" component="h3" align="center">
+                        Total Locked Value: {totalLockVal} ETH
                     </Typography>
                 </PanelWrapper>
             </>
@@ -131,11 +169,8 @@ export default LockdropCountdownPanel;
 const PanelWrapper: React.FC = ({ children }) => {
     const useStyles = makeStyles(theme => ({
         container: {
-            padding: theme.spacing(4),
+            padding: theme.spacing(5, 2, 0),
             margin: theme.spacing(1),
-        },
-        lockedVal: {
-            margin: theme.spacing(2, 0, 0),
         },
     }));
 
@@ -145,9 +180,6 @@ const PanelWrapper: React.FC = ({ children }) => {
         <>
             <Container maxWidth="lg" className={classes.container}>
                 {children}
-                {/* <Typography variant="h5" className={classes.lockedVal}>
-                    Total Lock Value is {LockValue} USD
-                </Typography> */}
             </Container>
         </>
     );

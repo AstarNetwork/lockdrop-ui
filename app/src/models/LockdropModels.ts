@@ -4,7 +4,6 @@ export interface LockInput {
     duration: number;
     amount: BN;
     affiliation: string;
-    txMethod?: string;
     rate: number;
 }
 
@@ -16,7 +15,7 @@ export interface TimeFormat {
 }
 
 export interface LockEvent {
-    eth: BN;
+    eth: BN; // this uses BN.js instead of BigNumber.js because that is what eth helper uses
     duration: number;
     lock: string;
     introducer: string;
@@ -35,3 +34,26 @@ export type OptionItem = {
     label: string; // the dropdown display label
     value: number | string; // dropdown select return value
 };
+
+export interface LockTx {
+    blockNumber: string;
+    timeStamp: string;
+    hash: string;
+    nonce: string;
+    blockHash: string;
+    transactionIndex: string;
+    from: string;
+    to: string;
+    value: string;
+    gas: string;
+    gasPrice: string;
+    isError: string;
+    txreceipt_status: string;
+    input: string;
+    contractAddress: string;
+    cumulativeGasUsed: string;
+    gasUsed: string;
+    confirmations: string;
+}
+
+export type LockTxArray = LockTx[];
