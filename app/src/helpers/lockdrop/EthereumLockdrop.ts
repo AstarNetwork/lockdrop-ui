@@ -13,8 +13,9 @@ import { PlmDrop } from '../../models/PlasmDrop';
 
 const ethMarketApi = 'https://api.coingecko.com/api/v3/coins/ethereum';
 
-// the alpha value for the token
-const alphaOne = 2;
+// the total amount of issueing PLMs at 1st Lockdrop.
+const totalAmountOfPLMs = new BigNumber("500000000.000000000000000");
+const totalAmountOfPLMsForLockdrop = totalAmountOfPLMs.times(new BigNumber("17").div(new BigNumber("20")));
 
 // returns an array of the entire list of locked events for the contract only once
 export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<LockEvent[]> {
@@ -115,37 +116,23 @@ export async function getCurrentUsdRate() {
     return usdRate;
 }
 
-async function plmBaseIssueAmount(lockData: LockEvent) {
-    const ethExchangeRate = await getCurrentUsdRate();
+function plmBaseIssueRatio(lockData: LockEvent, ethExchangeRate: BigNumber): BigNumber {
+    // get lockTimeBonus * ethExRate
+    const bonusRate = new BigNumber(lockDurationToRate(lockData.duration)).times(ethExchangeRate);
 
-    const bonusRate = lockDurationToRate(lockData.duration) * ethExchangeRate * alphaOne;
-
-    // calculate lockedEth * lockBonusRate * ethExRate * alpha
-    const issuingAmount: BigNumber = new BigNumber(lockData.eth.toString()).times(new BigNumber(bonusRate));
-    return issuingAmount;
+    // calculate issuingPLMRate = lockedEth([ETH]) * lockBonusRate * ethExRate
+    const issuingRatio: BigNumber = new BigNumber(window.web3.utils.fromWei(lockData.eth.toString(), 'ether')).times(new BigNumber(bonusRate));
+    return issuingRatio;
 }
 
-// returns the number of PLM the given valid introducer address has received from the lockdrop
-// and multiply it by the affiliation bonus rate
-async function getIntroducerBonus(address: string) {
-    let bonusPlm = new BigNumber(0);
-    try {
-        // ensure that the given address is a valid introducer
-        if (isRegisteredEthAddress(address)) {
-            let totalPlms = new BigNumber(0);
+function totalPlmBaseIssuingRate(allLocks: LockEvent[], ethExchangeRate: BigNumber): BigNumber {
+    return allLocks.reduce((sum: BigNumber, value: LockEvent): BigNumber => 
+            sum.plus(plmBaseIssueRatio(value, ethExchangeRate)), new BigNumber(0));
+}
 
-            const currentLocks = await getCurrentAccountLocks(window.web3, address, window.contract);
-            for (let i = 0; i < currentLocks.length; i++) {
-                const currentIssue = await plmBaseIssueAmount(currentLocks[i]);
-                totalPlms = totalPlms.plus(currentIssue.toFixed());
-            }
-
-            bonusPlm = totalPlms.times(affiliationRate);
-        }
-    } catch (error) {
-        console.log(error);
-    }
-    return bonusPlm;
+function plmBaseIssueAmountInLock(lock: LockEvent, totalPlmsRate: BigNumber, ethExchangeRate: BigNumber): BigNumber {
+    const currentIssue = plmBaseIssueRatio(lock, ethExchangeRate);
+    return totalAmountOfPLMsForLockdrop.times(currentIssue).div(totalPlmsRate);
 }
 
 // returns an array of addresses that referenced the given address for the affiliation program
@@ -166,47 +153,57 @@ async function getAllAffReferences(address: string) {
     return results;
 }
 
+export async function calculateNetworkAlpha(): Promise<BigNumber> {
+    const ethExchangeRate = new BigNumber(await getCurrentUsdRate());
+    const allLocks = await getAllLockEvents(window.web3, window.contract);
+    
+    const totalPlmRate = totalPlmBaseIssuingRate(allLocks, ethExchangeRate);
+    
+    // alpha_1 = totalAmountOfPLMsForLockdrop /totalPlmRate
+    const alpha_1 = totalAmountOfPLMsForLockdrop.div(totalPlmRate);
+    console.log(alpha_1);
+    return alpha_1;
+}
+
 // calculate the total receiving PLMs from the lockdrop including the affiliation program bonus
 // in this function, affiliation means the current address being referenced by others
 // and introducer means this address referencing other affiliated addresses
-export async function calculateTotalPlm(address: string) {
+export async function calculateTotalPlm(address: string): Promise<PlmDrop> {
     const receivingPlm = new PlmDrop(new BigNumber(0), [], [], []);
 
+    const allAddressLocks = await getAllLockEvents(window.web3, window.contract);
     const currentAddressLocks = await getCurrentAccountLocks(window.web3, address, window.contract);
-
-    const introducers: string[] = [];
 
     receivingPlm.locks = currentAddressLocks;
 
-    // calculate total base issuing PLM tokens
+    const ethExchangeRate = new BigNumber(await getCurrentUsdRate());
+
+    // get total prm rate for calculating actual issuing PLMs.
+    const totalPlmRate = totalPlmBaseIssuingRate(allAddressLocks,ethExchangeRate);
+
     for (let i = 0; i < currentAddressLocks.length; i++) {
-        const issuingPlm = await plmBaseIssueAmount(currentAddressLocks[i]);
+        // calculate total base issuing PLM tokens
+        const issuingPlm = plmBaseIssueAmountInLock(currentAddressLocks[i], totalPlmRate, ethExchangeRate);
+        
         // add value to the total amount
         receivingPlm.basePlm = receivingPlm.basePlm.plus(issuingPlm);
 
+        // self -> introducer : bonus getting PLMs.
         // check if this address has an introducer
-        if (currentAddressLocks[i].introducer !== defaultAddress) {
-            introducers.push(currentAddressLocks[i].introducer);
+        if (isRegisteredEthAddress(currentAddressLocks[i].introducer) ){
+            receivingPlm.introducerAndBonuses.push([currentAddressLocks[i].introducer, issuingPlm.times(new BigNumber(affiliationRate))]);
         }
     }
 
+    // someone -> self(introducer) : bonus getting PLMs.
     // calculate affiliation bonus for this address
     if (isRegisteredEthAddress(address)) {
         const allRefs = await getAllAffReferences(address);
 
         for (let i = 0; i < allRefs.length; i++) {
-            receivingPlm.affiliationRefs.push(allRefs[i].lock);
-        }
-    }
-
-    // calculate introducer bonus for this address
-    if (introducers.length > 0) {
-        for (let i = 0; i < introducers.length; i++) {
-            const currentBonus = await getIntroducerBonus(introducers[i]);
-            // check if the bonus is greater than 0
-            if (currentBonus > new BigNumber(0)) {
-                receivingPlm.introducerBonuses.push(currentBonus);
-            }
+            // reference amount * 0.01
+            receivingPlm.affiliationRefsBonuses.push([allRefs[i].lock, 
+                plmBaseIssueAmountInLock(allRefs[i], totalPlmRate, ethExchangeRate).times(new BigNumber(affiliationRate))]);
         }
     }
     return receivingPlm;
