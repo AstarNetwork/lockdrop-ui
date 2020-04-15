@@ -147,7 +147,7 @@ async function getAllAffReferences(address: string) {
         const lockEvents = await getAllLockEvents(window.web3, window.contract);
         lockEvents
             .filter(e => e.introducer === address)
-            .map(i => {
+            .forEach(i => {
                 results.push(i);
             });
     } catch (error) {
