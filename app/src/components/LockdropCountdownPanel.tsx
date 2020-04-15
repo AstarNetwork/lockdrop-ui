@@ -71,30 +71,8 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime }) => {
     const getLockValue = async (): Promise<void> => {
         try {
             const allLocks = await getAllLockEvents(window.web3, window.contract);
-            const totalLockVal = await getTotalLockVal(allLocks, window.web3);
+            const totalLockVal = getTotalLockVal(allLocks, window.web3);
             setTotalLockVal(totalLockVal);
-            // const url =
-            //     'https://api.etherscan.io/api?module=account&action=txlist&address=0x458dabf1eff8fcdfbf0896a6bd1f457c01e2ffd6&startblock=0&endblock=latest&sort=asc';
-
-            // const res = await fetch(url);
-            // const data = await res.json();
-            // const result: LockTxArray = data.result;
-            // let totalVal = new BigNumber(0);
-
-            // // Memo: forEach will occur `forEach Is Not a Function` error sometime
-            // for (let i = 0; i < result.length; i++) {
-            //     const txVal = new BigNumber(result[i].value);
-            //     totalVal = totalVal.plus(txVal);
-            // }
-
-            // // Memo: Recursion
-            // if (totalVal.s !== null) {
-            //     setTotalLockVal(
-            //         Number(new BigNumber(Web3Utils.fromWei(totalVal.toFixed(), 'ether')).decimalPlaces(1).toFixed()),
-            //     );
-            // } else {
-            //     getLockValue();
-            // }
         } catch (err) {
             console.error(err);
         }

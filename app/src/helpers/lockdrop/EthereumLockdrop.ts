@@ -12,6 +12,9 @@ import { lockDurationToRate } from '../plasmUtils';
 import { PlmDrop } from '../../models/PlasmDrop';
 
 const ethMarketApi = 'https://api.coingecko.com/api/v3/coins/ethereum';
+// exchange rate at the start of April 14 UTC (at the end of the lockdrop)
+// historical data was obtained from here https://coinmarketcap.com/currencies/ethereum/historical-data/
+export const ethFinalExRate = 156.36;
 
 // the total amount of issueing PLMs at 1st Lockdrop.
 const totalAmountOfPLMs = new BigNumber('500000000.000000000000000');
@@ -158,7 +161,7 @@ async function getAllAffReferences(address: string) {
 }
 
 export async function calculateNetworkAlpha(): Promise<BigNumber> {
-    const ethExchangeRate = new BigNumber(await getCurrentUsdRate());
+    const ethExchangeRate = new BigNumber(ethFinalExRate);
     const allLocks = await getAllLockEvents(window.web3, window.contract);
 
     const totalPlmRate = totalPlmBaseIssuingRate(allLocks, ethExchangeRate);
@@ -180,7 +183,7 @@ export async function calculateTotalPlm(address: string): Promise<PlmDrop> {
 
     receivingPlm.locks = currentAddressLocks;
 
-    const ethExchangeRate = new BigNumber(await getCurrentUsdRate());
+    const ethExchangeRate = new BigNumber(ethFinalExRate);
 
     // get total prm rate for calculating actual issuing PLMs.
     const totalPlmRate = totalPlmBaseIssuingRate(allAddressLocks, ethExchangeRate);
@@ -226,11 +229,12 @@ export async function calculateTotalPlm(address: string): Promise<PlmDrop> {
 export function getTotalLockVal(locks: LockEvent[], web3: Web3): string {
     let totalVal = new BigNumber(0);
     if (locks.length > 0) {
-        locks.forEach(i => {
-            const currentEth = new BigNumber(i.eth.toString());
+        for (let i = 0; i < locks.length; i++) {
+            const currentEth = new BigNumber(locks[i].eth.toString());
             totalVal = totalVal.plus(currentEth);
-        });
+        }
     }
+    console.log(totalVal.toFixed());
     return web3.utils.fromWei(totalVal.toFixed(), 'ether');
 }
 
