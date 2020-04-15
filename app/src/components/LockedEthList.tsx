@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getAllLockEvents, getCurrentAccountLocks, getTotalLockVal } from '../helpers/lockdrop/EthereumLockdrop';
 //import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
@@ -143,11 +143,11 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance }) => 
     const [lockEvents, setEvents] = useState<LockEvent[]>([]);
     const [isLoadingComp, setLoadState] = useState(true);
 
-    const updateList = async () => {
-        await getAllLockEvents(web3, contractInstance).then(i => {
+    const updateList = useCallback(() => {
+        return getAllLockEvents(web3, contractInstance).then(i => {
             setEvents(i);
         });
-    };
+    }, [web3, contractInstance]);
 
     useEffect(() => {
         const abortController = new AbortController();
@@ -160,14 +160,14 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance }) => 
         return () => {
             abortController.abort();
         };
-    }, [lockEvents]);
+    }, [updateList, lockEvents]);
 
     useEffect(() => {
         getAllLockEvents(web3, contractInstance).then(i => {
             setEvents(i);
             setLoadState(false);
         });
-    }, []);
+    }, [web3, contractInstance]);
 
     return (
         <div className={classes.lockListPage}>
@@ -249,7 +249,7 @@ const CurrentLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance, acco
             setEvents(i);
             setLoadState(false);
         });
-    }, []);
+    }, [web3, accounts, contractInstance]);
 
     return (
         <div className={classes.lockListPage}>
@@ -298,16 +298,16 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
     // 24 hours in epoch date
     const epochDayMil = 86400000;
 
-    const getUnlockDate = () => {
+    const getUnlockDate = useCallback(() => {
         // Ethereum timestamp is in seconds while JS Date is ms
         const lockedDay = Number(lockInfo.timestamp) * 1000;
 
         const unlockDate = lockedDay + lockInfo.duration * epochDayMil;
 
         return unlockDate;
-    };
+    }, [lockInfo]);
 
-    const calculateTimeLeft = () => {
+    const calculateTimeLeft = useCallback(() => {
         // milliseconds left till unlock
         const tillEnd = getUnlockDate() - +Date.now();
         return {
@@ -316,13 +316,13 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
             minutes: Math.floor((tillEnd / 1000 / 60) % 60),
             seconds: Math.floor((tillEnd / 1000) % 60),
         };
-    };
+    }, [getUnlockDate]);
 
     const [canUnlock, setLockState] = useState(false);
     const [tillUnlock, setUnlockDate] = useState<TimeFormat>(calculateTimeLeft());
     const [lockIsClaimed, setLockClaim] = useState(false);
 
-    const checkUnlock = async () => {
+    const checkUnlock = useCallback(async () => {
         // get today in UTC epoch seconds (js default is ms)
         const today = Date.now();
 
@@ -339,7 +339,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
         setLockClaim(lockClaimState);
 
         return today > unlockDate;
-    };
+    }, [lockInfo, web3]);
 
     // update time value every second
     useEffect(() => {
@@ -354,12 +354,12 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
         return () => {
             abortController.abort();
         };
-    });
+    }, [calculateTimeLeft, checkUnlock]);
 
     useEffect(() => {
         setUnlockDate(calculateTimeLeft());
         checkUnlock().then(setLockState);
-    }, []);
+    }, [calculateTimeLeft, checkUnlock]);
 
     const handleClick = () => {
         web3.eth.sendTransaction({
