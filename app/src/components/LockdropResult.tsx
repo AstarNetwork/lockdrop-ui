@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState } from 'react';
 import { makeStyles, createStyles, Theme, CircularProgress, Divider } from '@material-ui/core';
-import { calculateTotalPlm, getCurrentUsdRate } from '../helpers/lockdrop/EthereumLockdrop';
+import { calculateTotalPlm, ethFinalExRate } from '../helpers/lockdrop/EthereumLockdrop';
 import { PlmDrop } from '../models/PlasmDrop';
 import BigNumber from 'bignumber.js';
 import CountUp from 'react-countup';
@@ -32,7 +32,7 @@ const LockdropResult: React.FC = () => {
 
     useEffect(() => {
         setTimeout(async () => {
-            setExRate(await getCurrentUsdRate());
+            setExRate(ethFinalExRate);
             const accounts = await window.web3.eth.getAccounts();
             const totalIssue = await calculateTotalPlm(accounts[0]);
             setTotalPlm(totalIssue);
