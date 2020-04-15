@@ -160,14 +160,14 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance }) => 
         return () => {
             abortController.abort();
         };
-    }, [lockEvents]);
+    }, [lockEvents, updateList]);
 
     useEffect(() => {
         getAllLockEvents(web3, contractInstance).then(i => {
             setEvents(i);
             setLoadState(false);
         });
-    }, []);
+    }, [web3, contractInstance]);
 
     return (
         <div className={classes.lockListPage}>
@@ -249,7 +249,7 @@ const CurrentLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance, acco
             setEvents(i);
             setLoadState(false);
         });
-    }, []);
+    }, [web3, accounts, contractInstance]);
 
     return (
         <div className={classes.lockListPage}>
@@ -359,7 +359,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
     useEffect(() => {
         setUnlockDate(calculateTimeLeft());
         checkUnlock().then(setLockState);
-    }, []);
+    }, [calculateTimeLeft, checkUnlock]);
 
     const handleClick = () => {
         web3.eth.sendTransaction({

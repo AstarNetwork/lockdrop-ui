@@ -148,11 +148,16 @@ async function getAllAffReferences(address: string) {
     const results: LockEvent[] = [];
     try {
         const lockEvents = await getAllLockEvents(window.web3, window.contract);
-        lockEvents
-            .filter(e => e.introducer === address)
-            .map(i => {
-                results.push(i);
-            });
+        // lockEvents
+        //     .filter(e => e.introducer === address)
+        //     .forEach(i => {
+        //         results.push(i);
+        //     });
+        const refEvents = lockEvents.filter(e => e.introducer === address);
+
+        for (let i = 0; i < refEvents.length; i++) {
+            results.push(refEvents[i]);
+        }
     } catch (error) {
         console.log(error);
     }
@@ -234,7 +239,6 @@ export function getTotalLockVal(locks: LockEvent[], web3: Web3): string {
             totalVal = totalVal.plus(currentEth);
         }
     }
-    console.log(totalVal.toFixed());
     return web3.utils.fromWei(totalVal.toFixed(), 'ether');
 }
 

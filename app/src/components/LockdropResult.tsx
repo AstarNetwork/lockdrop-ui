@@ -88,7 +88,6 @@ const LockdropResult: React.FC = () => {
                     <IonPopover isOpen={showIntoPopover} onDidDismiss={() => setShowIntroPopover(false)}>
                         <IntoAffItems data={totalPlm} />
                     </IonPopover>
-                    <h3></h3>
                 </>
             ) : (
                 <h2 className={classes.header}>No Locks found for your address!</h2>
