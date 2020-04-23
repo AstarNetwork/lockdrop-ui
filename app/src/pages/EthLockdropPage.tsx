@@ -3,12 +3,12 @@
 import { IonContent, IonPage, IonLoading } from '@ionic/react';
 import React from 'react';
 import LockdropForm from '../components/LockdropForm';
-import { connectWeb3, defaultAffiliation } from '../helpers/lockdrop/EthereumLockdrop';
+import { connectWeb3, defaultAffiliation, getAllLockEvents } from '../helpers/lockdrop/EthereumLockdrop';
 import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
-import { LockInput } from '../models/LockdropModels';
+import { LockInput, LockEvent } from '../models/LockdropModels';
 import LockedEthList from '../components/LockedEthList';
 import { toast } from 'react-toastify';
 import { isRegisteredEthAddress } from '../data/affiliationProgram';
@@ -40,6 +40,8 @@ interface PageStates {
     isLoading: boolean;
     networkType: string;
     isProcessing: boolean;
+    lockData: LockEvent[];
+    error: null;
 }
 
 // need an empty interface to use states (React's generic positioning)
@@ -84,6 +86,8 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             isLoading: true,
             networkType: '',
             isProcessing: false,
+            lockData: [],
+            error: null,
         };
     }
 
@@ -97,8 +101,20 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             (window as any).ethereum.on('accountsChanged', this.handleAccountChange);
         }
 
-        this.setState({ isLoading: false });
         this.state.web3.eth.net.getNetworkType().then(i => this.setState({ networkType: i }));
+
+        // fetch all locks from the Ethereum chain
+        getAllLockEvents(this.state.web3, this.state.contract).then(
+            result => {
+                this.setState({ lockData: result, isLoading: false });
+            },
+            error => {
+                this.setState({
+                    lockData: [],
+                    error,
+                });
+            },
+        );
     };
 
     // called when the user changes MetaMask account
@@ -163,11 +179,19 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                     <></>
                                 )}
                                 <SectionCard maxWidth="lg">
-                                    <LockdropCountdownPanel endTime={LockdropEnd} startTime={LockdropStart} />
+                                    <LockdropCountdownPanel
+                                        endTime={LockdropEnd}
+                                        startTime={LockdropStart}
+                                        lockData={this.state.lockData}
+                                    />
                                     {hasLockdropEnded() ? (
                                         <>
                                             <Divider />
-                                            <LockdropResult />
+                                            <LockdropResult
+                                                lockData={this.state.lockData}
+                                                web3={this.state.web3}
+                                                contract={this.state.contract}
+                                            />
                                         </>
                                     ) : (
                                         <></>
@@ -182,13 +206,18 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                     web3={this.state.web3}
                                     contractInstance={this.state.contract}
                                     accounts={this.state.accounts}
+                                    lockData={this.state.lockData}
                                 />
                             </>
                         )
                     ) : (
                         <>
                             <SectionCard maxWidth="lg">
-                                <LockdropCountdownPanel endTime={LockdropEnd} startTime={LockdropStart} />
+                                <LockdropCountdownPanel
+                                    endTime={LockdropEnd}
+                                    startTime={LockdropStart}
+                                    lockData={this.state.lockData}
+                                />
                             </SectionCard>
                         </>
                     )}

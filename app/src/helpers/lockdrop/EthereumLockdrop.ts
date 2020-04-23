@@ -10,6 +10,7 @@ import BigNumber from 'bignumber.js';
 import { isRegisteredEthAddress, defaultAddress, affiliationRate } from '../../data/affiliationProgram';
 import { lockDurationToRate } from '../plasmUtils';
 import { PlmDrop } from '../../models/PlasmDrop';
+import Web3Utils from 'web3-utils';
 
 const ethMarketApi = 'https://api.coingecko.com/api/v3/coins/ethereum';
 // exchange rate at the start of April 14 UTC (at the end of the lockdrop)
@@ -124,7 +125,7 @@ function plmBaseIssueRatio(lockData: LockEvent, ethExchangeRate: BigNumber): Big
     const bonusRate = new BigNumber(lockDurationToRate(lockData.duration)).times(ethExchangeRate);
 
     // calculate issuingPLMRate = lockedEth([ETH]) * lockBonusRate * ethExRate
-    const issuingRatio: BigNumber = new BigNumber(window.web3.utils.fromWei(lockData.eth.toString(), 'ether')).times(
+    const issuingRatio: BigNumber = new BigNumber(Web3Utils.fromWei(lockData.eth.toString(), 'ether')).times(
         new BigNumber(bonusRate),
     );
     return issuingRatio;
@@ -143,50 +144,48 @@ function plmBaseIssueAmountInLock(lock: LockEvent, totalPlmsRate: BigNumber, eth
 }
 
 // returns an array of addresses that referenced the given address for the affiliation program
-async function getAllAffReferences(address: string) {
+function getAllAffReferences(address: string, lockData: LockEvent[]) {
     // check if there is
     const results: LockEvent[] = [];
-    try {
-        const lockEvents = await getAllLockEvents(window.web3, window.contract);
-        const refEvents = lockEvents.filter(e => e.introducer === address);
+    const refEvents = lockData.filter(e => e.introducer === address);
 
-        for (let i = 0; i < refEvents.length; i++) {
-            results.push(refEvents[i]);
-        }
-    } catch (error) {
-        console.log(error);
+    for (let i = 0; i < refEvents.length; i++) {
+        results.push(refEvents[i]);
     }
 
     return results;
 }
 
-export async function calculateNetworkAlpha(): Promise<BigNumber> {
+export function calculateNetworkAlpha(allLocks: LockEvent[]): BigNumber {
     const ethExchangeRate = new BigNumber(ethFinalExRate);
-    const allLocks = await getAllLockEvents(window.web3, window.contract);
 
     const totalPlmRate = totalPlmBaseIssuingRate(allLocks, ethExchangeRate);
 
     // alpha_1 = totalAmountOfPLMsForLockdrop /totalPlmRate
     const alpha1 = totalAmountOfPLMsForLockdrop.div(totalPlmRate);
-    console.log(alpha1);
+
     return alpha1;
 }
 
 // calculate the total receiving PLMs from the lockdrop including the affiliation program bonus
 // in this function, affiliation means the current address being referenced by others
 // and introducer means this address referencing other affiliated addresses
-export async function calculateTotalPlm(address: string): Promise<PlmDrop> {
+export async function calculateTotalPlm(
+    address: string,
+    lockData: LockEvent[],
+    web3: Web3,
+    contract: Contract,
+): Promise<PlmDrop> {
     const receivingPlm = new PlmDrop(new BigNumber(0), [], [], []);
 
-    const allAddressLocks = await getAllLockEvents(window.web3, window.contract);
-    const currentAddressLocks = await getCurrentAccountLocks(window.web3, address, window.contract);
+    const currentAddressLocks = await getCurrentAccountLocks(web3, address, contract);
 
     receivingPlm.locks = currentAddressLocks;
 
     const ethExchangeRate = new BigNumber(ethFinalExRate);
 
     // get total prm rate for calculating actual issuing PLMs.
-    const totalPlmRate = totalPlmBaseIssuingRate(allAddressLocks, ethExchangeRate);
+    const totalPlmRate = totalPlmBaseIssuingRate(lockData, ethExchangeRate);
 
     for (let i = 0; i < currentAddressLocks.length; i++) {
         // calculate total base issuing PLM tokens
@@ -211,7 +210,7 @@ export async function calculateTotalPlm(address: string): Promise<PlmDrop> {
     // someone -> self(introducer) : bonus getting PLMs.
     // calculate affiliation bonus for this address
     if (isRegisteredEthAddress(address)) {
-        const allRefs = await getAllAffReferences(address);
+        const allRefs = getAllAffReferences(address, lockData);
 
         for (let i = 0; i < allRefs.length; i++) {
             // reference amount * 0.01
@@ -226,7 +225,7 @@ export async function calculateTotalPlm(address: string): Promise<PlmDrop> {
     return receivingPlm;
 }
 
-export function getTotalLockVal(locks: LockEvent[], web3: Web3): string {
+export function getTotalLockVal(locks: LockEvent[]): string {
     let totalVal = new BigNumber(0);
     if (locks.length > 0) {
         for (let i = 0; i < locks.length; i++) {
@@ -234,7 +233,7 @@ export function getTotalLockVal(locks: LockEvent[], web3: Web3): string {
             totalVal = totalVal.plus(currentEth);
         }
     }
-    return web3.utils.fromWei(totalVal.toFixed(), 'ether');
+    return Web3Utils.fromWei(totalVal.toFixed(), 'ether');
 }
 
 // this function will authenticate if the client has metamask installed and can communicate with the blockchain

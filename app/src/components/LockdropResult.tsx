@@ -7,10 +7,19 @@ import BigNumber from 'bignumber.js';
 import CountUp from 'react-countup';
 import { ThemeColors } from '../theme/themes';
 import { IonPopover, IonList, IonListHeader, IonItem, IonLabel, IonChip } from '@ionic/react';
+import { LockEvent } from '../models/LockdropModels';
+import Web3 from 'web3';
+import { Contract } from 'web3-eth-contract';
 
 const etherScanSearch = 'https://etherscan.io/address/';
 
-const LockdropResult: React.FC = () => {
+interface ResultProps {
+    lockData: LockEvent[];
+    web3: Web3;
+    contract: Contract;
+}
+
+const LockdropResult: React.FC<ResultProps> = ({ lockData, web3, contract }) => {
     const useStyles = makeStyles((theme: Theme) =>
         createStyles({
             pageContent: {
@@ -33,8 +42,8 @@ const LockdropResult: React.FC = () => {
     useEffect(() => {
         setTimeout(async () => {
             setExRate(ethFinalExRate);
-            const accounts = await window.web3.eth.getAccounts();
-            const totalIssue = await calculateTotalPlm(accounts[0]);
+            const accounts = await web3.eth.getAccounts();
+            const totalIssue = await calculateTotalPlm(accounts[0], lockData, web3, contract);
             setTotalPlm(totalIssue);
 
             setLoadState(false);
@@ -74,10 +83,6 @@ const LockdropResult: React.FC = () => {
                     <IonPopover isOpen={showIntoRefPopover} onDidDismiss={() => setShowIntroRefPopover(false)}>
                         <IntoRefItems data={totalPlm} />
                     </IonPopover>
-                    {/* <p>
-                        You have referenced {totalPlm.introducerAndBonuses.length} introducers:{' '}
-                        {totalPlm.getIntroBonus()} PLM
-                    </p> */}
                     <br />
                     <IonLabel>You have referenced </IonLabel>
                     <IonChip color="primary" onClick={() => setShowIntroPopover(true)}>

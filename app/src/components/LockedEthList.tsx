@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect, useCallback } from 'react';
-import { getAllLockEvents, getCurrentAccountLocks, getTotalLockVal } from '../helpers/lockdrop/EthereumLockdrop';
+import { getCurrentAccountLocks, getTotalLockVal } from '../helpers/lockdrop/EthereumLockdrop';
 //import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
@@ -86,9 +86,10 @@ interface LockHistoryProps {
     web3: Web3;
     contractInstance: Contract;
     accounts: string[]; // this will be used to get locks for a certain account
+    lockData: LockEvent[];
 }
 // component that displays the number of tokens and the duration for the lock via Web3
-const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance, accounts }) => {
+const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance, accounts, lockData }) => {
     const classes = useStyles();
     const theme = useTheme();
     const [value, setValue] = React.useState(0);
@@ -124,10 +125,20 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance, acc
                         onChangeIndex={handleChangeIndex}
                     >
                         <TabPanel value={value} index={0} dir={theme.direction}>
-                            <GlobalLocks web3={web3} contractInstance={contractInstance} accounts={accounts} />
+                            <GlobalLocks
+                                web3={web3}
+                                contractInstance={contractInstance}
+                                accounts={accounts}
+                                lockData={lockData}
+                            />
                         </TabPanel>
                         <TabPanel value={value} index={1} dir={theme.direction}>
-                            <CurrentLocks web3={web3} contractInstance={contractInstance} accounts={accounts} />
+                            <CurrentLocks
+                                web3={web3}
+                                contractInstance={contractInstance}
+                                accounts={accounts}
+                                lockData={lockData}
+                            />
                         </TabPanel>
                     </SwipeableViews>
                 </div>
@@ -138,35 +149,27 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance, acc
 
 export default LockedEthList;
 
-const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance }) => {
+const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance, lockData }) => {
     const classes = useStyles();
     const [lockEvents, setEvents] = useState<LockEvent[]>([]);
     const [isLoadingComp, setLoadState] = useState(true);
-
-    const updateList = useCallback(() => {
-        return getAllLockEvents(web3, contractInstance).then(i => {
-            setEvents(i);
-        });
-    }, [web3, contractInstance]);
 
     useEffect(() => {
         const abortController = new AbortController();
         // update list every second
         setTimeout(async () => {
-            await updateList();
+            setEvents(lockData);
         }, 1000);
 
         // cleanup async hook
         return () => {
             abortController.abort();
         };
-    }, [updateList, lockEvents]);
+    }, [lockEvents]);
 
     useEffect(() => {
-        getAllLockEvents(web3, contractInstance).then(i => {
-            setEvents(i);
-            setLoadState(false);
-        });
+        setEvents(lockData);
+        setLoadState(false);
     }, [web3, contractInstance]);
 
     return (
@@ -178,7 +181,7 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance }) => 
                     {lockEvents.length > 0 ? (
                         <>
                             <h1>Global Locks</h1>
-                            <h3>{getTotalLockVal(lockEvents, web3)} ETH locked</h3>
+                            <h3>{getTotalLockVal(lockEvents)} ETH locked</h3>
                             <List className={classes.listRoot} subheader={<li />}>
                                 <li className={classes.listSection}>
                                     <ul className={classes.ul}>
@@ -260,7 +263,7 @@ const CurrentLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance, acco
                     {lockEvents.length > 0 ? (
                         <>
                             <h1>Your Locks</h1>
-                            <h3>{getTotalLockVal(lockEvents, web3)} ETH locked</h3>
+                            <h3>{getTotalLockVal(lockEvents)} ETH locked</h3>
                             <List className={classes.listRoot} subheader={<li />}>
                                 <li className={classes.listSection}>
                                     <ul className={classes.ul}>
