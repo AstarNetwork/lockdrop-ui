@@ -43,12 +43,12 @@ const LockdropResult: React.FC<ResultProps> = ({ lockData, web3, contract }) => 
         setTimeout(async () => {
             setExRate(ethFinalExRate);
             const accounts = await web3.eth.getAccounts();
-            const totalIssue = await calculateTotalPlm(accounts[0], lockData, web3, contract);
+            const totalIssue = calculateTotalPlm(accounts[0], lockData);
             setTotalPlm(totalIssue);
 
             setLoadState(false);
         }, 1000);
-    }, []);
+    }, [web3, lockData, contract]);
 
     const countupTotalPlmVal: JSX.Element = (
         <CountUp

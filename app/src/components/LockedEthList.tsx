@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect, useCallback } from 'react';
-import { getCurrentAccountLocks, getTotalLockVal } from '../helpers/lockdrop/EthereumLockdrop';
+import { getTotalLockVal } from '../helpers/lockdrop/EthereumLockdrop';
 //import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
@@ -23,6 +23,7 @@ import LockIcon from '@material-ui/icons/Lock';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { defaultAddress } from '../data/affiliationProgram';
+import Web3Utils from 'web3-utils';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -149,7 +150,7 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance, acc
 
 export default LockedEthList;
 
-const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance, lockData }) => {
+const GlobalLocks: React.FC<LockHistoryProps> = ({ lockData }) => {
     const classes = useStyles();
     const [lockEvents, setEvents] = useState<LockEvent[]>([]);
     const [isLoadingComp, setLoadState] = useState(true);
@@ -165,12 +166,12 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance, lockD
         return () => {
             abortController.abort();
         };
-    }, [lockEvents]);
+    }, [lockEvents, lockData]);
 
     useEffect(() => {
         setEvents(lockData);
         setLoadState(false);
-    }, [web3, contractInstance]);
+    }, [lockData]);
 
     return (
         <div className={classes.lockListPage}>
@@ -194,7 +195,7 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance, lockD
                                                         <h4>Lock address: {eventItem.lock}</h4>
                                                         <h5>Locked in block no. {eventItem.blockNo}</h5>
                                                         <p>
-                                                            Locked {web3.utils.fromWei(eventItem.eth, 'ether')} ETH for{' '}
+                                                            Locked {Web3Utils.fromWei(eventItem.eth, 'ether')} ETH for{' '}
                                                             {eventItem.duration} days
                                                         </p>
                                                         {eventItem.introducer !== defaultAddress ? (
@@ -223,36 +224,21 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance, lockD
     );
 };
 
-const CurrentLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance, accounts }) => {
+const CurrentLocks: React.FC<LockHistoryProps> = ({ web3, accounts, lockData }) => {
     const classes = useStyles();
     const [lockEvents, setEvents] = useState<LockEvent[]>([]);
     const [isLoadingComp, setLoadState] = useState(true);
 
-    const updateList = async () => {
-        await getCurrentAccountLocks(web3, accounts[0], contractInstance).then(i => {
-            setEvents(i);
-        });
+    const getUserLocks = () => {
+        return lockData.filter(i => i.lockOwner === accounts[0]);
     };
 
     useEffect(() => {
-        const abortController = new AbortController();
-        // update list every second
-        setTimeout(async () => {
-            await updateList();
-        }, 1000);
-
-        // cleanup async hook
-        return () => {
-            abortController.abort();
-        };
-    });
-
-    useEffect(() => {
-        getCurrentAccountLocks(web3, accounts[0], contractInstance).then(i => {
-            setEvents(i);
+        setTimeout(() => {
+            setEvents(getUserLocks);
             setLoadState(false);
-        });
-    }, [web3, accounts, contractInstance]);
+        }, 1000);
+    });
 
     return (
         <div className={classes.lockListPage}>
@@ -359,6 +345,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
         };
     }, [calculateTimeLeft, checkUnlock]);
 
+    // initial update
     useEffect(() => {
         setUnlockDate(calculateTimeLeft());
         checkUnlock().then(setLockState);
@@ -379,7 +366,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
                     <h4>Lock address: {lockInfo.lock}</h4>
                     <h5>Locked in block no. {lockInfo.blockNo}</h5>
                     <p>
-                        Locked {web3.utils.fromWei(lockInfo.eth, 'ether')} ETH for {lockInfo.duration} days
+                        Locked {Web3Utils.fromWei(lockInfo.eth, 'ether')} ETH for {lockInfo.duration} days
                     </p>
                     {lockInfo.introducer !== defaultAddress ? (
                         <p>Introducer: {lockInfo.introducer}</p>
