@@ -167,7 +167,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                     <Navbar />
                     {hasLockdropStarted() ? (
                         this.state.isLoading ? (
-                            <IonLoading isOpen={true} message={'Connecting to Wallet...'} />
+                            <IonLoading isOpen={true} message={'Connecting to Wallet and fetching chain data...'} />
                         ) : (
                             <>
                                 {this.state.isProcessing ? (
