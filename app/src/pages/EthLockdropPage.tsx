@@ -20,6 +20,7 @@ import BN from 'bn.js';
 import moment from 'moment';
 import LockdropResult from '../components/LockdropResult';
 import { Divider } from '@material-ui/core';
+import AffiliatorList from '../components/AffiliatorList';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -190,6 +191,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                 ) : (
                                     <></>
                                 )}
+
                                 <SectionCard maxWidth="lg">
                                     <LockdropCountdownPanel
                                         endTime={LockdropEnd}
@@ -208,11 +210,13 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                         <></>
                                     )}
                                 </SectionCard>
+                                <AffiliatorList lockData={this.state.allLockEvents} />
                                 {hasLockdropEnded() ? (
                                     <></>
                                 ) : (
                                     <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
                                 )}
+
                                 <LockedEthList
                                     web3={this.state.web3}
                                     contractInstance={this.state.contract}

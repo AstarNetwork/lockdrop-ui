@@ -31,7 +31,7 @@ const LockdropResult: React.FC<ResultProps> = ({ lockData, web3 }) => {
     );
 
     const classes = useStyles();
-    const [totalPlm, setTotalPlm] = useState<PlmDrop>(new PlmDrop(new BigNumber(0), [], [], []));
+    const [totalPlm, setTotalPlm] = useState<PlmDrop>(new PlmDrop('', new BigNumber(0), [], [], []));
     const [exRate, setExRate] = useState(0);
     const [isLoading, setLoadState] = useState(true);
     const [showIntoRefPopover, setShowIntroRefPopover] = useState(false);
