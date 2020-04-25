@@ -121,7 +121,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
         try {
             // get all the lock events from the chain
             const allLocks = await getAllLockEvents(this.state.web3, this.state.contract);
-            
+
             this.setState({ allLockEvents: allLocks });
             console.log(allLocks);
         } catch (error) {
