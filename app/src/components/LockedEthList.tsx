@@ -239,7 +239,7 @@ const CurrentLocks: React.FC<LockHistoryProps> = ({ web3, accounts, lockData }) 
         return () => {
             clearInterval(interval);
         };
-    }, [getUserLocks]);
+    });
 
     return (
         <div className={classes.lockListPage}>
