@@ -202,7 +202,6 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                             <LockdropResult
                                                 lockData={this.state.allLockEvents}
                                                 web3={this.state.web3}
-                                                contract={this.state.contract}
                                             />
                                         </>
                                     ) : (

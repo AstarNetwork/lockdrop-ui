@@ -9,17 +9,15 @@ import { ThemeColors } from '../theme/themes';
 import { IonPopover, IonList, IonListHeader, IonItem, IonLabel, IonChip } from '@ionic/react';
 import { LockEvent } from '../models/LockdropModels';
 import Web3 from 'web3';
-import { Contract } from 'web3-eth-contract';
 
 const etherScanSearch = 'https://etherscan.io/address/';
 
 interface ResultProps {
     lockData: LockEvent[];
     web3: Web3;
-    contract: Contract;
 }
 
-const LockdropResult: React.FC<ResultProps> = ({ lockData, web3, contract }) => {
+const LockdropResult: React.FC<ResultProps> = ({ lockData, web3 }) => {
     const useStyles = makeStyles((theme: Theme) =>
         createStyles({
             pageContent: {
@@ -39,17 +37,6 @@ const LockdropResult: React.FC<ResultProps> = ({ lockData, web3, contract }) => 
     const [showIntoRefPopover, setShowIntroRefPopover] = useState(false);
     const [showIntoPopover, setShowIntroPopover] = useState(false);
 
-    // useEffect(() => {
-    //     setTimeout(async () => {
-    //         setExRate(ethFinalExRate);
-    //         const accounts = await web3.eth.getAccounts();
-    //         const totalIssue = calculateTotalPlm(accounts[0], lockData);
-    //         setTotalPlm(totalIssue);
-
-    //         setLoadState(false);
-    //     }, 1000);
-    // }, [web3, lockData, contract]);
-
     useEffect(() => {
         const interval = setInterval(async () => {
             setExRate(ethFinalExRate);
@@ -63,7 +50,7 @@ const LockdropResult: React.FC<ResultProps> = ({ lockData, web3, contract }) => 
         return () => {
             clearInterval(interval);
         };
-    }, [web3, lockData, contract]);
+    });
 
     const countupTotalPlmVal: JSX.Element = (
         <CountUp
