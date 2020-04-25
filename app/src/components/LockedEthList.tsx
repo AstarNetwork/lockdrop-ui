@@ -351,7 +351,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
     useEffect(() => {
         setUnlockDate(calculateTimeLeft());
         checkUnlock().then(setLockState);
-    });
+    }, [calculateTimeLeft, checkUnlock]);
 
     const handleClick = () => {
         setLoading(true);
