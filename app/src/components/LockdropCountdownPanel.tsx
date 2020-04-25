@@ -99,7 +99,7 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData 
         return () => {
             clearInterval(interval);
         };
-    }, []);
+    }, [calculateTimeLeft, getLockState, getLockValue]);
 
     if (lockState !== LockState.end) {
         return (

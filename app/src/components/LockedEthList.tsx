@@ -163,7 +163,7 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ lockData }) => {
         return () => {
             clearInterval(interval);
         };
-    }, []);
+    }, [lockData]);
 
     useEffect(() => {
         setEvents(lockData);
@@ -239,7 +239,7 @@ const CurrentLocks: React.FC<LockHistoryProps> = ({ web3, accounts, lockData }) 
         return () => {
             clearInterval(interval);
         };
-    }, []);
+    }, [getUserLocks]);
 
     return (
         <div className={classes.lockListPage}>
@@ -345,7 +345,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
         return () => {
             clearInterval(interval);
         };
-    }, []);
+    }, [calculateTimeLeft, checkUnlock]);
 
     // initial update
     useEffect(() => {
