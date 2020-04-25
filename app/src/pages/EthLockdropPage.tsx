@@ -107,17 +107,11 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
 
         this.state.web3.eth.net.getNetworkType().then(i => this.setState({ networkType: i }));
 
-        this.timerInterval = setInterval(
+        this.timerInterval = setInterval(() => {
             this.getLockData().then(() => {
                 this.setState({ isLoading: false });
-            }),
-            1000,
-        );
-
-        // fetch all locks from the Ethereum chain
-        // this.getLockData().then(() => {
-        //     this.setState({ isLoading: false });
-        // });
+            });
+        }, 1000);
     };
 
     componentWillUnmount = () => {

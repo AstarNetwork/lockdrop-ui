@@ -39,8 +39,19 @@ const LockdropResult: React.FC<ResultProps> = ({ lockData, web3, contract }) => 
     const [showIntoRefPopover, setShowIntroRefPopover] = useState(false);
     const [showIntoPopover, setShowIntroPopover] = useState(false);
 
+    // useEffect(() => {
+    //     setTimeout(async () => {
+    //         setExRate(ethFinalExRate);
+    //         const accounts = await web3.eth.getAccounts();
+    //         const totalIssue = calculateTotalPlm(accounts[0], lockData);
+    //         setTotalPlm(totalIssue);
+
+    //         setLoadState(false);
+    //     }, 1000);
+    // }, [web3, lockData, contract]);
+
     useEffect(() => {
-        setTimeout(async () => {
+        const interval = setInterval(async () => {
             setExRate(ethFinalExRate);
             const accounts = await web3.eth.getAccounts();
             const totalIssue = calculateTotalPlm(accounts[0], lockData);
@@ -48,6 +59,10 @@ const LockdropResult: React.FC<ResultProps> = ({ lockData, web3, contract }) => 
 
             setLoadState(false);
         }, 1000);
+        // cleanup hook
+        return () => {
+            clearInterval(interval);
+        };
     }, [web3, lockData, contract]);
 
     const countupTotalPlmVal: JSX.Element = (

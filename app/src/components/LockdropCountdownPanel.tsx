@@ -78,16 +78,28 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData 
         }
     };
     // update time value every second
+    // useEffect(() => {
+    //     setTimeout(() => {
+    //         setTimeLeft(calculateTimeLeft());
+    //         setLockState(getLockState());
+    //     }, 1000);
+
+    //     setTimeout(async () => {
+    //         await getLockValue();
+    //     }, 1000);
+    // });
+
     useEffect(() => {
-        setTimeout(() => {
+        const interval = setInterval(async () => {
             setTimeLeft(calculateTimeLeft());
             setLockState(getLockState());
-        }, 1000);
-
-        setTimeout(async () => {
             await getLockValue();
         }, 1000);
-    });
+        // cleanup hook
+        return () => {
+            clearInterval(interval);
+        };
+    }, []);
 
     if (lockState !== LockState.end) {
         return (

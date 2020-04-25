@@ -156,17 +156,14 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ lockData }) => {
     const [isLoadingComp, setLoadState] = useState(true);
 
     useEffect(() => {
-        const abortController = new AbortController();
-        // update list every second
-        setTimeout(async () => {
+        const interval = setInterval(() => {
             setEvents(lockData);
         }, 1000);
-
-        // cleanup async hook
+        // cleanup hook
         return () => {
-            abortController.abort();
+            clearInterval(interval);
         };
-    }, [lockEvents, lockData]);
+    }, []);
 
     useEffect(() => {
         setEvents(lockData);
@@ -234,11 +231,15 @@ const CurrentLocks: React.FC<LockHistoryProps> = ({ web3, accounts, lockData }) 
     };
 
     useEffect(() => {
-        setTimeout(() => {
+        const interval = setInterval(() => {
             setEvents(getUserLocks);
             setLoadState(false);
         }, 1000);
-    });
+        // cleanup hook
+        return () => {
+            clearInterval(interval);
+        };
+    }, []);
 
     return (
         <div className={classes.lockListPage}>
@@ -334,19 +335,17 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
 
     // update time value every second
     useEffect(() => {
-        const abortController = new AbortController();
+        //const abortController = new AbortController();
 
-        setTimeout(async () => {
+        const interval = setInterval(async () => {
             setUnlockDate(calculateTimeLeft());
-            //setLockState(await checkUnlock());
-            setLockState(true);
+            setLockState(await checkUnlock());
         }, 1000);
-
         // cleanup async hook
         return () => {
-            abortController.abort();
+            clearInterval(interval);
         };
-    });
+    }, []);
 
     // initial update
     useEffect(() => {
@@ -363,8 +362,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
                 value: '0',
             })
             .then(
-                e => {
-                    console.log(e);
+                () => {
                     setLoading(false);
                 },
                 error => {
