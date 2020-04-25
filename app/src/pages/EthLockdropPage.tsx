@@ -93,6 +93,8 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
         };
     }
 
+    timerInterval: any;
+
     // get and set the web3 state when the component is mounted
     componentDidMount = async () => {
         const web3State = await connectWeb3();
@@ -105,10 +107,21 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
 
         this.state.web3.eth.net.getNetworkType().then(i => this.setState({ networkType: i }));
 
+        this.timerInterval = setInterval(
+            this.getLockData().then(() => {
+                this.setState({ isLoading: false });
+            }),
+            1000,
+        );
+
         // fetch all locks from the Ethereum chain
-        this.getLockData().then(() => {
-            this.setState({ isLoading: false });
-        });
+        // this.getLockData().then(() => {
+        //     this.setState({ isLoading: false });
+        // });
+    };
+
+    componentWillUnmount = () => {
+        clearInterval(this.timerInterval);
     };
 
     // called when the user changes MetaMask account
@@ -123,7 +136,6 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             const allLocks = await getAllLockEvents(this.state.web3, this.state.contract);
 
             this.setState({ allLockEvents: allLocks });
-            console.log(allLocks);
         } catch (error) {
             this.setState({ error });
         }

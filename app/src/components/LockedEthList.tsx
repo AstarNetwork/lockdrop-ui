@@ -12,7 +12,7 @@ import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListSubheader from '@material-ui/core/ListSubheader';
-import { Divider, Grid, ListItemSecondaryAction, IconButton } from '@material-ui/core';
+import { Divider, Grid, ListItemSecondaryAction, IconButton, LinearProgress } from '@material-ui/core';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
 import AppBar from '@material-ui/core/AppBar';
@@ -310,6 +310,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
     const [canUnlock, setLockState] = useState(false);
     const [tillUnlock, setUnlockDate] = useState<TimeFormat>(calculateTimeLeft());
     const [lockIsClaimed, setLockClaim] = useState(false);
+    const [isLoading, setLoading] = useState(false);
 
     const checkUnlock = useCallback(async () => {
         // get today in UTC epoch seconds (js default is ms)
@@ -326,7 +327,8 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
         const lockClaimState = lockBalance === '0';
         // console.log(lockBalance);
         setLockClaim(lockClaimState);
-
+        // manually change the loading state
+        setLoading(false);
         return today > unlockDate;
     }, [lockInfo, web3]);
 
@@ -336,14 +338,15 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
 
         setTimeout(async () => {
             setUnlockDate(calculateTimeLeft());
-            setLockState(await checkUnlock());
+            //setLockState(await checkUnlock());
+            setLockState(true);
         }, 1000);
 
         // cleanup async hook
         return () => {
             abortController.abort();
         };
-    }, [calculateTimeLeft, checkUnlock]);
+    });
 
     // initial update
     useEffect(() => {
@@ -352,11 +355,23 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
     }, [calculateTimeLeft, checkUnlock]);
 
     const handleClick = () => {
-        web3.eth.sendTransaction({
-            from: address,
-            to: lockInfo.lock,
-            value: '0',
-        });
+        setLoading(true);
+        web3.eth
+            .sendTransaction({
+                from: address,
+                to: lockInfo.lock,
+                value: '0',
+            })
+            .then(
+                e => {
+                    console.log(e);
+                    setLoading(false);
+                },
+                error => {
+                    console.log(error);
+                    setLoading(false);
+                },
+            );
     };
 
     return (
@@ -373,28 +388,36 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
                     ) : (
                         <p>No introducer</p>
                     )}
-                    {!canUnlock ? (
-                        <Grid container spacing={1}>
-                            <Grid item>
-                                <p>{tillUnlock.days} Days </p>
-                            </Grid>
-                            <Grid item>
-                                <p>{tillUnlock.hours} Hours </p>
-                            </Grid>
-                            <Grid item>
-                                <p>{tillUnlock.minutes} Minutes </p>
-                            </Grid>
-                            <Grid item>
-                                <p>{tillUnlock.seconds} Seconds </p>
-                            </Grid>
-                            <Grid item>
-                                <p>Left</p>
-                            </Grid>
-                        </Grid>
-                    ) : lockIsClaimed ? (
-                        <p>Lock already claimed!</p>
+                    {isLoading ? (
+                        <>
+                            <LinearProgress />
+                        </>
                     ) : (
-                        <p>You can claim your lock!</p>
+                        <>
+                            {!canUnlock ? (
+                                <Grid container spacing={1}>
+                                    <Grid item>
+                                        <p>{tillUnlock.days} Days </p>
+                                    </Grid>
+                                    <Grid item>
+                                        <p>{tillUnlock.hours} Hours </p>
+                                    </Grid>
+                                    <Grid item>
+                                        <p>{tillUnlock.minutes} Minutes </p>
+                                    </Grid>
+                                    <Grid item>
+                                        <p>{tillUnlock.seconds} Seconds </p>
+                                    </Grid>
+                                    <Grid item>
+                                        <p>Left</p>
+                                    </Grid>
+                                </Grid>
+                            ) : lockIsClaimed ? (
+                                <p>Lock already claimed!</p>
+                            ) : (
+                                <p>You can claim your lock!</p>
+                            )}
+                        </>
                     )}
                 </ListItemText>
 

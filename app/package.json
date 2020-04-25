@@ -13,6 +13,7 @@
         "@types/react-swipeable-views": "^0.13.0",
         "@types/styled-components": "^5.0.1",
         "bignumber.js": "^9.0.0",
+        "eslint-plugin-react-hooks": "^0.0.0-d7382b6c4",
         "ethereum-address": "0.0.4",
         "html-react-parser": "^0.10.2",
         "ionicons": "^4.6.3",
