@@ -7,10 +7,17 @@ import BigNumber from 'bignumber.js';
 import CountUp from 'react-countup';
 import { ThemeColors } from '../theme/themes';
 import { IonPopover, IonList, IonListHeader, IonItem, IonLabel, IonChip } from '@ionic/react';
+import { LockEvent } from '../models/LockdropModels';
+import Web3 from 'web3';
 
 const etherScanSearch = 'https://etherscan.io/address/';
 
-const LockdropResult: React.FC = () => {
+interface ResultProps {
+    lockData: LockEvent[];
+    web3: Web3;
+}
+
+const LockdropResult: React.FC<ResultProps> = ({ lockData, web3 }) => {
     const useStyles = makeStyles((theme: Theme) =>
         createStyles({
             pageContent: {
@@ -31,15 +38,19 @@ const LockdropResult: React.FC = () => {
     const [showIntoPopover, setShowIntroPopover] = useState(false);
 
     useEffect(() => {
-        setTimeout(async () => {
+        const interval = setInterval(async () => {
             setExRate(ethFinalExRate);
-            const accounts = await window.web3.eth.getAccounts();
-            const totalIssue = await calculateTotalPlm(accounts[0]);
+            const accounts = await web3.eth.getAccounts();
+            const totalIssue = calculateTotalPlm(accounts[0], lockData);
             setTotalPlm(totalIssue);
 
             setLoadState(false);
         }, 1000);
-    }, []);
+        // cleanup hook
+        return () => {
+            clearInterval(interval);
+        };
+    });
 
     const countupTotalPlmVal: JSX.Element = (
         <CountUp
@@ -74,10 +85,6 @@ const LockdropResult: React.FC = () => {
                     <IonPopover isOpen={showIntoRefPopover} onDidDismiss={() => setShowIntroRefPopover(false)}>
                         <IntoRefItems data={totalPlm} />
                     </IonPopover>
-                    {/* <p>
-                        You have referenced {totalPlm.introducerAndBonuses.length} introducers:{' '}
-                        {totalPlm.getIntroBonus()} PLM
-                    </p> */}
                     <br />
                     <IonLabel>You have referenced </IonLabel>
                     <IonChip color="primary" onClick={() => setShowIntroPopover(true)}>

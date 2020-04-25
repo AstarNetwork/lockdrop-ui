@@ -4,13 +4,14 @@ import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
-import { TimeFormat } from '../models/LockdropModels';
+import { TimeFormat, LockEvent } from '../models/LockdropModels';
 import moment, { Moment, duration } from 'moment';
-import { getTotalLockVal, getAllLockEvents } from '../helpers/lockdrop/EthereumLockdrop';
+import { getTotalLockVal } from '../helpers/lockdrop/EthereumLockdrop';
 
 interface Props {
     startTime: Moment;
     endTime: Moment;
+    lockData: LockEvent[];
 }
 
 enum LockState {
@@ -19,7 +20,7 @@ enum LockState {
     end,
 }
 
-const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime }) => {
+const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData }) => {
     const now = moment().utc();
 
     const calculateTimeLeft = (): TimeFormat => {
@@ -70,23 +71,34 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime }) => {
 
     const getLockValue = async (): Promise<void> => {
         try {
-            const allLocks = await getAllLockEvents(window.web3, window.contract);
-            const totalLockVal = getTotalLockVal(allLocks, window.web3);
+            const totalLockVal = getTotalLockVal(lockData);
             setTotalLockVal(totalLockVal);
         } catch (err) {
             console.error(err);
         }
     };
     // update time value every second
+    // useEffect(() => {
+    //     setTimeout(() => {
+    //         setTimeLeft(calculateTimeLeft());
+    //         setLockState(getLockState());
+    //     }, 1000);
+
+    //     setTimeout(async () => {
+    //         await getLockValue();
+    //     }, 1000);
+    // });
+
     useEffect(() => {
-        setTimeout(() => {
+        const interval = setInterval(async () => {
             setTimeLeft(calculateTimeLeft());
             setLockState(getLockState());
-        }, 1000);
-
-        setTimeout(async () => {
             await getLockValue();
         }, 1000);
+        // cleanup hook
+        return () => {
+            clearInterval(interval);
+        };
     });
 
     if (lockState !== LockState.end) {

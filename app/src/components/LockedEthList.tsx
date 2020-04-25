@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect, useCallback } from 'react';
-import { getAllLockEvents, getCurrentAccountLocks, getTotalLockVal } from '../helpers/lockdrop/EthereumLockdrop';
+import { getTotalLockVal } from '../helpers/lockdrop/EthereumLockdrop';
 //import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
@@ -12,7 +12,7 @@ import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListSubheader from '@material-ui/core/ListSubheader';
-import { Divider, Grid, ListItemSecondaryAction, IconButton } from '@material-ui/core';
+import { Divider, Grid, ListItemSecondaryAction, IconButton, LinearProgress } from '@material-ui/core';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
 import AppBar from '@material-ui/core/AppBar';
@@ -23,6 +23,7 @@ import LockIcon from '@material-ui/icons/Lock';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { defaultAddress } from '../data/affiliationProgram';
+import Web3Utils from 'web3-utils';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -86,9 +87,10 @@ interface LockHistoryProps {
     web3: Web3;
     contractInstance: Contract;
     accounts: string[]; // this will be used to get locks for a certain account
+    lockData: LockEvent[];
 }
 // component that displays the number of tokens and the duration for the lock via Web3
-const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance, accounts }) => {
+const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance, accounts, lockData }) => {
     const classes = useStyles();
     const theme = useTheme();
     const [value, setValue] = React.useState(0);
@@ -124,10 +126,20 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance, acc
                         onChangeIndex={handleChangeIndex}
                     >
                         <TabPanel value={value} index={0} dir={theme.direction}>
-                            <GlobalLocks web3={web3} contractInstance={contractInstance} accounts={accounts} />
+                            <GlobalLocks
+                                web3={web3}
+                                contractInstance={contractInstance}
+                                accounts={accounts}
+                                lockData={lockData}
+                            />
                         </TabPanel>
                         <TabPanel value={value} index={1} dir={theme.direction}>
-                            <CurrentLocks web3={web3} contractInstance={contractInstance} accounts={accounts} />
+                            <CurrentLocks
+                                web3={web3}
+                                contractInstance={contractInstance}
+                                accounts={accounts}
+                                lockData={lockData}
+                            />
                         </TabPanel>
                     </SwipeableViews>
                 </div>
@@ -138,36 +150,25 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, contractInstance, acc
 
 export default LockedEthList;
 
-const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance }) => {
+const GlobalLocks: React.FC<LockHistoryProps> = ({ lockData }) => {
     const classes = useStyles();
     const [lockEvents, setEvents] = useState<LockEvent[]>([]);
     const [isLoadingComp, setLoadState] = useState(true);
 
-    const updateList = useCallback(() => {
-        return getAllLockEvents(web3, contractInstance).then(i => {
-            setEvents(i);
-        });
-    }, [web3, contractInstance]);
-
     useEffect(() => {
-        const abortController = new AbortController();
-        // update list every second
-        setTimeout(async () => {
-            await updateList();
+        const interval = setInterval(() => {
+            setEvents(lockData);
         }, 1000);
-
-        // cleanup async hook
+        // cleanup hook
         return () => {
-            abortController.abort();
+            clearInterval(interval);
         };
-    }, [updateList, lockEvents]);
+    }, [lockData]);
 
     useEffect(() => {
-        getAllLockEvents(web3, contractInstance).then(i => {
-            setEvents(i);
-            setLoadState(false);
-        });
-    }, [web3, contractInstance]);
+        setEvents(lockData);
+        setLoadState(false);
+    }, [lockData]);
 
     return (
         <div className={classes.lockListPage}>
@@ -178,7 +179,7 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance }) => 
                     {lockEvents.length > 0 ? (
                         <>
                             <h1>Global Locks</h1>
-                            <h3>{getTotalLockVal(lockEvents, web3)} ETH locked</h3>
+                            <h3>{getTotalLockVal(lockEvents)} ETH locked</h3>
                             <List className={classes.listRoot} subheader={<li />}>
                                 <li className={classes.listSection}>
                                     <ul className={classes.ul}>
@@ -191,7 +192,7 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance }) => 
                                                         <h4>Lock address: {eventItem.lock}</h4>
                                                         <h5>Locked in block no. {eventItem.blockNo}</h5>
                                                         <p>
-                                                            Locked {web3.utils.fromWei(eventItem.eth, 'ether')} ETH for{' '}
+                                                            Locked {Web3Utils.fromWei(eventItem.eth, 'ether')} ETH for{' '}
                                                             {eventItem.duration} days
                                                         </p>
                                                         {eventItem.introducer !== defaultAddress ? (
@@ -220,36 +221,25 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance }) => 
     );
 };
 
-const CurrentLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance, accounts }) => {
+const CurrentLocks: React.FC<LockHistoryProps> = ({ web3, accounts, lockData }) => {
     const classes = useStyles();
     const [lockEvents, setEvents] = useState<LockEvent[]>([]);
     const [isLoadingComp, setLoadState] = useState(true);
 
-    const updateList = async () => {
-        await getCurrentAccountLocks(web3, accounts[0], contractInstance).then(i => {
-            setEvents(i);
-        });
+    const getUserLocks = () => {
+        return lockData.filter(i => i.lockOwner === accounts[0]);
     };
 
     useEffect(() => {
-        const abortController = new AbortController();
-        // update list every second
-        setTimeout(async () => {
-            await updateList();
+        const interval = setInterval(() => {
+            setEvents(getUserLocks);
+            setLoadState(false);
         }, 1000);
-
-        // cleanup async hook
+        // cleanup hook
         return () => {
-            abortController.abort();
+            clearInterval(interval);
         };
     });
-
-    useEffect(() => {
-        getCurrentAccountLocks(web3, accounts[0], contractInstance).then(i => {
-            setEvents(i);
-            setLoadState(false);
-        });
-    }, [web3, accounts, contractInstance]);
 
     return (
         <div className={classes.lockListPage}>
@@ -260,7 +250,7 @@ const CurrentLocks: React.FC<LockHistoryProps> = ({ web3, contractInstance, acco
                     {lockEvents.length > 0 ? (
                         <>
                             <h1>Your Locks</h1>
-                            <h3>{getTotalLockVal(lockEvents, web3)} ETH locked</h3>
+                            <h3>{getTotalLockVal(lockEvents)} ETH locked</h3>
                             <List className={classes.listRoot} subheader={<li />}>
                                 <li className={classes.listSection}>
                                     <ul className={classes.ul}>
@@ -321,6 +311,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
     const [canUnlock, setLockState] = useState(false);
     const [tillUnlock, setUnlockDate] = useState<TimeFormat>(calculateTimeLeft());
     const [lockIsClaimed, setLockClaim] = useState(false);
+    const [isLoading, setLoading] = useState(false);
 
     const checkUnlock = useCallback(async () => {
         // get today in UTC epoch seconds (js default is ms)
@@ -337,36 +328,48 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
         const lockClaimState = lockBalance === '0';
         // console.log(lockBalance);
         setLockClaim(lockClaimState);
-
+        // manually change the loading state
+        setLoading(false);
         return today > unlockDate;
     }, [lockInfo, web3]);
 
     // update time value every second
     useEffect(() => {
-        const abortController = new AbortController();
+        //const abortController = new AbortController();
 
-        setTimeout(async () => {
+        const interval = setInterval(async () => {
             setUnlockDate(calculateTimeLeft());
             setLockState(await checkUnlock());
         }, 1000);
-
         // cleanup async hook
         return () => {
-            abortController.abort();
+            clearInterval(interval);
         };
     }, [calculateTimeLeft, checkUnlock]);
 
+    // initial update
     useEffect(() => {
         setUnlockDate(calculateTimeLeft());
         checkUnlock().then(setLockState);
     }, [calculateTimeLeft, checkUnlock]);
 
     const handleClick = () => {
-        web3.eth.sendTransaction({
-            from: address,
-            to: lockInfo.lock,
-            value: '0',
-        });
+        setLoading(true);
+        web3.eth
+            .sendTransaction({
+                from: address,
+                to: lockInfo.lock,
+                value: '0',
+            })
+            .then(
+                () => {
+                    setLoading(false);
+                },
+                error => {
+                    console.log(error);
+                    setLoading(false);
+                },
+            );
     };
 
     return (
@@ -376,35 +379,43 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
                     <h4>Lock address: {lockInfo.lock}</h4>
                     <h5>Locked in block no. {lockInfo.blockNo}</h5>
                     <p>
-                        Locked {web3.utils.fromWei(lockInfo.eth, 'ether')} ETH for {lockInfo.duration} days
+                        Locked {Web3Utils.fromWei(lockInfo.eth, 'ether')} ETH for {lockInfo.duration} days
                     </p>
                     {lockInfo.introducer !== defaultAddress ? (
                         <p>Introducer: {lockInfo.introducer}</p>
                     ) : (
                         <p>No introducer</p>
                     )}
-                    {!canUnlock ? (
-                        <Grid container spacing={1}>
-                            <Grid item>
-                                <p>{tillUnlock.days} Days </p>
-                            </Grid>
-                            <Grid item>
-                                <p>{tillUnlock.hours} Hours </p>
-                            </Grid>
-                            <Grid item>
-                                <p>{tillUnlock.minutes} Minutes </p>
-                            </Grid>
-                            <Grid item>
-                                <p>{tillUnlock.seconds} Seconds </p>
-                            </Grid>
-                            <Grid item>
-                                <p>Left</p>
-                            </Grid>
-                        </Grid>
-                    ) : lockIsClaimed ? (
-                        <p>Lock already claimed!</p>
+                    {isLoading ? (
+                        <>
+                            <LinearProgress />
+                        </>
                     ) : (
-                        <p>You can claim your lock!</p>
+                        <>
+                            {!canUnlock ? (
+                                <Grid container spacing={1}>
+                                    <Grid item>
+                                        <p>{tillUnlock.days} Days </p>
+                                    </Grid>
+                                    <Grid item>
+                                        <p>{tillUnlock.hours} Hours </p>
+                                    </Grid>
+                                    <Grid item>
+                                        <p>{tillUnlock.minutes} Minutes </p>
+                                    </Grid>
+                                    <Grid item>
+                                        <p>{tillUnlock.seconds} Seconds </p>
+                                    </Grid>
+                                    <Grid item>
+                                        <p>Left</p>
+                                    </Grid>
+                                </Grid>
+                            ) : lockIsClaimed ? (
+                                <p>Lock already claimed!</p>
+                            ) : (
+                                <p>You can claim your lock!</p>
+                            )}
+                        </>
                     )}
                 </ListItemText>
 
