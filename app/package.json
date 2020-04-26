@@ -4,6 +4,7 @@
     "version": "0.0.1",
     "private": true,
     "dependencies": {
+        "@ionic/core": "^4.11.0",
         "@ionic/react": "^4.11.0",
         "@ionic/react-router": "^4.11.0",
         "@material-ui/core": "^4.9.4",
@@ -21,6 +22,7 @@
         "react": "^16.12.0",
         "react-countup": "^4.3.3",
         "react-dom": "^16.12.0",
+        "react-is": "^16.13.1",
         "react-redux": "^7.2.0",
         "react-router": "^5.1.2",
         "react-router-dom": "^5.1.2",
@@ -39,6 +41,7 @@
         "web3-utils": "^1.2.6"
     },
     "devDependencies": {
+        "@testing-library/dom": "^7.2.2",
         "@testing-library/jest-dom": "^4.2.4",
         "@testing-library/react": "^9.4.0",
         "@testing-library/user-event": "^8.0.3",

@@ -24,33 +24,6 @@ const totalAmountOfPLMsForLockdrop = totalAmountOfPLMs.times(new BigNumber('17')
 // returns an array of the entire list of locked events for the contract only once
 export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<LockEvent[]> {
     // this value can be set as the block number of where the contract was deployed
-    // const startBlock = 0;
-    // try {
-    //     // get all the event data
-    //     const ev = await instance.getPastEvents('Locked', { fromBlock: startBlock });
-    //     return Promise.all(
-    //         ev.map(async i => {
-    //             const transactionString = await Promise.resolve(web3.eth.getBlock(i.blockNumber));
-    //             const time = transactionString.timestamp.toString();
-
-    //             const e = i.returnValues;
-    //             return {
-    //                 eth: e['eth'] as BN,
-    //                 duration: e['duration'] as number,
-    //                 lock: e['lock'] as string,
-    //                 introducer: e['introducer'] as string,
-    //                 blockNo: i.blockNumber,
-    //                 timestamp: time,
-    //             } as LockEvent;
-    //         }),
-    //     );
-    // } catch (error) {
-    //     console.log(error);
-    //     // return an empty array when failed
-    //     return [] as LockEvent[];
-    // }
-
-    // this value can be set as the block number of where the contract was deployed
     const startBlock = 0;
     try {
         const ev = await instance.getPastEvents('Locked', {
@@ -88,54 +61,6 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
         return [] as LockEvent[];
     }
 }
-
-/*
-// returns a list of Lock events for the given account
-export async function getCurrentAccountLocks(
-    web3: Web3,
-    fromAccount: string,
-    contractInstance: Contract,
-): Promise<LockEvent[]> {
-    // this value can be set as the block number of where the contract was deployed
-    const startBlock = 0;
-    try {
-        const ev = await contractInstance.getPastEvents('Locked', {
-            fromBlock: startBlock,
-        });
-
-        const eventHashes = await Promise.all(
-            ev.map(async e => {
-                return Promise.all([Promise.resolve(e.returnValues), web3.eth.getTransaction(e.transactionHash)]);
-            }),
-        );
-
-        return Promise.all(
-            eventHashes
-                .filter(e => e[1]['from'] === fromAccount)
-                .map(async e => {
-                    // e[0] is lock event and e[1] is block hash
-                    const blockHash = e[1];
-                    const lockEvent = e[0];
-
-                    const transactionString = await Promise.resolve(web3.eth.getBlock(blockHash.blockNumber));
-                    const time = transactionString.timestamp.toString();
-                    return {
-                        eth: lockEvent.eth as BN,
-                        duration: lockEvent.duration as number,
-                        lock: lockEvent.lock as string,
-                        introducer: lockEvent.introducer as string,
-                        blockNo: blockHash.blockNumber,
-                        timestamp: time,
-                    } as LockEvent;
-                }),
-        );
-    } catch (error) {
-        console.log(error);
-        // return an empty array when failed
-        return [] as LockEvent[];
-    }
-}
-*/
 
 export function defaultAffiliation(aff: string) {
     // check if affiliation address is not empty and is not themselves
@@ -187,7 +112,7 @@ function plmBaseIssueAmountInLock(lock: LockEvent, totalPlmsRate: BigNumber, eth
 function getAllAffReferences(address: string, lockData: LockEvent[]) {
     // check if there is
     const results: LockEvent[] = [];
-    const refEvents = lockData.filter(e => e.introducer === address);
+    const refEvents = lockData.filter(e => e.introducer.toLowerCase() === address.toLowerCase());
 
     for (let i = 0; i < refEvents.length; i++) {
         results.push(refEvents[i]);
@@ -211,15 +136,15 @@ export function calculateNetworkAlpha(allLocks: LockEvent[]): BigNumber {
 // in this function, affiliation means the current address being referenced by others
 // and introducer means this address referencing other affiliated addresses
 export function calculateTotalPlm(address: string, lockData: LockEvent[]): PlmDrop {
-    const receivingPlm = new PlmDrop(new BigNumber(0), [], [], []);
+    const receivingPlm = new PlmDrop(address, new BigNumber(0), [], [], []);
 
-    const currentAddressLocks = lockData.filter(i => i.lockOwner === address);
+    const currentAddressLocks = lockData.filter(i => i.lockOwner.toLowerCase() === address.toLowerCase());
 
     receivingPlm.locks = currentAddressLocks;
 
     const ethExchangeRate = new BigNumber(ethFinalExRate);
 
-    // get total prm rate for calculating actual issuing PLMs.
+    // get total plm rate for calculating actual issuing PLMs.
     const totalPlmRate = totalPlmBaseIssuingRate(lockData, ethExchangeRate);
 
     for (let i = 0; i < currentAddressLocks.length; i++) {
