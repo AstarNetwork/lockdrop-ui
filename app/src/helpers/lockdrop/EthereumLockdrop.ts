@@ -11,6 +11,9 @@ import { isRegisteredEthAddress, defaultAddress, affiliationRate } from '../../d
 import { lockDurationToRate } from '../plasmUtils';
 import { PlmDrop } from '../../models/PlasmDrop';
 import Web3Utils from 'web3-utils';
+import EthCrypto from 'eth-crypto';
+import * as polkadotUtil from '@polkadot/util-crypto';
+import { ecrecover } from 'ethereumjs-util';
 
 const ethMarketApi = 'https://api.coingecko.com/api/v3/coins/ethereum';
 // exchange rate at the start of April 14 UTC (at the end of the lockdrop)
@@ -20,6 +23,32 @@ export const ethFinalExRate = 156.36;
 // the total amount of issueing PLMs at 1st Lockdrop.
 const totalAmountOfPLMs = new BigNumber('500000000.000000000000000');
 const totalAmountOfPLMsForLockdrop = totalAmountOfPLMs.times(new BigNumber('17').div(new BigNumber('20')));
+
+// generates a Plasm address with the given public key
+export function generatePlmAddress(ethPubKey: string) {
+    const compressedKey = polkadotUtil.blake2AsU8a(EthCrypto.publicKey.compress(ethPubKey), 256);
+
+    const plmAccountId = polkadotUtil.encodeAddress(compressedKey, 5);
+
+    return plmAccountId;
+}
+
+export async function getPubKey(web3: Web3) {
+    let msg = web3.utils.sha3('claim_lockdrop');
+    const addresses = await web3.eth.getAccounts();
+    if (typeof msg === 'string') {
+        const sig = await web3.eth.sign(msg, addresses[0]);
+        const r = new Buffer(sig.slice(0, 66));
+        const s = new Buffer('0x' + sig.slice(66, 130));
+        const v = '0x' + sig.slice(130, 132);
+        const vInDecimal = web3.utils.toDecimal(v);
+        msg = '0x' + msg;
+
+        return ecrecover(new Buffer(msg), vInDecimal, r, s);
+    } else {
+        return null;
+    }
+}
 
 // returns an array of the entire list of locked events for the contract only once
 export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<LockEvent[]> {
@@ -52,6 +81,7 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
                     blockNo: blockHash.blockNumber,
                     timestamp: time,
                     lockOwner: e[1]['from'],
+                    blockHash: blockHash,
                 } as LockEvent;
             }),
         );

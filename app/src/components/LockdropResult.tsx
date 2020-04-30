@@ -6,7 +6,7 @@ import { PlmDrop } from '../models/PlasmDrop';
 import BigNumber from 'bignumber.js';
 import CountUp from 'react-countup';
 import { ThemeColors } from '../theme/themes';
-import { IonPopover, IonList, IonListHeader, IonItem, IonLabel, IonChip } from '@ionic/react';
+import { IonPopover, IonList, IonListHeader, IonItem, IonLabel, IonChip, IonButton } from '@ionic/react';
 import { LockEvent } from '../models/LockdropModels';
 import Web3 from 'web3';
 
@@ -26,6 +26,9 @@ const LockdropResult: React.FC<ResultProps> = ({ lockData, web3 }) => {
             },
             header: {
                 color: ThemeColors.blue,
+            },
+            claimButton: {
+                padding: theme.spacing(4, 2, 0),
             },
         }),
     );
@@ -95,6 +98,8 @@ const LockdropResult: React.FC<ResultProps> = ({ lockData, web3 }) => {
                     <IonPopover isOpen={showIntoPopover} onDidDismiss={() => setShowIntroPopover(false)}>
                         <IntoAffItems data={totalPlm} />
                     </IonPopover>
+                    <br />
+                    <ClaimPlm web3={web3} />
                 </>
             ) : (
                 <h2 className={classes.header}>No Locks found for your address!</h2>
@@ -146,6 +151,32 @@ const IntoAffItems: React.FC<IntroRefProps> = ({ data }) => {
                     <IonListHeader>No Introducers</IonListHeader>
                 )}
             </IonList>
+        </>
+    );
+};
+
+interface ClaimProps {
+    web3: Web3;
+}
+const ClaimPlm: React.FC<ClaimProps> = () => {
+    const useStyles = makeStyles((theme: Theme) =>
+        createStyles({
+            claimButton: {
+                margin: theme.spacing(4, 2, 0),
+            },
+        }),
+    );
+
+    const classes = useStyles();
+
+    //const [isLoading, setLoadState] = useState(true);
+    //const [plmAddress, setPlmAddress] = useState('');
+
+    return (
+        <>
+            <IonButton color="primary" size="large" className={classes.claimButton}>
+                Claim PLM
+            </IonButton>
         </>
     );
 };
