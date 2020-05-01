@@ -1,14 +1,15 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState } from 'react';
 import { makeStyles, createStyles, Theme, CircularProgress, Divider } from '@material-ui/core';
-import { calculateTotalPlm, ethFinalExRate, getPubKey } from '../helpers/lockdrop/EthereumLockdrop';
+import { calculateTotalPlm, ethFinalExRate, getPubKey, generatePlmAddress } from '../helpers/lockdrop/EthereumLockdrop';
 import { PlmDrop } from '../models/PlasmDrop';
 import BigNumber from 'bignumber.js';
 import CountUp from 'react-countup';
 import { ThemeColors } from '../theme/themes';
-import { IonPopover, IonList, IonListHeader, IonItem, IonLabel, IonChip, IonButton } from '@ionic/react';
+import { IonPopover, IonList, IonListHeader, IonItem, IonLabel, IonChip, IonButton, IonLoading } from '@ionic/react';
 import { LockEvent } from '../models/LockdropModels';
 import Web3 from 'web3';
+import SectionCard from './SectionCard';
 
 const etherScanSearch = 'https://etherscan.io/address/';
 
@@ -161,32 +162,62 @@ interface ClaimProps {
 const ClaimPlm: React.FC<ClaimProps> = ({ web3 }) => {
     const useStyles = makeStyles((theme: Theme) =>
         createStyles({
+            header: {
+                color: ThemeColors.blue,
+            },
             claimButton: {
                 margin: theme.spacing(4, 2, 0),
+            },
+            addressPanel: {
+                padding: theme.spacing(3, 3, 0),
             },
         }),
     );
 
+    const [isLoading, setLoadState] = useState(false);
+    const [plmAddress, setPlmAddress] = useState('');
+
     const getPlasmAddress = async () => {
         const pubKey = await getPubKey(web3);
-        console.log(pubKey);
+        let result = '';
+        if (typeof pubKey === 'string') {
+            // remove the 0x prefix before passing the value
+            const plmAddress = generatePlmAddress(pubKey.replace('0x', ''));
+            result = plmAddress;
+        }
+        setLoadState(false);
+        return result;
     };
 
     const classes = useStyles();
 
-    //const [isLoading, setLoadState] = useState(true);
-    //const [plmAddress, setPlmAddress] = useState('');
-
     return (
         <>
+            <IonLoading isOpen={isLoading} message={'Verifying user...'} />
             <IonButton
                 color="primary"
                 size="large"
                 className={classes.claimButton}
-                onClick={async () => await getPlasmAddress()}
+                onClick={async () => {
+                    setLoadState(true);
+                    setPlmAddress(await getPlasmAddress());
+                }}
             >
                 Claim PLM
             </IonButton>
+            {plmAddress ? (
+                <>
+                    <SectionCard maxWidth="md">
+                        <div className={classes.addressPanel}>
+                            <p>Your Plasm Net address with the lockdrop rewards:</p>
+                            <h2 className={classes.header}>{plmAddress}</h2>
+                            <p>Copy this address and please keep them safe!</p>
+                        </div>
+                    </SectionCard>
+                </>
+            ) : (
+                <></>
+            )}
         </>
     );
 };
