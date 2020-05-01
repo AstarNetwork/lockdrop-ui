@@ -13,7 +13,7 @@ import { PlmDrop } from '../../models/PlasmDrop';
 import Web3Utils from 'web3-utils';
 import EthCrypto from 'eth-crypto';
 import * as polkadotUtil from '@polkadot/util-crypto';
-import { ecrecover } from 'ethereumjs-util';
+import { ecrecover, fromRpcSig, toBuffer, bufferToHex } from 'ethereumjs-util';
 
 const ethMarketApi = 'https://api.coingecko.com/api/v3/coins/ethereum';
 // exchange rate at the start of April 14 UTC (at the end of the lockdrop)
@@ -34,19 +34,16 @@ export function generatePlmAddress(ethPubKey: string) {
 }
 
 export async function getPubKey(web3: Web3) {
-    let msg = web3.utils.sha3('claim_lockdrop');
-    const addresses = await web3.eth.getAccounts();
-    if (typeof msg === 'string') {
-        const sig = await web3.eth.sign(msg, addresses[0]);
-        const r = new Buffer(sig.slice(0, 66));
-        const s = new Buffer('0x' + sig.slice(66, 130));
-        const v = '0x' + sig.slice(130, 132);
-        const vInDecimal = web3.utils.toDecimal(v);
-        msg = '0x' + msg;
+    const msg = 'claim_lockdrop';
+    const hash = web3.eth.accounts.hashMessage(msg);
+    try {
+        const addresses = await web3.eth.getAccounts();
+        const sig = '0x' + (await web3.eth.sign(hash, addresses[0])).slice(2);
+        const res = fromRpcSig(sig);
 
-        return ecrecover(new Buffer(msg), vInDecimal, r, s);
-    } else {
-        return null;
+        return bufferToHex(ecrecover(toBuffer(hash), res.v, res.r, res.s));
+    } catch (error) {
+        console.log(error);
     }
 }
 

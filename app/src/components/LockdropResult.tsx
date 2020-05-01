@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState } from 'react';
 import { makeStyles, createStyles, Theme, CircularProgress, Divider } from '@material-ui/core';
-import { calculateTotalPlm, ethFinalExRate } from '../helpers/lockdrop/EthereumLockdrop';
+import { calculateTotalPlm, ethFinalExRate, getPubKey } from '../helpers/lockdrop/EthereumLockdrop';
 import { PlmDrop } from '../models/PlasmDrop';
 import BigNumber from 'bignumber.js';
 import CountUp from 'react-countup';
@@ -158,7 +158,7 @@ const IntoAffItems: React.FC<IntroRefProps> = ({ data }) => {
 interface ClaimProps {
     web3: Web3;
 }
-const ClaimPlm: React.FC<ClaimProps> = () => {
+const ClaimPlm: React.FC<ClaimProps> = ({ web3 }) => {
     const useStyles = makeStyles((theme: Theme) =>
         createStyles({
             claimButton: {
@@ -167,6 +167,11 @@ const ClaimPlm: React.FC<ClaimProps> = () => {
         }),
     );
 
+    const getPlasmAddress = async () => {
+        const pubKey = await getPubKey(web3);
+        console.log(pubKey);
+    };
+
     const classes = useStyles();
 
     //const [isLoading, setLoadState] = useState(true);
@@ -174,7 +179,12 @@ const ClaimPlm: React.FC<ClaimProps> = () => {
 
     return (
         <>
-            <IonButton color="primary" size="large" className={classes.claimButton}>
+            <IonButton
+                color="primary"
+                size="large"
+                className={classes.claimButton}
+                onClick={async () => await getPlasmAddress()}
+            >
                 Claim PLM
             </IonButton>
         </>
