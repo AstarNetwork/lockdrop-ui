@@ -1,14 +1,15 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState } from 'react';
 import { makeStyles, createStyles, Theme, CircularProgress, Divider } from '@material-ui/core';
-import { calculateTotalPlm, ethFinalExRate } from '../helpers/lockdrop/EthereumLockdrop';
+import { calculateTotalPlm, ethFinalExRate, getPubKey, generatePlmAddress } from '../helpers/lockdrop/EthereumLockdrop';
 import { PlmDrop } from '../models/PlasmDrop';
 import BigNumber from 'bignumber.js';
 import CountUp from 'react-countup';
 import { ThemeColors } from '../theme/themes';
-import { IonPopover, IonList, IonListHeader, IonItem, IonLabel, IonChip } from '@ionic/react';
+import { IonPopover, IonList, IonListHeader, IonItem, IonLabel, IonChip, IonButton, IonLoading } from '@ionic/react';
 import { LockEvent } from '../models/LockdropModels';
 import Web3 from 'web3';
+import SectionCard from './SectionCard';
 
 const etherScanSearch = 'https://etherscan.io/address/';
 
@@ -26,6 +27,9 @@ const LockdropResult: React.FC<ResultProps> = ({ lockData, web3 }) => {
             },
             header: {
                 color: ThemeColors.blue,
+            },
+            claimButton: {
+                padding: theme.spacing(4, 2, 0),
             },
         }),
     );
@@ -95,6 +99,8 @@ const LockdropResult: React.FC<ResultProps> = ({ lockData, web3 }) => {
                     <IonPopover isOpen={showIntoPopover} onDidDismiss={() => setShowIntroPopover(false)}>
                         <IntoAffItems data={totalPlm} />
                     </IonPopover>
+                    <br />
+                    <ClaimPlm web3={web3} />
                 </>
             ) : (
                 <h2 className={classes.header}>No Locks found for your address!</h2>
@@ -146,6 +152,71 @@ const IntoAffItems: React.FC<IntroRefProps> = ({ data }) => {
                     <IonListHeader>No Introducers</IonListHeader>
                 )}
             </IonList>
+        </>
+    );
+};
+
+interface ClaimProps {
+    web3: Web3;
+}
+const ClaimPlm: React.FC<ClaimProps> = ({ web3 }) => {
+    const useStyles = makeStyles((theme: Theme) =>
+        createStyles({
+            header: {
+                color: ThemeColors.blue,
+            },
+            claimButton: {
+                margin: theme.spacing(4, 2, 0),
+            },
+            addressPanel: {
+                padding: theme.spacing(3, 3, 0),
+            },
+        }),
+    );
+
+    const [isLoading, setLoadState] = useState(false);
+    const [plmAddress, setPlmAddress] = useState('');
+
+    const getPlasmAddress = async () => {
+        const pubKey = await getPubKey(web3);
+        let result = '';
+        if (typeof pubKey === 'string') {
+            // remove the 0x prefix before passing the value
+            const plmAddress = generatePlmAddress(pubKey.replace('0x', ''));
+            result = plmAddress;
+        }
+        setLoadState(false);
+        return result;
+    };
+
+    const classes = useStyles();
+
+    return (
+        <>
+            <IonLoading isOpen={isLoading} message={'Verifying user...'} />
+            <IonButton
+                color="primary"
+                size="large"
+                className={classes.claimButton}
+                onClick={async () => {
+                    setLoadState(true);
+                    setPlmAddress(await getPlasmAddress());
+                }}
+            >
+                Check Lockdrop Plasm Address
+            </IonButton>
+            {plmAddress ? (
+                <>
+                    <SectionCard maxWidth="md">
+                        <div className={classes.addressPanel}>
+                            <p>Your Plasm Network address with the lockdrop rewards:</p>
+                            <h2 className={classes.header}>{plmAddress}</h2>
+                        </div>
+                    </SectionCard>
+                </>
+            ) : (
+                <></>
+            )}
         </>
     );
 };

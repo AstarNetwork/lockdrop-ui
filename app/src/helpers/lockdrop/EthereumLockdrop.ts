@@ -11,6 +11,9 @@ import { isRegisteredEthAddress, defaultAddress, affiliationRate } from '../../d
 import { lockDurationToRate } from '../plasmUtils';
 import { PlmDrop } from '../../models/PlasmDrop';
 import Web3Utils from 'web3-utils';
+import EthCrypto from 'eth-crypto';
+import * as polkadotUtil from '@polkadot/util-crypto';
+import { ecrecover, fromRpcSig, toBuffer, bufferToHex } from 'ethereumjs-util';
 
 const ethMarketApi = 'https://api.coingecko.com/api/v3/coins/ethereum';
 // exchange rate at the start of April 14 UTC (at the end of the lockdrop)
@@ -20,6 +23,29 @@ export const ethFinalExRate = 156.36;
 // the total amount of issueing PLMs at 1st Lockdrop.
 const totalAmountOfPLMs = new BigNumber('500000000.000000000000000');
 const totalAmountOfPLMsForLockdrop = totalAmountOfPLMs.times(new BigNumber('17').div(new BigNumber('20')));
+
+// generates a Plasm address with the given public key
+export function generatePlmAddress(ethPubKey: string) {
+    const compressedKey = polkadotUtil.blake2AsU8a(EthCrypto.publicKey.compress(ethPubKey), 256);
+
+    const plmAccountId = polkadotUtil.encodeAddress(compressedKey, 5);
+
+    return plmAccountId;
+}
+
+export async function getPubKey(web3: Web3) {
+    const msg = 'claim_lockdrop';
+    const hash = web3.eth.accounts.hashMessage(msg);
+    try {
+        const addresses = await web3.eth.getAccounts();
+        const sig = '0x' + (await web3.eth.sign(hash, addresses[0])).slice(2);
+        const res = fromRpcSig(sig);
+
+        return bufferToHex(ecrecover(toBuffer(hash), res.v, res.r, res.s));
+    } catch (error) {
+        console.log(error);
+    }
+}
 
 // returns an array of the entire list of locked events for the contract only once
 export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<LockEvent[]> {
@@ -52,6 +78,7 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
                     blockNo: blockHash.blockNumber,
                     timestamp: time,
                     lockOwner: e[1]['from'],
+                    blockHash: blockHash,
                 } as LockEvent;
             }),
         );
