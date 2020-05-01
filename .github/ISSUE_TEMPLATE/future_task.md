@@ -10,4 +10,4 @@
 {When finished this task?}
 
 ## Dependencies
-{Dependencis issue or PR.}
+{Dependencies issue or PR.}
