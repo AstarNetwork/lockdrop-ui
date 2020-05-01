@@ -203,15 +203,14 @@ const ClaimPlm: React.FC<ClaimProps> = ({ web3 }) => {
                     setPlmAddress(await getPlasmAddress());
                 }}
             >
-                Claim PLM
+                Check Lockdrop Plasm Address
             </IonButton>
             {plmAddress ? (
                 <>
                     <SectionCard maxWidth="md">
                         <div className={classes.addressPanel}>
-                            <p>Your Plasm Net address with the lockdrop rewards:</p>
+                            <p>Your Plasm Network address with the lockdrop rewards:</p>
                             <h2 className={classes.header}>{plmAddress}</h2>
-                            <p>Copy this address and please keep them safe!</p>
                         </div>
                     </SectionCard>
                 </>
