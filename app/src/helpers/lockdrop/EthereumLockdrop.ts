@@ -26,21 +26,10 @@ const totalAmountOfPLMsForLockdrop = totalAmountOfPLMs.times(new BigNumber('17')
 
 // generates a Plasm address with the given public key
 export function generatePlmAddress(ethPubKey: string) {
-    // converts a given hex string into Uint8Array
-    const toByteArray = (hexString: string) => {
-        const result = [];
-        for (let i = 0; i < hexString.length; i += 2) {
-            result.push(parseInt(hexString.substr(i, 2), 16));
-        }
-        return new Uint8Array(result);
-    };
+    const compressedKey = polkadotUtil.blake2AsU8a(EthCrypto.publicKey.compress(ethPubKey), 256);
 
-    // compress 64byte key into 32+1 byte key
-    const compressedPubKey = EthCrypto.publicKey.compress(ethPubKey);
-    // hash to blake2
-    const plasmPubKey = polkadotUtil.blake2AsU8a(toByteArray(compressedPubKey), 256);
-    // encode address
-    const plmAccountId = polkadotUtil.encodeAddress(plasmPubKey, 5);
+    const plmAccountId = polkadotUtil.encodeAddress(compressedKey, 5);
+
     return plmAccountId;
 }
 
