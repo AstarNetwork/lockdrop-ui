@@ -77,7 +77,7 @@ const LockdropResult: React.FC<ResultProps> = ({ lockData, web3 }) => {
                 <>
                     <h2 className={classes.header}>{countupTotalPlmVal} PLM in total</h2>
                     <p>You have locked {totalPlm.locks.length} time(s)</p>
-                    <p>ETH exchange rate at the end of the lockdrop: {exRate} USD</p>
+                    <p>ETH exchange rate at the end of the lockdrop: {exRate} USD(<a href="https://api.coingecko.com/api/v3/coins/ethereum/history?date=01-05-2020&localization=false">ref</a>)</p>
                     <p>You have received around {totalPlm.basePlm.toFormat(2)} PLM from locking</p>
                     <Divider />
                     <h2>Affiliation Program</h2>
