@@ -18,7 +18,7 @@ import { ecrecover, fromRpcSig, toBuffer, bufferToHex } from 'ethereumjs-util';
 const ethMarketApi = 'https://api.coingecko.com/api/v3/coins/ethereum';
 // exchange rate at the start of April 14 UTC (at the end of the lockdrop)
 // historical data was obtained from here https://coinmarketcap.com/currencies/ethereum/historical-data/
-export const ethFinalExRate = 156.36;
+export const ethFinalExRate = 205.56;
 
 // the total amount of issueing PLMs at 1st Lockdrop.
 const totalAmountOfPLMs = new BigNumber('500000000.000000000000000');
