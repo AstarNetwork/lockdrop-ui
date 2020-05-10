@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // This module is used for communicating with the Ethereum smart contract
 import Lockdrop from '../../contracts/Lockdrop.json';
+//todo: change this to the actual contract instance
+import SecondLockdrop from '../../contracts/Lockdrop.json';
 import getWeb3 from '../getWeb3';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
@@ -15,7 +17,6 @@ import EthCrypto from 'eth-crypto';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { ecrecover, fromRpcSig, toBuffer, bufferToHex } from 'ethereumjs-util';
 
-const ethMarketApi = 'https://api.coingecko.com/api/v3/coins/ethereum';
 // exchange rate at the start of April 14 UTC (at the end of the lockdrop)
 // historical data was obtained from here https://coinmarketcap.com/currencies/ethereum/historical-data/
 export const ethFinalExRate = 205.56;
@@ -111,7 +112,9 @@ export function defaultAffiliation(aff: string) {
     }
 }
 
-export async function getCurrentUsdRate() {
+export async function getEthUsdRate(endDate: string) {
+    // date format mm-DD-YYYY
+    const ethMarketApi = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${endDate}&localization=false`;
     let usdRate = 0;
     try {
         const res = await fetch(ethMarketApi);
@@ -240,6 +243,8 @@ export async function connectWeb3() {
         // Get network provider and web3 instance.
         const web3 = await getWeb3();
         //const web3 = getEthInst();
+        //! a temporary value to switch lockdrop type
+        const isFirstLockdrop = true;
 
         if (web3 instanceof Web3) {
             // Use web3 to get the user's accounts.
@@ -248,14 +253,30 @@ export async function connectWeb3() {
             // Get the contract instance.
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = (Lockdrop as any).networks[networkId];
-            const instance = new web3.eth.Contract(
+
+            // create an empty contract instance first
+            let instance = new web3.eth.Contract(
                 Lockdrop.abi as any,
                 deployedNetwork && deployedNetwork.address,
             ) as Contract;
 
+            //todo: switch contract instance depending on lockdrop type
+            // assign different contract abi depending on the lockdrop type
+            if (isFirstLockdrop) {
+                instance = new web3.eth.Contract(
+                    Lockdrop.abi as any,
+                    deployedNetwork && deployedNetwork.address,
+                ) as Contract;
+            } else {
+                instance = new web3.eth.Contract(
+                    SecondLockdrop.abi as any,
+                    deployedNetwork && deployedNetwork.address,
+                ) as Contract;
+            }
+
             // assign current web3 instance to window global var
-            window.web3 = web3;
-            window.contract = instance;
+            // window.web3 = web3;
+            // window.contract = instance;
 
             return {
                 web3: web3,

@@ -15,12 +15,13 @@ import { isRegisteredEthAddress } from '../data/affiliationProgram';
 import 'react-toastify/dist/ReactToastify.css';
 import SectionCard from '../components/SectionCard';
 import LockdropCountdownPanel from '../components/LockdropCountdownPanel';
-import { LockdropEnd, LockdropStart } from '../data/lockInfo';
+import { firstLockdropEnd, firstLockdropStart } from '../data/lockInfo';
 import BN from 'bn.js';
 import moment from 'moment';
 import LockdropResult from '../components/LockdropResult';
 import { Divider } from '@material-ui/core';
 import AffiliatorList from '../components/AffiliatorList';
+import { removeWeb3Event } from '../helpers/getWeb3';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -59,21 +60,20 @@ toast.configure({
     draggable: true,
 });
 
-const hasLockdropStarted = () => {
+const hasfirstLockdropStarted = () => {
     const now = moment()
         .utc()
         .valueOf();
-    const start = LockdropStart.valueOf();
-    //const end = LockdropEnd.valueOf();
+    const start = firstLockdropStart.valueOf();
+    //const end = firstLockdropEnd.valueOf();
     return start <= now;
 };
 
-const hasLockdropEnded = () => {
+const hasfirstLockdropEnded = () => {
     const now = moment()
         .utc()
         .valueOf();
-    const end = LockdropEnd.valueOf();
-    //const end = LockdropEnd.valueOf();
+    const end = firstLockdropEnd.valueOf();
     return end <= now;
 };
 
@@ -93,7 +93,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             fetchingLockData: true,
         };
     }
-
+    // used for fetching data periodically
     timerInterval: any;
 
     // get and set the web3 state when the component is mounted
@@ -117,6 +117,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
 
     componentWillUnmount = () => {
         clearInterval(this.timerInterval);
+        removeWeb3Event();
     };
 
     // called when the user changes MetaMask account
@@ -178,7 +179,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             <IonPage>
                 <IonContent>
                     <Navbar />
-                    {hasLockdropStarted() ? (
+                    {hasfirstLockdropStarted() ? (
                         this.state.isLoading ? (
                             <IonLoading isOpen={true} message={'Connecting to Wallet and fetching chain data...'} />
                         ) : (
@@ -194,11 +195,11 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
 
                                 <SectionCard maxWidth="lg">
                                     <LockdropCountdownPanel
-                                        endTime={LockdropEnd}
-                                        startTime={LockdropStart}
+                                        endTime={firstLockdropEnd}
+                                        startTime={firstLockdropStart}
                                         lockData={this.state.allLockEvents}
                                     />
-                                    {hasLockdropEnded() ? (
+                                    {hasfirstLockdropEnded() ? (
                                         <>
                                             <Divider />
                                             <LockdropResult
@@ -211,7 +212,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                     )}
                                 </SectionCard>
                                 <AffiliatorList lockData={this.state.allLockEvents} />
-                                {hasLockdropEnded() ? (
+                                {hasfirstLockdropEnded() ? (
                                     <></>
                                 ) : (
                                     <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
@@ -229,8 +230,8 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                         <>
                             <SectionCard maxWidth="lg">
                                 <LockdropCountdownPanel
-                                    endTime={LockdropEnd}
-                                    startTime={LockdropStart}
+                                    endTime={firstLockdropEnd}
+                                    startTime={firstLockdropStart}
                                     lockData={this.state.allLockEvents}
                                 />
                             </SectionCard>
