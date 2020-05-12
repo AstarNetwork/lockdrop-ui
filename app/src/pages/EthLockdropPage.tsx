@@ -20,7 +20,7 @@ import BN from 'bn.js';
 import moment from 'moment';
 import LockdropResult from '../components/LockdropResult';
 import { Divider } from '@material-ui/core';
-import AffiliatorList from '../components/AffiliatorList';
+import AffiliationList from '../components/AffiliationList';
 import { removeWeb3Event } from '../helpers/getWeb3';
 
 const formInfo = `This is the lockdrop form for Ethereum.
@@ -33,7 +33,7 @@ Regarding the audit by Quantstamp, click <a
                             target="_blank"
                         >
                             here
-                        </a> to see the details`;
+                        </a> for more details`;
 
 interface PageStates {
     web3: Web3;
@@ -60,7 +60,7 @@ toast.configure({
     draggable: true,
 });
 
-const hasfirstLockdropStarted = () => {
+const hasFirstLockdropStarted = () => {
     const now = moment()
         .utc()
         .valueOf();
@@ -69,7 +69,7 @@ const hasfirstLockdropStarted = () => {
     return start <= now;
 };
 
-const hasfirstLockdropEnded = () => {
+const hasFirstLockdropEnded = () => {
     const now = moment()
         .utc()
         .valueOf();
@@ -106,7 +106,9 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             (window as any).ethereum.on('accountsChanged', this.handleAccountChange);
         }
 
-        this.state.web3.eth.net.getNetworkType().then(i => this.setState({ networkType: i }));
+        this.setState({ networkType: await this.state.web3.eth.net.getNetworkType() });
+
+        //this.state.web3.eth.net.getNetworkType().then(i => this.setState({ networkType: i }));
 
         this.timerInterval = setInterval(() => {
             this.getLockData().then(() => {
@@ -179,7 +181,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             <IonPage>
                 <IonContent>
                     <Navbar />
-                    {hasfirstLockdropStarted() ? (
+                    {hasFirstLockdropStarted() ? (
                         this.state.isLoading ? (
                             <IonLoading isOpen={true} message={'Connecting to Wallet and fetching chain data...'} />
                         ) : (
@@ -199,7 +201,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                         startTime={firstLockdropStart}
                                         lockData={this.state.allLockEvents}
                                     />
-                                    {hasfirstLockdropEnded() ? (
+                                    {hasFirstLockdropEnded() ? (
                                         <>
                                             <Divider />
                                             <LockdropResult
@@ -211,8 +213,8 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                         <></>
                                     )}
                                 </SectionCard>
-                                <AffiliatorList lockData={this.state.allLockEvents} />
-                                {hasfirstLockdropEnded() ? (
+                                <AffiliationList lockData={this.state.allLockEvents} />
+                                {hasFirstLockdropEnded() ? (
                                     <></>
                                 ) : (
                                     <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />

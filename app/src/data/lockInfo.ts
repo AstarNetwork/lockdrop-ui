@@ -8,6 +8,12 @@ export const firstLockdropStart = moment.utc('2020-03-15 00:00:00');
 // lockdrop ends in 1586822400
 export const firstLockdropEnd = moment.utc('2020-04-14 00:00:00');
 
+// todo: the second lockdrop dates are just a temporary value
+// lockdrop starts from 1584230400 epoch time
+export const secondLockdropStart = moment.utc('2020-06-20 00:00:00');
+// lockdrop ends in 1586822400
+export const secondockdropEnd = moment.utc('2020-07-01 00:00:00');
+
 // used to define the content of the dropdown menu
 export const durations: OptionItem[] = [
     { label: '30 Days', value: 30 },

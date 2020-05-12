@@ -46,7 +46,7 @@ export function generatePlmAddress(ethPubKey: string) {
 }
 
 export async function getPubKey(web3: Web3) {
-    const msg = 'claim_lockdrop';
+    const msg = 'display_address';
     const hash = web3.eth.accounts.hashMessage(msg);
     try {
         const addresses = await web3.eth.getAccounts();
