@@ -11,18 +11,24 @@ import {
     IonLabel,
     IonButton,
 } from '@ionic/react';
-import { pin, wifi, wine } from 'ionicons/icons';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SectionCard from '../components/SectionCard';
-import lockdropLogo from '../resources/ld_logo_a.png';
+import lockdropLogoA from '../resources/ld_logo_a.png';
+import lockdropLogoB from '../resources/ld_logo_b.png';
+import ethLogo from '../resources/ethereum_logo.svg';
+import btcLogo from '../resources/bitcoin_logo.svg';
 import { makeStyles } from '@material-ui/core';
+
+// randomize the lockdrop logo
+// this is for AB testing the logo
+const lockdropLogo = Math.floor(Math.random() * 10) > 5 ? lockdropLogoA : lockdropLogoB;
 
 const useStyles = makeStyles(() => ({
     logoImg: {
         display: 'block',
         maxWidth: '100%',
-        width: '45%',
+        width: '20rem',
         height: 'auto',
         marginLeft: 'auto',
         marginRight: 'auto',
@@ -50,7 +56,7 @@ export const LandingPage: React.FC = () => {
                         <IonCardTitle>First Lockdrop</IonCardTitle>
                     </IonCardHeader>
                     <IonItem>
-                        <IonIcon icon={pin} slot="start" />
+                        <IonIcon src={ethLogo} slot="start" />
                         <IonLabel>Plasm ETH Lock</IonLabel>
                         <IonButton fill="outline" slot="end">
                             View
@@ -67,7 +73,7 @@ export const LandingPage: React.FC = () => {
                         <IonCardTitle>Second Lockdrop</IonCardTitle>
                     </IonCardHeader>
                     <IonItem>
-                        <IonIcon icon={wifi} slot="start" />
+                        <IonIcon src={ethLogo} slot="start" />
                         <IonLabel>Plasm ETH Lock</IonLabel>
                         <IonButton fill="outline" slot="end">
                             View
@@ -75,7 +81,7 @@ export const LandingPage: React.FC = () => {
                     </IonItem>
 
                     <IonItem>
-                        <IonIcon icon={wine} slot="start" />
+                        <IonIcon src={btcLogo} slot="start" />
                         <IonLabel>Plasm BTC Lock</IonLabel>
                         <IonButton fill="outline" slot="end">
                             View
