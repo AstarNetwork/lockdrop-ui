@@ -110,7 +110,7 @@ export default function Navbar() {
     );
 
     return (
-        <div className={classes.grow}>
+        <div>
             <AppBar position="static" className={classes.navbar}>
                 <Toolbar>
                     <IconButton edge="start" color="inherit" aria-label="open homepage" href={Links.plasmHome}>
