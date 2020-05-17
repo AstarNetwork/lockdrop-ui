@@ -6,7 +6,7 @@ import SecondLockdrop from '../../contracts/Lockdrop.json';
 import getWeb3 from '../getWeb3';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
-import { LockEvent } from '../../models/LockdropModels';
+import { LockEvent, LockSeason } from '../../models/LockdropModels';
 import BN from 'bn.js';
 import BigNumber from 'bignumber.js';
 import { isRegisteredEthAddress, defaultAddress, affiliationRate } from '../../data/affiliationProgram';
@@ -238,13 +238,11 @@ export function getTotalLockVal(locks: LockEvent[]): string {
 }
 
 // this function will authenticate if the client has metamask installed and can communicate with the blockchain
-export async function connectWeb3() {
+export async function connectWeb3(lockSeason: LockSeason) {
     try {
         // Get network provider and web3 instance.
         const web3 = await getWeb3();
         //const web3 = getEthInst();
-        //! a temporary value to switch lockdrop type
-        const isFirstLockdrop = true;
 
         if (web3 instanceof Web3) {
             // Use web3 to get the user's accounts.
@@ -262,16 +260,19 @@ export async function connectWeb3() {
 
             //todo: switch contract instance depending on lockdrop type
             // assign different contract abi depending on the lockdrop type
-            if (isFirstLockdrop) {
-                instance = new web3.eth.Contract(
-                    Lockdrop.abi as any,
-                    deployedNetwork && deployedNetwork.address,
-                ) as Contract;
-            } else {
-                instance = new web3.eth.Contract(
-                    SecondLockdrop.abi as any,
-                    deployedNetwork && deployedNetwork.address,
-                ) as Contract;
+            switch (lockSeason) {
+                case LockSeason.First:
+                    instance = new web3.eth.Contract(
+                        Lockdrop.abi as any,
+                        deployedNetwork && deployedNetwork.address,
+                    ) as Contract;
+                    break;
+                case LockSeason.Second:
+                    instance = new web3.eth.Contract(
+                        SecondLockdrop.abi as any,
+                        deployedNetwork && deployedNetwork.address,
+                    ) as Contract;
+                    break;
             }
 
             // assign current web3 instance to window global var

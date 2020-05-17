@@ -27,9 +27,9 @@ const App: React.FC = () => (
     <IonApp>
         <IonReactRouter>
             <IonRouterOutlet>
-                <Route path="/welcome" component={LandingPage} exact={true} />
-                <Route path="/first-lockdrop" component={EthLockdropPage} exact={true} />
-                <Route path="/" render={() => <Redirect to={'/welcome'} />} exact={true} />
+                <Route exact path="/lock-form" component={LandingPage} />
+                <Route path="/lock-form/first" component={EthLockdropPage} />
+                <Route exact path="/" render={() => <Redirect to={'/lock-form'} />} />
             </IonRouterOutlet>
         </IonReactRouter>
     </IonApp>

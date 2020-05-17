@@ -8,7 +8,7 @@ import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
-import { LockInput, LockEvent } from '../models/LockdropModels';
+import { LockInput, LockEvent, LockSeason } from '../models/LockdropModels';
 import LockedEthList from '../components/LockedEthList';
 import { toast } from 'react-toastify';
 import { isRegisteredEthAddress } from '../data/affiliationProgram';
@@ -98,7 +98,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
 
     // get and set the web3 state when the component is mounted
     componentDidMount = async () => {
-        const web3State = await connectWeb3();
+        const web3State = await connectWeb3(LockSeason.First);
         this.setState(web3State);
 
         // checks if account has changed in MetaMask
