@@ -179,8 +179,8 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
     render() {
         return (
             <IonPage>
+                <Navbar />
                 <IonContent>
-                    <Navbar />
                     {hasFirstLockdropStarted() ? (
                         this.state.isLoading ? (
                             <IonLoading isOpen={true} message={'Connecting to Wallet and fetching chain data...'} />

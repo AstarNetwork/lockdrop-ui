@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState } from 'react';
-import { makeStyles, createStyles, Theme, CircularProgress, Divider } from '@material-ui/core';
+import { makeStyles, createStyles, Theme, CircularProgress, Divider, Link } from '@material-ui/core';
 import { calculateTotalPlm, ethFinalExRate, getPubKey, generatePlmAddress } from '../helpers/lockdrop/EthereumLockdrop';
 import { PlmDrop } from '../models/PlasmDrop';
 import BigNumber from 'bignumber.js';
@@ -216,7 +216,14 @@ const ClaimPlm: React.FC<ClaimProps> = ({ web3 }) => {
                     <SectionCard maxWidth="md">
                         <div className={classes.addressPanel}>
                             <p>Your Plasm Network address with the lockdrop rewards:</p>
-                            <h2 className={classes.header}>{plmAddress}</h2>
+                            <Link
+                                color="inherit"
+                                href={'https://plasm.subscan.io/account/' + plmAddress}
+                                rel="noopener noreferrer"
+                                target="_blank"
+                            >
+                                <h2 className={classes.header}>{plmAddress}</h2>
+                            </Link>
                         </div>
                     </SectionCard>
                 </>

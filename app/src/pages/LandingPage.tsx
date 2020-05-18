@@ -19,7 +19,7 @@ import lockdropLogoB from '../resources/ld_logo_b.png';
 import ethLogo from '../resources/ethereum_logo.svg';
 import btcLogo from '../resources/bitcoin_logo.svg';
 import { makeStyles } from '@material-ui/core';
-import { firstLockdropStart, firstLockdropEnd, secondLockdropStart, secondLockdropEnd } from '../data/lockInfo';
+import { firstLockdropStart, firstLockdropEnd } from '../data/lockInfo';
 
 // randomize the lockdrop logo
 // this is for AB testing the logo
@@ -78,9 +78,9 @@ export const LandingPage: React.FC = () => {
                     </IonItem>
 
                     <IonCardContent>
-                        Lock Start: {firstLockdropStart.toString()}
+                        Lock Start: {firstLockdropStart.format('YYYY-MM-DD hh:mm').toString()} UTC
                         <br />
-                        Lock End: {firstLockdropEnd.toString()}
+                        Lock End: {firstLockdropEnd.format('YYYY-MM-DD hh:mm').toString()} UTC
                     </IonCardContent>
                 </SectionCard>
 
@@ -91,7 +91,7 @@ export const LandingPage: React.FC = () => {
                     <IonItem>
                         <IonIcon src={ethLogo} slot="start" />
                         <IonLabel>Plasm ETH Lock</IonLabel>
-                        <IonButton fill="outline" slot="end">
+                        <IonButton fill="outline" slot="end" disabled={true}>
                             View
                         </IonButton>
                     </IonItem>
@@ -99,14 +99,14 @@ export const LandingPage: React.FC = () => {
                     <IonItem>
                         <IonIcon src={btcLogo} slot="start" />
                         <IonLabel>Plasm BTC Lock</IonLabel>
-                        <IonButton fill="outline" slot="end">
+                        <IonButton fill="outline" slot="end" disabled={true}>
                             View
                         </IonButton>
                     </IonItem>
                     <IonCardContent>
-                        Lock Start: {secondLockdropStart.toString()}
+                        Lock Start: TBA
                         <br />
-                        Lock End: {secondLockdropEnd.toString()}
+                        Lock End: TBA
                     </IonCardContent>
                 </SectionCard>
                 <Footer />

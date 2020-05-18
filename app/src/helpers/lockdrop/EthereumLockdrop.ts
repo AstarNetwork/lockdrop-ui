@@ -46,11 +46,11 @@ export function generatePlmAddress(ethPubKey: string) {
 }
 
 export async function getPubKey(web3: Web3) {
-    const msg = 'display_address';
+    const msg = 'Please Sign this message to generate Plasm Network address';
     const hash = web3.eth.accounts.hashMessage(msg);
     try {
         const addresses = await web3.eth.getAccounts();
-        const sig = '0x' + (await web3.eth.sign(hash, addresses[0])).slice(2);
+        const sig = '0x' + (await web3.eth.personal.sign(msg, addresses[0], 'SecureP4ssW0rd')).slice(2);
         const res = fromRpcSig(sig);
 
         return bufferToHex(ecrecover(toBuffer(hash), res.v, res.r, res.s));
