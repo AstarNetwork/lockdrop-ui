@@ -34,6 +34,13 @@ const theme = createMuiTheme({
             'Helvetica Neue',
         ].join(','),
     },
+    palette: {
+        primary: {
+            main: '#4791db',
+            light: '#1976d2',
+            dark: '#115293',
+        },
+    },
 });
 
 ReactDOM.render(

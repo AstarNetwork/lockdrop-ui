@@ -25,20 +25,22 @@ import '@ionic/react/css/display.css';
 import './theme/variables.css';
 import SideMenu from './components/SideMenu';
 
-const App: React.FC = () => (
-    <IonApp>
-        <IonReactRouter>
-            <IonSplitPane contentId="main">
-                <SideMenu />
+const App: React.FC = () => {
+    return (
+        <IonApp>
+            <IonReactRouter>
+                <IonSplitPane contentId="main" when="lg">
+                    <SideMenu />
 
-                <IonRouterOutlet id="main">
-                    <Route exact path="/lock-form" component={LandingPage} />
-                    <Route path="/lock-form/first" component={EthLockdropPage} />
-                    <Route exact path="/" render={() => <Redirect to={'/lock-form'} />} />
-                </IonRouterOutlet>
-            </IonSplitPane>
-        </IonReactRouter>
-    </IonApp>
-);
+                    <IonRouterOutlet id="main">
+                        <Route exact path="/lock-form" component={LandingPage} />
+                        <Route path="/lock-form/first" component={EthLockdropPage} />
+                        <Route exact path="/" render={() => <Redirect to={'/lock-form'} />} />
+                    </IonRouterOutlet>
+                </IonSplitPane>
+            </IonReactRouter>
+        </IonApp>
+    );
+};
 
 export default App;
