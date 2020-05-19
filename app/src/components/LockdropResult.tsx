@@ -172,7 +172,10 @@ const ClaimPlm: React.FC<ClaimProps> = ({ web3 }) => {
                 color: ThemeColors.blue,
             },
             claimButton: {
-                margin: theme.spacing(4, 2, 0),
+                paddingTop: theme.spacing(2),
+                marginLeft: 'auto',
+                marginRight: 'auto',
+                maxWidth: '100%',
             },
             addressPanel: {
                 padding: theme.spacing(3, 3, 0),
@@ -209,7 +212,7 @@ const ClaimPlm: React.FC<ClaimProps> = ({ web3 }) => {
                     setPlmAddress(await getPlasmAddress());
                 }}
             >
-                Check Lockdrop Plasm Address
+                Get Plasm Address
             </IonButton>
             {plmAddress ? (
                 <>
