@@ -7,6 +7,7 @@ export const ThemeColors = {
     orange: '#FF5838',
     darkRed: '#5c0f0f',
     blue: '#4C8DFF',
+    lightBlue: '#56ccf2',
 };
 
 export const ThemeFontFamily = {
