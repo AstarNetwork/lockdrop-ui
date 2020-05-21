@@ -1,6 +1,19 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState } from 'react';
-import { makeStyles, createStyles, Theme, CircularProgress, Divider, Link } from '@material-ui/core';
+import {
+    makeStyles,
+    createStyles,
+    Theme,
+    CircularProgress,
+    Divider,
+    Link,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+    Collapse,
+    Typography,
+} from '@material-ui/core';
 import { calculateTotalPlm, ethFinalExRate, getPubKey, generatePlmAddress } from '../helpers/lockdrop/EthereumLockdrop';
 import { PlmDrop } from '../models/PlasmDrop';
 import BigNumber from 'bignumber.js';
@@ -10,6 +23,9 @@ import { IonPopover, IonList, IonListHeader, IonItem, IonLabel, IonChip, IonButt
 import { LockEvent } from '../models/LockdropModels';
 import Web3 from 'web3';
 import SectionCard from './SectionCard';
+import ExpandLess from '@material-ui/icons/ExpandLess';
+import ExpandMore from '@material-ui/icons/ExpandMore';
+import VpnKeyIcon from '@material-ui/icons/VpnKey';
 
 const etherScanSearch = 'https://etherscan.io/address/';
 
@@ -180,22 +196,36 @@ const ClaimPlm: React.FC<ClaimProps> = ({ web3 }) => {
             addressPanel: {
                 padding: theme.spacing(3, 3, 0),
             },
+            root: {
+                width: '100%',
+                alignContent: 'center',
+                backgroundColor: theme.palette.background.paper,
+            },
+            nested: {
+                paddingLeft: theme.spacing(4),
+            },
         }),
     );
 
     const [isLoading, setLoadState] = useState(false);
     const [plmAddress, setPlmAddress] = useState('');
+    const [ethPubkey, setEthPubkey] = useState('');
+    const [open, setOpen] = useState(false);
 
     const getPlasmAddress = async () => {
         const pubKey = await getPubKey(web3);
         let result = '';
         if (typeof pubKey === 'string') {
+            setEthPubkey(pubKey);
             // remove the 0x prefix before passing the value
             const plmAddress = generatePlmAddress(pubKey.replace('0x', ''));
             result = plmAddress;
         }
         setLoadState(false);
         return result;
+    };
+    const ExpandItem = () => {
+        setOpen(!open);
     };
 
     const classes = useStyles();
@@ -227,6 +257,18 @@ const ClaimPlm: React.FC<ClaimProps> = ({ web3 }) => {
                             >
                                 <h2 className={classes.header}>{plmAddress}</h2>
                             </Link>
+                            <List component="nav" className={classes.root}>
+                                <ListItem button onClick={ExpandItem}>
+                                    <ListItemIcon>
+                                        <VpnKeyIcon />
+                                    </ListItemIcon>
+                                    <ListItemText primary="View Eth Public Key" />
+                                    {open ? <ExpandLess /> : <ExpandMore />}
+                                </ListItem>
+                                <Collapse in={open} timeout="auto" unmountOnExit>
+                                    <Typography className={classes.header}>{ethPubkey}</Typography>
+                                </Collapse>
+                            </List>
                         </div>
                     </SectionCard>
                 </>
