@@ -14,6 +14,11 @@ export interface TimeFormat {
     seconds: number;
 }
 
+export enum LockSeason {
+    First,
+    Second,
+}
+
 export interface LockEvent {
     eth: BN; // this uses BN.js instead of BigNumber.js because that is what eth helper uses
     duration: number;

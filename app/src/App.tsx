@@ -1,9 +1,10 @@
 import React from 'react';
-import { Route } from 'react-router-dom';
-import { IonApp, IonRouterOutlet } from '@ionic/react';
+import { Route, Redirect } from 'react-router-dom';
+import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-//import LandingPage from './pages/LandingPage';
+import LandingPage from './pages/LandingPage';
 import EthLockdropPage from './pages/EthLockdropPage';
+
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
 
@@ -22,17 +23,24 @@ import '@ionic/react/css/display.css';
 
 /* Theme variables */
 import './theme/variables.css';
+import SideMenu from './components/SideMenu';
 
-const App: React.FC = () => (
-    <IonApp>
-        <IonReactRouter>
-            <IonRouterOutlet>
-                {/* <Route path="/welcome" component={LandingPage} exact={true} /> */}
-                <Route path="/" component={EthLockdropPage} exact={true} />
-                {/* <Route path="/" render={() => <Redirect to={'/eth-lockdrop'} />} exact={true} /> */}
-            </IonRouterOutlet>
-        </IonReactRouter>
-    </IonApp>
-);
+const App: React.FC = () => {
+    return (
+        <IonApp>
+            <IonReactRouter>
+                <IonSplitPane contentId="main" when="lg">
+                    <SideMenu />
+
+                    <IonRouterOutlet id="main">
+                        <Route exact path="/lock-form" component={LandingPage} />
+                        <Route path="/lock-form/first" component={EthLockdropPage} />
+                        <Route exact path="/" render={() => <Redirect to={'/lock-form'} />} />
+                    </IonRouterOutlet>
+                </IonSplitPane>
+            </IonReactRouter>
+        </IonApp>
+    );
+};
 
 export default App;

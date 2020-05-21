@@ -45,7 +45,7 @@ const useStyles = makeStyles((theme: Theme) =>
     }),
 );
 
-const AffiliatorList: React.FC<Props> = ({ lockData }) => {
+const AffiliationList: React.FC<Props> = ({ lockData }) => {
     const classes = useStyles();
     const [lockdropResult, setLockdropResult] = useState<PlmDrop[]>([]);
 
@@ -113,4 +113,4 @@ const IntroducerBonusesItems: React.FC<IntroducerPlanelProps> = ({ lockResult })
     );
 };
 
-export default AffiliatorList;
+export default AffiliationList;

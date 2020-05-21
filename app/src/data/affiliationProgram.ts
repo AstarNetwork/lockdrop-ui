@@ -3,7 +3,7 @@ export const defaultAddress = '0x0000000000000000000000000000000000000000';
 
 export const affiliationRate = 0.01;
 
-export const validEthAddressList = [
+const firstEthIntroducer = [
     '0xd8de1f6764e442b8763d313722e9eaee3779707e',
     '0x1d32750e8a03443f008236f7c344fc84821cf690',
     '0xa5a6d551ab33c3920848844b3fe3b27591df8f10',
@@ -38,9 +38,11 @@ export const validEthAddressList = [
     '0xfadf736b86f09f2d07d2b655cfc848fe215140d4',
     '0x9f4f9e15a4a963a9a3885979cc64b326dcaa18a8',
     '0x0def9b4811e4c4e9da5acf82d421c97b5e9c152f',
-
-    defaultAddress,
 ];
+
+const secondEthIntroducer = ['add Ethereum addresses'];
+
+export const validEthAddressList = [...firstEthIntroducer, ...secondEthIntroducer, defaultAddress];
 
 export function isRegisteredEthAddress(introducer: string) {
     return validEthAddressList.includes(introducer.toLowerCase());

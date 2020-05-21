@@ -8,19 +8,20 @@ import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
-import { LockInput, LockEvent } from '../models/LockdropModels';
+import { LockInput, LockEvent, LockSeason } from '../models/LockdropModels';
 import LockedEthList from '../components/LockedEthList';
 import { toast } from 'react-toastify';
 import { isRegisteredEthAddress } from '../data/affiliationProgram';
 import 'react-toastify/dist/ReactToastify.css';
 import SectionCard from '../components/SectionCard';
 import LockdropCountdownPanel from '../components/LockdropCountdownPanel';
-import { LockdropEnd, LockdropStart } from '../data/lockInfo';
+import { firstLockdropEnd, firstLockdropStart } from '../data/lockInfo';
 import BN from 'bn.js';
 import moment from 'moment';
 import LockdropResult from '../components/LockdropResult';
 import { Divider } from '@material-ui/core';
-import AffiliatorList from '../components/AffiliatorList';
+import AffiliationList from '../components/AffiliationList';
+import { removeWeb3Event } from '../helpers/getWeb3';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -32,7 +33,7 @@ Regarding the audit by Quantstamp, click <a
                             target="_blank"
                         >
                             here
-                        </a> to see the details`;
+                        </a> for more details`;
 
 interface PageStates {
     web3: Web3;
@@ -59,21 +60,20 @@ toast.configure({
     draggable: true,
 });
 
-const hasLockdropStarted = () => {
+const hasFirstLockdropStarted = () => {
     const now = moment()
         .utc()
         .valueOf();
-    const start = LockdropStart.valueOf();
-    //const end = LockdropEnd.valueOf();
+    const start = firstLockdropStart.valueOf();
+    //const end = firstLockdropEnd.valueOf();
     return start <= now;
 };
 
-const hasLockdropEnded = () => {
+const hasFirstLockdropEnded = () => {
     const now = moment()
         .utc()
         .valueOf();
-    const end = LockdropEnd.valueOf();
-    //const end = LockdropEnd.valueOf();
+    const end = firstLockdropEnd.valueOf();
     return end <= now;
 };
 
@@ -93,12 +93,12 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             fetchingLockData: true,
         };
     }
-
+    // used for fetching data periodically
     timerInterval: any;
 
     // get and set the web3 state when the component is mounted
     componentDidMount = async () => {
-        const web3State = await connectWeb3();
+        const web3State = await connectWeb3(LockSeason.First);
         this.setState(web3State);
 
         // checks if account has changed in MetaMask
@@ -106,7 +106,9 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             (window as any).ethereum.on('accountsChanged', this.handleAccountChange);
         }
 
-        this.state.web3.eth.net.getNetworkType().then(i => this.setState({ networkType: i }));
+        this.setState({ networkType: await this.state.web3.eth.net.getNetworkType() });
+
+        //this.state.web3.eth.net.getNetworkType().then(i => this.setState({ networkType: i }));
 
         this.timerInterval = setInterval(() => {
             this.getLockData().then(() => {
@@ -117,6 +119,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
 
     componentWillUnmount = () => {
         clearInterval(this.timerInterval);
+        removeWeb3Event();
     };
 
     // called when the user changes MetaMask account
@@ -176,9 +179,9 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
     render() {
         return (
             <IonPage>
+                <Navbar />
                 <IonContent>
-                    <Navbar />
-                    {hasLockdropStarted() ? (
+                    {hasFirstLockdropStarted() ? (
                         this.state.isLoading ? (
                             <IonLoading isOpen={true} message={'Connecting to Wallet and fetching chain data...'} />
                         ) : (
@@ -194,11 +197,11 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
 
                                 <SectionCard maxWidth="lg">
                                     <LockdropCountdownPanel
-                                        endTime={LockdropEnd}
-                                        startTime={LockdropStart}
+                                        endTime={firstLockdropEnd}
+                                        startTime={firstLockdropStart}
                                         lockData={this.state.allLockEvents}
                                     />
-                                    {hasLockdropEnded() ? (
+                                    {hasFirstLockdropEnded() ? (
                                         <>
                                             <Divider />
                                             <LockdropResult
@@ -210,8 +213,8 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                         <></>
                                     )}
                                 </SectionCard>
-                                <AffiliatorList lockData={this.state.allLockEvents} />
-                                {hasLockdropEnded() ? (
+                                <AffiliationList lockData={this.state.allLockEvents} />
+                                {hasFirstLockdropEnded() ? (
                                     <></>
                                 ) : (
                                     <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
@@ -229,8 +232,8 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                         <>
                             <SectionCard maxWidth="lg">
                                 <LockdropCountdownPanel
-                                    endTime={LockdropEnd}
-                                    startTime={LockdropStart}
+                                    endTime={firstLockdropEnd}
+                                    startTime={firstLockdropStart}
                                     lockData={this.state.allLockEvents}
                                 />
                             </SectionCard>
