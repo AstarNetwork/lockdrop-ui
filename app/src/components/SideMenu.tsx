@@ -1,5 +1,5 @@
 import React from 'react';
-import { IonMenu, IonListHeader, IonContent, IonList, IonItem, IonIcon, IonLabel } from '@ionic/react';
+import { IonMenu, IonListHeader, IonContent, IonList, IonItem, IonIcon, IonLabel, IonRouterLink } from '@ionic/react';
 import { Links } from '../data/links';
 
 import ethLogo from '../resources/ethereum_logo.svg';
@@ -17,25 +17,29 @@ const SideMenu: React.FC = () => {
                 <IonListHeader>Sitemap</IonListHeader>
                 <IonContent>
                     <IonList>
-                        <IonItem button detail href="/lock-form">
-                            <IonIcon src={homeIcon} slot="start" />
-                            <IonLabel>Home</IonLabel>
-                        </IonItem>
+                        <IonRouterLink routerLink="/lock-form">
+                            <IonItem button detail>
+                                <IonIcon src={homeIcon} slot="start" />
+                                <IonLabel>Home</IonLabel>
+                            </IonItem>
+                        </IonRouterLink>
                     </IonList>
                     <IonList>
                         <IonListHeader>First Lockdrop</IonListHeader>
-                        <IonItem button detail href="/lock-form/first">
-                            <IonIcon src={ethLogo} slot="start" />
-                            <IonLabel>ETH Lock</IonLabel>
-                        </IonItem>
+                        <IonRouterLink routerLink="/lock-form/first">
+                            <IonItem button detail>
+                                <IonIcon src={ethLogo} slot="start" />
+                                <IonLabel>ETH Lock</IonLabel>
+                            </IonItem>
+                        </IonRouterLink>
                     </IonList>
                     <IonList>
                         <IonListHeader>Second Lockdrop</IonListHeader>
-                        <IonItem button href="/lock-form/first" disabled detail>
+                        <IonItem button href={process.env.PUBLIC_URL + '/lock-form/first'} disabled detail>
                             <IonIcon src={ethLogo} slot="start" />
                             <IonLabel>ETH Lock</IonLabel>
                         </IonItem>
-                        <IonItem button href="/lock-form/first" disabled detail>
+                        <IonItem button href={process.env.PUBLIC_URL + '/lock-form/first'} disabled detail>
                             <IonIcon src={btcLogo} slot="start" />
                             <IonLabel>BTC Lock</IonLabel>
                         </IonItem>

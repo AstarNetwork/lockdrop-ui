@@ -1,7 +1,7 @@
 import React from 'react';
 import { Route, Redirect } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/react';
-import { IonReactRouter } from '@ionic/react-router';
+import { IonReactHashRouter } from '@ionic/react-router';
 import LandingPage from './pages/LandingPage';
 import EthLockdropPage from './pages/EthLockdropPage';
 
@@ -28,7 +28,7 @@ import SideMenu from './components/SideMenu';
 const App: React.FC = () => {
     return (
         <IonApp>
-            <IonReactRouter basename={process.env.PUBLIC_URL}>
+            <IonReactHashRouter>
                 <IonSplitPane contentId="main" when="lg">
                     <SideMenu />
 
@@ -38,7 +38,7 @@ const App: React.FC = () => {
                         <Route exact path="/" render={() => <Redirect to="/lock-form" />} />
                     </IonRouterOutlet>
                 </IonSplitPane>
-            </IonReactRouter>
+            </IonReactHashRouter>
         </IonApp>
     );
 };
