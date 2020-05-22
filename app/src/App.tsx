@@ -1,7 +1,7 @@
 import React from 'react';
 import { Route, Redirect } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/react';
-import { IonReactRouter } from '@ionic/react-router';
+import { IonReactHashRouter } from '@ionic/react-router';
 import LandingPage from './pages/LandingPage';
 import EthLockdropPage from './pages/EthLockdropPage';
 
@@ -28,17 +28,17 @@ import SideMenu from './components/SideMenu';
 const App: React.FC = () => {
     return (
         <IonApp>
-            <IonReactRouter>
+            <IonReactHashRouter>
                 <IonSplitPane contentId="main" when="lg">
                     <SideMenu />
 
-                    <IonRouterOutlet id="main">
+                    <IonRouterOutlet id="main" animated>
                         <Route exact path="/lock-form" component={LandingPage} />
                         <Route path="/lock-form/first" component={EthLockdropPage} />
-                        <Route exact path="/" render={() => <Redirect to={'/lock-form'} />} />
+                        <Route exact path="/" render={() => <Redirect to="/lock-form" />} />
                     </IonRouterOutlet>
                 </IonSplitPane>
-            </IonReactRouter>
+            </IonReactHashRouter>
         </IonApp>
     );
 };
