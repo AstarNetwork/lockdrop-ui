@@ -17,14 +17,14 @@ const SideMenu: React.FC = () => {
                 <IonListHeader>Sitemap</IonListHeader>
                 <IonContent>
                     <IonList>
-                        <IonItem button href="/lock-form" detail>
+                        <IonItem button detail href="/lock-form">
                             <IonIcon src={homeIcon} slot="start" />
                             <IonLabel>Home</IonLabel>
                         </IonItem>
                     </IonList>
                     <IonList>
                         <IonListHeader>First Lockdrop</IonListHeader>
-                        <IonItem button href="/lock-form/first" detail>
+                        <IonItem button detail href="/lock-form/first">
                             <IonIcon src={ethLogo} slot="start" />
                             <IonLabel>ETH Lock</IonLabel>
                         </IonItem>

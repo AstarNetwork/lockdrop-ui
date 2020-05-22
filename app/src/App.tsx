@@ -28,14 +28,14 @@ import SideMenu from './components/SideMenu';
 const App: React.FC = () => {
     return (
         <IonApp>
-            <IonReactRouter>
+            <IonReactRouter basename={process.env.PUBLIC_URL}>
                 <IonSplitPane contentId="main" when="lg">
                     <SideMenu />
 
-                    <IonRouterOutlet id="main">
+                    <IonRouterOutlet id="main" animated>
                         <Route exact path="/lock-form" component={LandingPage} />
                         <Route path="/lock-form/first" component={EthLockdropPage} />
-                        <Route exact path="/" render={() => <Redirect to={'/lock-form'} />} />
+                        <Route exact path="/" render={() => <Redirect to="/lock-form" />} />
                     </IonRouterOutlet>
                 </IonSplitPane>
             </IonReactRouter>

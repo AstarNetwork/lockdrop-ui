@@ -69,7 +69,7 @@ const getWeb3 = () =>
     new Promise((resolve, reject) => {
         // Wait for loading completion to avoid race conditions with web3 injection timing.
         try {
-            window.addEventListener('load', async () => resolve(await web3Listener()));
+            window.addEventListener('load', () => resolve(web3Listener()));
         } catch (error) {
             reject(error);
         }
@@ -78,7 +78,7 @@ const getWeb3 = () =>
 export const removeWeb3Event = () => {
     new Promise((resolve, reject) => {
         try {
-            window.removeEventListener('load', async () => resolve(await web3Listener()));
+            window.removeEventListener('load', () => resolve(web3Listener()));
         } catch (error) {
             reject(error);
         }
