@@ -89,7 +89,7 @@ const LockdropResult: React.FC<ResultProps> = ({ lockData, web3 }) => {
                 <>
                     <CircularProgress />
                 </>
-            ) : (totalPlm.locks.length > 0 || totalPlm.affiliationRefsBonuses.length > 0 ) ? (
+            ) : totalPlm.locks.length > 0 || totalPlm.affiliationRefsBonuses.length > 0 ? (
                 <>
                     <h2 className={classes.header}>{countupTotalPlmVal} PLM in total</h2>
                     <p>You have locked {totalPlm.locks.length} time(s)</p>
