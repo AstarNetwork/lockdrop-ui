@@ -65,16 +65,6 @@ async function web3Listener() {
 //         });
 //     });
 
-const getWeb3 = () =>
-    new Promise((resolve, reject) => {
-        // Wait for loading completion to avoid race conditions with web3 injection timing.
-        try {
-            window.addEventListener('load', () => resolve(web3Listener()));
-        } catch (error) {
-            reject(error);
-        }
-    });
-
 export const removeWeb3Event = () => {
     new Promise((resolve, reject) => {
         try {
@@ -84,5 +74,21 @@ export const removeWeb3Event = () => {
         }
     });
 };
+
+const getWeb3 = () =>
+    new Promise((resolve, reject) => {
+        // check if the event was already fired
+        if (document.readyState === 'complete') {
+            // reload page to reset the event
+            window.location.reload();
+        }
+
+        // Wait for loading completion to avoid race conditions with web3 injection timing.
+        try {
+            window.addEventListener('load', () => resolve(web3Listener()));
+        } catch (error) {
+            reject(error);
+        }
+    });
 
 export default getWeb3;
