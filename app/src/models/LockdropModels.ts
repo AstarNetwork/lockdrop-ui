@@ -1,10 +1,19 @@
 import BN from 'bn.js';
+import { Moment } from 'moment';
 
 export interface LockInput {
     duration: number;
     amount: BN;
     affiliation: string;
     rate: number;
+}
+
+export interface LockMenu {
+    uri: string;
+    icon: string;
+    title: string;
+    startDate: Moment;
+    endDate: Moment;
 }
 
 export interface TimeFormat {
@@ -27,7 +36,6 @@ export interface LockEvent {
     blockNo: number;
     timestamp: string; // in Unix epoch
     lockOwner: string; // locker's address
-    blockHash: any;
 }
 
 // option data is the type that is going to be passed to the component

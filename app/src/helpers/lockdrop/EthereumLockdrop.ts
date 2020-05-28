@@ -90,7 +90,6 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
                     blockNo: blockHash.blockNumber,
                     timestamp: time,
                     lockOwner: e[1]['from'],
-                    blockHash: blockHash,
                 } as LockEvent;
             }),
         );
