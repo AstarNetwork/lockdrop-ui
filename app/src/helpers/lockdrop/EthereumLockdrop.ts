@@ -50,6 +50,7 @@ export async function getPubKey(web3: Web3) {
     const hash = web3.eth.accounts.hashMessage(msg);
     try {
         const addresses = await web3.eth.getAccounts();
+        // the password parameter is only used for minor cases
         const sig = '0x' + (await web3.eth.personal.sign(msg, addresses[0], 'SecureP4ssW0rd')).slice(2);
         const res = fromRpcSig(sig);
 
