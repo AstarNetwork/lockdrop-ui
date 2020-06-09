@@ -1,7 +1,6 @@
 import sha256 from 'fast-sha256';
 import eccrypto from 'eccrypto';
-import crypto from 'crypto-ts';
-import base58 from 'bs58';
+import wif from 'wif';
 
 //const BTC_TX_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/txs/';
 //const BTC_ADDR_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/addrs/;';
@@ -59,6 +58,7 @@ export function hashBtcMessage(message: string) {
     return sha256(sha256(buf));
 }
 
-function signMessage(message: string, privateKey: string) {
-    return eccrypto.getPublic(base58.decode(privateKey));
-}
+export const signMessage = (privateKey: string, message: string, testNet?: boolean) => {
+    const network = testNet ? 239 : 128;
+    return eccrypto.sign(wif.decode(privateKey, network).privateKey, Buffer.from(hashBtcMessage(message)));
+};

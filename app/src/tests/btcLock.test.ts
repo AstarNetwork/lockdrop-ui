@@ -1,11 +1,6 @@
-//import { generatePlmAddress } from '../helpers/lockdrop/EthereumLockdrop';
-import { instantiateSecp256k1 } from 'bitcoin-ts';
-import Message from 'bitcore-message';
-import bs58 from 'bs58';
-//import { crypto, PrivateKey } from 'bitcore-lib';
-import { hashBtcMessage } from '../helpers/lockdrop/BitcoinLockdrop';
+import { PrivateKey, Message } from 'bitcore-lib';
 import eccrypto from 'eccrypto';
-import crypto from 'crypto';
+import wif from 'wif';
 
 const MESSAGE = 'plasm network btc lock';
 
@@ -30,7 +25,7 @@ describe('BTC signature tests', () => {
     it('verifies the signature from address', () => {
         //verify the first set of signature
         expect(
-            Message('aas').verify(
+            new Message('aas').verify(
                 '1En7wYxwUiuFfma1Pu3N6d5gopRPvWoj4q',
                 'IAqCpjxYFTl/OtYzLYb8VVYgyspmiEj43GQoG8R10hLKVOWF6YNXdBlx2U08HEG+oyyu3eZGoYoAfFcRFcQ+dBM=',
             ),
@@ -38,7 +33,23 @@ describe('BTC signature tests', () => {
 
         // verify the second set of signature
         expect(
-            Message('Hello World').verify(
+            new Message('Hello World').verify(
+                '16R2kAxaUNM4xj6ykKbxEugpJdYyJzTP13',
+                'H0b22gIQIfutUzm7Z9qchdfhUtaO52alhNPK3emrkGOfbOzGHVPuWD9rMIphxniwBNgF/YN4c5C/dMwXz3yJz5k=',
+            ),
+        ).toEqual(true);
+    });
+
+    it('verifies public key', () => {
+        // mainnet version number is 128(0x08) while testnet is 239 (0xEF)
+        // details from here https://en.bitcoin.it/wiki/List_of_address_prefixes
+        const priv = wif.decode(testSet1.privateKey, 128);
+
+        const pub = eccrypto.getPublic(priv.privateKey);
+        expect(pub.toString('hex').replace('0x', '')).toEqual(testSet1.publicKey);
+
+        expect(
+            new Message('Hello World').verify(
                 '16R2kAxaUNM4xj6ykKbxEugpJdYyJzTP13',
                 'H0b22gIQIfutUzm7Z9qchdfhUtaO52alhNPK3emrkGOfbOzGHVPuWD9rMIphxniwBNgF/YN4c5C/dMwXz3yJz5k=',
             ),
@@ -46,28 +57,18 @@ describe('BTC signature tests', () => {
     });
 
     it('sign message with private key', async () => {
-        const secp256k1 = await instantiateSecp256k1();
-        const privateKeyBuffer = Uint8Array.from(bs58.decode(testSet1.privateKey));
-        const messageHash = hashBtcMessage(MESSAGE);
+        const signature = new Message(MESSAGE).sign(new PrivateKey(testSet1.privateKey));
 
-        const signature = secp256k1.signMessageHashDER(privateKeyBuffer, messageHash);
-        //console.log(Buffer.from(signature).toString('base64'));
-
-        expect(
-            secp256k1.verifySignatureDERLowS(signature, Uint8Array.from(bs58.decode(testSet2.address)), messageHash),
-        ).toEqual(true);
+        expect(new Message(MESSAGE).verify(testSet1.address, signature)).toEqual(true);
     });
 
     it('recovers the public key from the signature', async () => {
-        const secp256k1 = await instantiateSecp256k1();
-        const hashedMsg = hashBtcMessage(MESSAGE);
-        const sigToByte = Uint8Array.from(Buffer.from(testSet2.signature, 'base64'));
+        const hashedMessage = new Message(MESSAGE);
 
-        const pub = secp256k1.recoverPublicKeyUncompressed(sigToByte, 0, hashedMsg);
-        console.log(Buffer.from(pub).toString('hex'));
+        const sig = hashedMessage.sign(new PrivateKey(testSet2.privateKey));
 
-        expect(Buffer.from(pub).toString('hex').length === testSet2.publicKey.length).toEqual(true);
-        // verify message with the public key
-        expect(secp256k1.verifySignatureDER(sigToByte, bs58.decode(testSet2.address), hashedMsg)).toEqual(true);
+        const pubKey = hashedMessage.recoverPublicKey(testSet2.address, sig);
+        //console.log(pubKey);
+        expect(pubKey).toEqual(testSet2.publicKey);
     });
 });
