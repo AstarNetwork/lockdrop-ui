@@ -63,10 +63,11 @@ export async function getPubKey(web3: Web3) {
 // returns an array of the entire list of locked events for the contract only once
 export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<LockEvent[]> {
     // this value can be set as the block number of where the contract was deployed
-    const startBlock = 0;
+    // got from here https://etherscan.io/address/0x5b673e2ef319b388a3014702d17022c57fe5eb92
+    const mainnetStartBlock = 9662816;
     try {
         const ev = await instance.getPastEvents('Locked', {
-            fromBlock: startBlock,
+            fromBlock: mainnetStartBlock,
         });
 
         const eventHashes = await Promise.all(
@@ -81,7 +82,9 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
                 const blockHash = e[1];
                 const lockEvent = e[0];
 
-                const transactionString = await Promise.resolve(web3.eth.getBlock(blockHash.blockNumber));
+                const transactionString = await Promise.resolve(
+                    web3.eth.getBlock((blockHash.blockNumber as number).toString()),
+                );
                 const time = transactionString.timestamp.toString();
                 return {
                     eth: lockEvent.eth as BN,
