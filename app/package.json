@@ -4,6 +4,7 @@
     "version": "0.0.1",
     "private": true,
     "dependencies": {
+        "@babel/helper-call-delegate": "^7.10.1",
         "@ionic/core": "^4.11.0",
         "@ionic/react": "^4.11.0",
         "@ionic/react-router": "^4.11.0",

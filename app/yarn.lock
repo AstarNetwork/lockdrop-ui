@@ -132,6 +132,15 @@
     "@babel/helper-annotate-as-pure" "^7.10.1"
     "@babel/types" "^7.10.1"
 
+"@babel/helper-call-delegate@^7.10.1":
+  version "7.10.1"
+  resolved "https://registry.yarnpkg.com/@babel/helper-call-delegate/-/helper-call-delegate-7.10.1.tgz#8a74d2ba691944874e44f71e53fa97616d683a6a"
+  integrity sha512-usMFX7TASNtz4eUMQ4GoQhkKS5R69SRWIzin2wk52wbP6/yT7K5QA4PKovhlZKU+cCwRIgXW+ZbkC3zVIx8Lyw==
+  dependencies:
+    "@babel/helper-hoist-variables" "^7.10.1"
+    "@babel/traverse" "^7.10.1"
+    "@babel/types" "^7.10.1"
+
 "@babel/helper-compilation-targets@^7.10.2", "@babel/helper-compilation-targets@^7.8.7":
   version "7.10.2"
   resolved "https://registry.yarnpkg.com/@babel/helper-compilation-targets/-/helper-compilation-targets-7.10.2.tgz#a17d9723b6e2c750299d2a14d4637c76936d8285"
@@ -2944,6 +2953,11 @@ babel-runtime@6.26.0, babel-runtime@^6.26.0:
   dependencies:
     core-js "^2.4.0"
     regenerator-runtime "^0.11.0"
+
+babel@^6.23.0:
+  version "6.23.0"
+  resolved "https://registry.yarnpkg.com/babel/-/babel-6.23.0.tgz#d0d1e7d803e974765beea3232d4e153c0efb90f4"
+  integrity sha1-0NHn2APpdHZb7qMjLU4VPA77kPQ=
 
 babylon@^6.18.0:
   version "6.18.0"
