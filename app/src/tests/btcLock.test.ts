@@ -7,10 +7,9 @@ import { regtestUtils } from './_regtest';
 import bip68 from 'bip68';
 import { PsbtInput } from 'bip174/src/lib/interfaces';
 import * as varuint from 'varuint-bitcoin';
+import { csvLockScript, MESSAGE } from '../helpers/lockdrop/BitcoinLockdrop';
 
 const regtest = regtestUtils.network;
-
-const MESSAGE = 'plasm network btc lock';
 
 const testSet1 = {
     address: '17L3qWGDUBGN5V8d9yqXgJqiwwnEugL1UJ',
@@ -27,21 +26,6 @@ const testSet2 = {
     publicKey:
         '04a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd5b8dec5235a0fa8722476c7709c02559e3aa73aa03918ba2d492eea75abea235',
 };
-
-function csvLockScript(publicKeyHex: string, sequence: number): Buffer {
-    return bitcoin.script.fromASM(
-        `
-        ${publicKeyHex}
-        OP_CHECKSIGVERIFY
-        ${bitcoin.script.number.encode(sequence).toString('hex')}
-        OP_CHECKSEQUENCEVERIFY
-        OP_DROP
-        OP_1
-        `
-            .trim()
-            .replace(/\s+/g, ' '),
-    );
-}
 
 // This function is used to finalize a CSV transaction using PSBT.
 function csvGetFinalScripts(
