@@ -66,4 +66,11 @@ export const dustyLock: LockMenu[] = [
         startDate: firstLockdropStart,
         endDate: firstLockdropEnd,
     },
+    {
+        title: 'BTC Lock',
+        uri: '/lock-form/dusty-btc',
+        icon: btcLogo,
+        startDate: firstLockdropStart,
+        endDate: firstLockdropEnd,
+    },
 ];

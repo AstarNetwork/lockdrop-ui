@@ -124,6 +124,14 @@ export const LandingPage: React.FC = () => {
                             <IonRouterLink routerLink="/lock-form/dusty-eth">View</IonRouterLink>
                         </IonButton>
                     </IonItem>
+                    <IonItem>
+                        <IonIcon src={ethLogo} slot="start" />
+                        <IonLabel>Dusty BTC Lock</IonLabel>
+
+                        <IonButton fill="outline" slot="end">
+                            <IonRouterLink routerLink="/lock-form/dusty-btc">View</IonRouterLink>
+                        </IonButton>
+                    </IonItem>
                 </SectionCard>
                 <Footer />
             </IonContent>

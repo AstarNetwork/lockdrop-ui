@@ -5,8 +5,6 @@ import wif from 'wif';
 import * as bitcoin from 'bitcoinjs-lib';
 import { regtestUtils } from './_regtest';
 import bip68 from 'bip68';
-import { PsbtInput } from 'bip174/src/lib/interfaces';
-import * as varuint from 'varuint-bitcoin';
 import { csvLockScript, MESSAGE } from '../helpers/lockdrop/BitcoinLockdrop';
 
 const regtest = regtestUtils.network;
@@ -27,79 +25,12 @@ const testSet2 = {
         '04a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd5b8dec5235a0fa8722476c7709c02559e3aa73aa03918ba2d492eea75abea235',
 };
 
-// This function is used to finalize a CSV transaction using PSBT.
-function csvGetFinalScripts(
-    inputIndex: number,
-    input: PsbtInput,
-    script: Buffer,
-    isSegwit: boolean,
-    isP2SH: boolean,
-    isP2WSH: boolean,
-): {
-    finalScriptSig: Buffer | undefined;
-    finalScriptWitness: Buffer | undefined;
-} {
-    // Step 1: Check to make sure the meaningful script matches what you expect.
-    const decompiled = bitcoin.script.decompile(script);
+function toOutputScript(address: string): Buffer {
+    return bitcoin.address.toOutputScript(address, regtest);
+}
 
-    if (!decompiled) {
-        throw new Error(`Can not finalize input #${inputIndex}`);
-    }
-
-    // Step 2: Create final scripts
-    let payment: bitcoin.Payment = {
-        network: regtest,
-        output: script,
-        // This logic should be more strict and make sure the pubkeys in the
-        // meaningful script are the ones signing in the PSBT etc.
-        input: bitcoin.script.compile([input.partialSig![0].signature, bitcoin.opcodes.OP_TRUE]),
-    };
-    if (isP2WSH && isSegwit)
-        payment = bitcoin.payments.p2wsh({
-            network: regtest,
-            redeem: payment,
-        });
-    if (isP2SH)
-        payment = bitcoin.payments.p2sh({
-            network: regtest,
-            redeem: payment,
-        });
-
-    function witnessStackToScriptWitness(witness: Buffer[]): Buffer {
-        let buffer = Buffer.allocUnsafe(0);
-
-        function writeSlice(slice: Buffer): void {
-            buffer = Buffer.concat([buffer, Buffer.from(slice)]);
-        }
-
-        function writeVarInt(i: number): void {
-            const currentLen = buffer.length;
-            const varintLen = varuint.encodingLength(i);
-
-            buffer = Buffer.concat([buffer, Buffer.allocUnsafe(varintLen)]);
-            varuint.encode(i, buffer, currentLen);
-        }
-
-        function writeVarSlice(slice: Buffer): void {
-            writeVarInt(slice.length);
-            writeSlice(slice);
-        }
-
-        function writeVector(vector: Buffer[]): void {
-            writeVarInt(vector.length);
-            vector.forEach(writeVarSlice);
-        }
-
-        writeVector(witness);
-
-        return buffer;
-    }
-
-    return {
-        finalScriptSig: payment.input,
-        finalScriptWitness:
-            payment.witness && payment.witness.length > 0 ? witnessStackToScriptWitness(payment.witness) : undefined,
-    };
+function idToHash(txid: string): Buffer {
+    return Buffer.from(txid, 'hex').reverse();
 }
 
 // tests
@@ -156,6 +87,13 @@ describe('BTC signature tests', () => {
 });
 
 describe('BTC lock script tests', () => {
+    // force update MTP
+    beforeEach(async () => {
+        await regtestUtils.mine(11);
+    });
+
+    const hashType = bitcoin.Transaction.SIGHASH_ALL;
+
     it('signs a BTC transaction', () => {
         const privkey = 'cQ6483mDWwoG8o4tn6nU9Jg52RKMjPUWXSY1vycAyPRXQJ1Pn2Rq';
         const txhex =
@@ -168,14 +106,13 @@ describe('BTC lock script tests', () => {
         builder.addOutput('n4pSwWQZm8Wter1wD6n8RDhEwgCqtQgpcY', 6000);
         builder.sign(0, privkeypair);
     });
-
+    /*
     it(
-        'creates a bitcoin lock script',
+        'creates a bitcoin CSV lock script',
         async () => {
-            //const lockDuration = 100; // days
-            const walletKey = bitcoin.ECPair.makeRandom({ network: bitcoin.networks.regtest });
+            const alice = bitcoin.ECPair.fromWIF('cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe', regtest);
             //const testKey = bitcoin.ECPair.fromWIF(testSet1.privateKey, bitcoin.networks.bitcoin);
-            const pubkey = walletKey.publicKey.toString('hex');
+            const pubkey = alice.publicKey.toString('hex');
 
             // 5 blocks from now
             const sequence = bip68.encode({ blocks: 5 });
@@ -186,32 +123,29 @@ describe('BTC lock script tests', () => {
                 network: regtest,
             });
 
-            // fund the P2SH(CSV) address
+            // fund the P2SH(CCSV) address
             const unspent = await regtestUtils.faucet(p2sh.address!, 1e5);
-            const utx = await regtestUtils.fetch(unspent.txId);
-            // for non segwit inputs, you must pass the full transaction buffer
-            const nonWitnessUtxo = Buffer.from(utx.txHex, 'hex');
 
-            // This is an example of using the finalizeInput second parameter to
-            // define how you finalize the inputs, allowing for any type of script.
-            const tx = new bitcoin.Psbt({ network: regtest })
-                .setVersion(2)
-                .addInput({
-                    hash: unspent.txId,
-                    index: unspent.vout,
-                    sequence,
-                    redeemScript: p2sh.redeem!.output!,
-                    nonWitnessUtxo,
-                })
-                .addOutput({
-                    address: regtestUtils.RANDOM_ADDRESS,
-                    value: 7e4,
-                })
-                .signInput(0, walletKey)
-                .finalizeInput(0, csvGetFinalScripts) // See csvGetFinalScripts
-                .extractTransaction();
-            console.log(tx.toHex());
-            await regtestUtils.mine(10);
+            const tx = new bitcoin.Transaction();
+            tx.version = 2;
+            tx.addInput(idToHash(unspent.txId), unspent.vout);
+            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 7e4);
+
+            const signatureHash = tx.hashForSignature(0, p2sh.redeem!.output!, hashType);
+            const redeemScriptSig = bitcoin.payments.p2sh({
+                network: regtest,
+                redeem: {
+                    network: regtest,
+                    output: p2sh.redeem!.output,
+                    input: bitcoin.script.compile([
+                        bitcoin.opcodes.OP_0,
+                        bitcoin.script.signature.encode(alice.sign(signatureHash), hashType),
+                        bitcoin.opcodes.OP_TRUE,
+                        bitcoin.opcodes.OP_TRUE,
+                    ]),
+                },
+            }).input;
+            tx.setInputScript(0, redeemScriptSig!);
 
             await regtestUtils.broadcast(tx.toHex());
 
@@ -224,4 +158,5 @@ describe('BTC lock script tests', () => {
         },
         10 * 1000, // extend jest async resolve timeout
     );
+    */
 });
