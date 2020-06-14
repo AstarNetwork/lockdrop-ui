@@ -8,6 +8,14 @@ export interface LockInput {
     rate: number;
 }
 
+export interface UnspentTx {
+    value: number;
+    txId: string;
+    vout: number;
+    address?: string;
+    height?: number;
+}
+
 export interface LockMenu {
     uri: string;
     icon: string;

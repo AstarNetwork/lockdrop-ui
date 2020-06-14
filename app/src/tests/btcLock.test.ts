@@ -5,8 +5,8 @@ import wif from 'wif';
 import * as bitcoin from 'bitcoinjs-lib';
 import * as assert from 'assert';
 import { regtestUtils } from './_regtest';
-import bip68 from 'bip68';
 import { btcLockScript, btcUnlockTx, MESSAGE } from '../helpers/lockdrop/BitcoinLockdrop';
+import { UnspentTx } from '../models/LockdropModels';
 
 const regtest = regtestUtils.network;
 
@@ -98,56 +98,61 @@ describe('BTC lock script tests', () => {
         builder.sign(0, privkeypair);
     });
 
-    it('lock BTC on script and redeem', async () => {
-        const DURATION = 10;     // Lock duration in blocks
-        const VALUE = 2000000;  // Lock value in Satoshi
-        const FEE = 200;        // Relay fee
+    it(
+        'lock BTC on script and redeem',
+        async () => {
+            const DURATION = 10; // Lock duration in blocks
+            const VALUE = 2000000; // Lock value in Satoshi
+            const FEE = 200; // Relay fee
 
-        const alice = bitcoin.ECPair.fromWIF('cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe', regtest);
-        const pubkey = alice.publicKey.toString('hex');
+            const alice = bitcoin.ECPair.fromWIF('cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe', regtest);
+            const pubkey = alice.publicKey.toString('hex');
 
-        const p2sh = bitcoin.payments.p2sh({
-            network: regtest,
-            redeem: {
-                output: btcLockScript(pubkey, DURATION),
-            },
-        });
+            const p2sh = bitcoin.payments.p2sh({
+                network: regtest,
+                redeem: {
+                    output: btcLockScript(pubkey, DURATION),
+                },
+            });
 
-        // fund the P2SH(CCSV) address (THIS IS LOCK ACTION)
-        const unspent = await regtestUtils.faucet(p2sh.address!, VALUE + FEE);
-        const tx = btcUnlockTx(
-            alice,
-            regtest,
-            unspent,
-            p2sh.redeem!.output!,
-            DURATION,
-            regtestUtils.RANDOM_ADDRESS,
-            FEE,
-        );
+            // fund the P2SH(CCSV) address (THIS IS LOCK ACTION)
+            const unspent = (await regtestUtils.faucet(p2sh.address!, VALUE + FEE)) as UnspentTx;
 
-        // Try to redeem at lock time
-        await regtestUtils.broadcast(tx.toHex()).catch(err => {
-            assert.throws(() => {
-                if (err) throw err;
-            }, /Error: non-BIP68-final \(code 64\)/);
-        });
+            const tx = btcUnlockTx(
+                alice,
+                regtest,
+                unspent,
+                p2sh.redeem!.output!,
+                DURATION,
+                regtestUtils.RANDOM_ADDRESS,
+                FEE,
+            );
 
-        // Try to redeem for few blocks before unlocking
-        await regtestUtils.mine(DURATION-2);
-        await regtestUtils.broadcast(tx.toHex()).catch(err => {
-            assert.throws(() => {
-                if (err) throw err;
-            }, /Error: non-BIP68-final \(code 64\)/);
-        });
+            // Try to redeem at lock time
+            await regtestUtils.broadcast(tx.toHex()).catch(err => {
+                assert.throws(() => {
+                    if (err) throw err;
+                }, /Error: non-BIP68-final \(code 64\)/);
+            });
 
-        await regtestUtils.mine(2);
-        // Try to redeem at unlocking time
-        await regtestUtils.broadcast(tx.toHex());
-        await regtestUtils.verify({
-            txId: tx.getId(),
-            address: regtestUtils.RANDOM_ADDRESS,
-            vout: 0,
-            value: VALUE,
-        });
-    }, 10 * 1000); // extend jest async resolve timeout
+            // Try to redeem for few blocks before unlocking
+            await regtestUtils.mine(DURATION - 2);
+            await regtestUtils.broadcast(tx.toHex()).catch(err => {
+                assert.throws(() => {
+                    if (err) throw err;
+                }, /Error: non-BIP68-final \(code 64\)/);
+            });
+
+            await regtestUtils.mine(2);
+            // Try to redeem at unlocking time
+            await regtestUtils.broadcast(tx.toHex());
+            await regtestUtils.verify({
+                txId: tx.getId(),
+                address: regtestUtils.RANDOM_ADDRESS,
+                vout: 0,
+                value: VALUE,
+            });
+        },
+        10 * 1000,
+    ); // extend jest async resolve timeout
 });
