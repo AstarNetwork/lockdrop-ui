@@ -80,3 +80,7 @@ http://ionicframework.com/docs/theming/ */
     min-width: 10rem !important;
     max-width: 17rem !important;
 }
+
+ion-card {
+    border-radius: 20px !important;
+}

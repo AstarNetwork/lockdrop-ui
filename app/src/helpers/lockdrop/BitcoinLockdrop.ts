@@ -2,7 +2,8 @@ import { Message } from 'bitcore-lib';
 import * as bitcoin from 'bitcoinjs-lib';
 import bip68 from 'bip68';
 import { UnspentTx } from '../../models/LockdropModels';
-import { Transaction, Signer } from 'bitcoinjs-lib';
+import { Transaction, Signer, Network } from 'bitcoinjs-lib';
+import TrezorConnect from 'trezor-connect';
 
 //const BTC_TX_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/txs/';
 //const BTC_ADDR_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/addrs/';
@@ -32,13 +33,23 @@ export function btcLockScript(publicKeyHex: string, blocks: number): Buffer {
     );
 }
 
+export function initTrezor() {
+    TrezorConnect.init({
+        manifest: {
+            email: 'hoonkim@stake.co.jp',
+            appUrl: 'https://lockdrop.plasmnet.io',
+        },
+        debug: true,
+    });
+}
+
 export function getPublicKey(address: string, signature: string) {
     return new Message(MESSAGE).recoverPublicKey(address, signature);
 }
 
 export function btcUnlockTx(
     signer: Signer,
-    network: bitcoin.networks.Network,
+    network: Network,
     lockTx: UnspentTx,
     lockScript: Buffer,
     lockBlocks: number,
