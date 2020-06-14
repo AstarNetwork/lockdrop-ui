@@ -16,26 +16,56 @@ function daysToBlockSequence(days: number) {
     return bip68.encode({ blocks: days * blocksPerDay });
 }
 
-export function csvLockScript(publicKeyHex: string, days: number): Buffer {
-    const sequence = daysToBlockSequence(days);
+export function btcLockScript(publicKeyHex: string, blocks: number): Buffer {
     return bitcoin.script.fromASM(
         `
-        ${publicKeyHex}
-        OP_CHECKSIGVERIFY
-        ${bitcoin.script.number.encode(sequence).toString('hex')}
+        ${bitcoin.script.number.encode(bip68.encode({ blocks })).toString('hex')}
         OP_CHECKSEQUENCEVERIFY
         OP_DROP
-        OP_1
+        ${publicKeyHex}
+        OP_CHECKSIG
         `
             .trim()
             .replace(/\s+/g, ' '),
     );
 }
 
-export function getBtcPublicKey(address: string, signature: string) {
-    return new Message(MESSAGE).recoverPublicKey(address, signature);
-}
+export function btcUnlockTx(
+    signer: KeyPair,
+    network,
+    lock_tx,
+    lock_script,
+    lock_blocks: number,
+    recipient: string,
+    fee: Satoshi,
+): Transaction {
+    function idToHash(txid: string): Buffer {
+        return Buffer.from(txid, 'hex').reverse();
+    }
 
-export function verifySignature(address: string, signature: string) {
-    return new Message(MESSAGE).verify(address, signature);
+    function toOutputScript(address: string): Buffer {
+        return bitcoin.address.toOutputScript(address, network);
+    }
+
+    const sequence = bip68.encode({ blocks: lock_blocks });
+    const tx = new bitcoin.Transaction();
+    tx.version = 2;
+    tx.addInput(idToHash(lock_tx.txId), lock_tx.vout, sequence);
+    tx.addOutput(toOutputScript(recipient), lock_tx.value - fee);
+
+    const hashType = bitcoin.Transaction.SIGHASH_ALL;
+    const signatureHash = tx.hashForSignature(0, lock_script, hashType);
+    const signature = bitcoin.script.signature.encode(signer.sign(signatureHash), hashType);
+
+    const redeemScriptSig = bitcoin.payments.p2sh({
+        network,
+        redeem: {
+            network,
+            output: lock_script,
+            input: bitcoin.script.compile([signature]),
+        },
+    }).input;
+    tx.setInputScript(0, redeemScriptSig!);
+
+    return tx;
 }

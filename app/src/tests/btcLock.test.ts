@@ -3,9 +3,10 @@ import { PrivateKey, Message } from 'bitcore-lib';
 import eccrypto from 'eccrypto';
 import wif from 'wif';
 import * as bitcoin from 'bitcoinjs-lib';
+import * as assert from 'assert';
 import { regtestUtils } from './_regtest';
 import bip68 from 'bip68';
-import { csvLockScript, MESSAGE } from '../helpers/lockdrop/BitcoinLockdrop';
+import { btcLockScript, btcUnlockTx, MESSAGE } from '../helpers/lockdrop/BitcoinLockdrop';
 
 const regtest = regtestUtils.network;
 
@@ -24,14 +25,6 @@ const testSet2 = {
     publicKey:
         '04a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd5b8dec5235a0fa8722476c7709c02559e3aa73aa03918ba2d492eea75abea235',
 };
-
-function toOutputScript(address: string): Buffer {
-    return bitcoin.address.toOutputScript(address, regtest);
-}
-
-function idToHash(txid: string): Buffer {
-    return Buffer.from(txid, 'hex').reverse();
-}
 
 // tests
 describe('BTC signature tests', () => {
@@ -92,8 +85,6 @@ describe('BTC lock script tests', () => {
         await regtestUtils.mine(11);
     });
 
-    const hashType = bitcoin.Transaction.SIGHASH_ALL;
-
     it('signs a BTC transaction', () => {
         const privkey = 'cQ6483mDWwoG8o4tn6nU9Jg52RKMjPUWXSY1vycAyPRXQJ1Pn2Rq';
         const txhex =
@@ -106,57 +97,57 @@ describe('BTC lock script tests', () => {
         builder.addOutput('n4pSwWQZm8Wter1wD6n8RDhEwgCqtQgpcY', 6000);
         builder.sign(0, privkeypair);
     });
-    /*
-    it(
-        'creates a bitcoin CSV lock script',
-        async () => {
-            const alice = bitcoin.ECPair.fromWIF('cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe', regtest);
-            //const testKey = bitcoin.ECPair.fromWIF(testSet1.privateKey, bitcoin.networks.bitcoin);
-            const pubkey = alice.publicKey.toString('hex');
 
-            // 5 blocks from now
-            const sequence = bip68.encode({ blocks: 5 });
-            const p2sh = bitcoin.payments.p2sh({
-                redeem: {
-                    output: csvLockScript(pubkey, sequence),
-                },
-                network: regtest,
-            });
+    it('lock BTC on script and redeem', async () => {
+        const DURATION = 10;     // Lock duration in blocks
+        const VALUE = 2000000;  // Lock value in Satoshi
+        const FEE = 200;        // Relay fee
 
-            // fund the P2SH(CCSV) address
-            const unspent = await regtestUtils.faucet(p2sh.address!, 1e5);
+        const alice = bitcoin.ECPair.fromWIF('cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe', regtest);
+        const pubkey = alice.publicKey.toString('hex');
 
-            const tx = new bitcoin.Transaction();
-            tx.version = 2;
-            tx.addInput(idToHash(unspent.txId), unspent.vout);
-            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 7e4);
+        const p2sh = bitcoin.payments.p2sh({
+            network: regtest,
+            redeem: {
+                output: btcLockScript(pubkey, DURATION),
+            },
+        });
 
-            const signatureHash = tx.hashForSignature(0, p2sh.redeem!.output!, hashType);
-            const redeemScriptSig = bitcoin.payments.p2sh({
-                network: regtest,
-                redeem: {
-                    network: regtest,
-                    output: p2sh.redeem!.output,
-                    input: bitcoin.script.compile([
-                        bitcoin.opcodes.OP_0,
-                        bitcoin.script.signature.encode(alice.sign(signatureHash), hashType),
-                        bitcoin.opcodes.OP_TRUE,
-                        bitcoin.opcodes.OP_TRUE,
-                    ]),
-                },
-            }).input;
-            tx.setInputScript(0, redeemScriptSig!);
+        // fund the P2SH(CCSV) address (THIS IS LOCK ACTION)
+        const unspent = await regtestUtils.faucet(p2sh.address!, VALUE + FEE);
+        const tx = btcUnlockTx(
+            alice,
+            regtest,
+            unspent,
+            p2sh.redeem!.output!,
+            DURATION,
+            regtestUtils.RANDOM_ADDRESS,
+            FEE,
+        );
 
-            await regtestUtils.broadcast(tx.toHex());
+        // Try to redeem at lock time
+        await regtestUtils.broadcast(tx.toHex()).catch(err => {
+            assert.throws(() => {
+                if (err) throw err;
+            }, /Error: non-BIP68-final \(code 64\)/);
+        });
 
-            await regtestUtils.verify({
-                txId: tx.getId(),
-                address: regtestUtils.RANDOM_ADDRESS,
-                vout: 0,
-                value: 7e4,
-            });
-        },
-        10 * 1000, // extend jest async resolve timeout
-    );
-    */
+        // Try to redeem for few blocks before unlocking
+        await regtestUtils.mine(DURATION-2);
+        await regtestUtils.broadcast(tx.toHex()).catch(err => {
+            assert.throws(() => {
+                if (err) throw err;
+            }, /Error: non-BIP68-final \(code 64\)/);
+        });
+
+        await regtestUtils.mine(2);
+        // Try to redeem at unlocking time
+        await regtestUtils.broadcast(tx.toHex());
+        await regtestUtils.verify({
+            txId: tx.getId(),
+            address: regtestUtils.RANDOM_ADDRESS,
+            vout: 0,
+            value: VALUE,
+        });
+    }, 10 * 1000); // extend jest async resolve timeout
 });
