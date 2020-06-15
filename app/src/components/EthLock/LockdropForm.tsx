@@ -1,16 +1,16 @@
 import { IonLabel, IonButton, IonItem, IonInput, IonCard, IonCardContent, IonChip } from '@ionic/react';
 import React, { useState } from 'react';
-import { LockInput } from '../models/LockdropModels';
-import SectionCard from './SectionCard';
-import { DropdownOption } from '../components/DropdownOption';
+import { LockInput } from '../../models/LockdropModels';
+import SectionCard from '../SectionCard';
+import { DropdownOption } from '../DropdownOption';
 import Container from '@material-ui/core/Container';
 import BN from 'bn.js';
 import { Typography } from '@material-ui/core';
-import quantstampLogo from '../resources/quantstamp-logo.png';
+import quantstampLogo from '../../resources/quantstamp-logo.png';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import Link from '@material-ui/core/Link';
 import parse from 'html-react-parser';
-import { durations, rates } from '../data/lockInfo';
+import { durations, rates } from '../../data/lockInfo';
 
 type InputProps = {
     token: string;

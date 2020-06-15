@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     IonContent,
     IonPage,
@@ -11,12 +11,17 @@ import {
     IonIcon,
     IonLabel,
 } from '@ionic/react';
-import { wifi, wine, warning } from 'ionicons/icons';
+import { warning } from 'ionicons/icons';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SectionCard from '../components/SectionCard';
 import { Typography, Link, makeStyles, createStyles } from '@material-ui/core';
 import quantstampLogo from '../resources/quantstamp-logo.png';
+import trezorLogo from '../resources/trezor_logo.svg';
+import ledgerLogo from '../resources/ledger_logo.svg';
+import TrezorConnect from 'trezor-connect';
+import { initTrezor } from '../helpers/lockdrop/BitcoinLockdrop';
+import { BtcWalletType } from '../models/LockdropModels';
 
 const useStyles = makeStyles(theme =>
     createStyles({
@@ -44,6 +49,27 @@ const useStyles = makeStyles(theme =>
 
 export default function DustyBtcLockPage() {
     const classes = useStyles();
+
+    const [walletType, setWalletType] = useState<BtcWalletType>(BtcWalletType.None);
+
+    const handleTrezor = async () => {
+        if (initTrezor()) {
+            const address = await TrezorConnect.getAddress({ path: "m/49'/0/'0'" });
+            console.log('logging in to trezor' + address.success);
+            setWalletType(BtcWalletType.Trezor);
+        } else {
+            console.log('failed to login to trezor');
+        }
+    };
+    const handleLedger = () => {
+        console.log('logging in to Ledger');
+        setWalletType(BtcWalletType.Ledger);
+    };
+    const handleRawTx = () => {
+        console.log('logging in to raw transaction');
+        setWalletType(BtcWalletType.Raw);
+    };
+
     return (
         <>
             <IonPage>
@@ -74,17 +100,17 @@ export default function DustyBtcLockPage() {
                             </IonCardHeader>
 
                             <IonCardContent>
-                                <IonItem button>
-                                    <IonIcon icon={wifi} slot="start" />
+                                <IonItem button onClick={() => handleTrezor()} disabled>
+                                    <IonIcon icon={trezorLogo} slot="start" />
                                     <IonLabel>Sign in with Trezor</IonLabel>
                                 </IonItem>
 
-                                <IonItem button>
-                                    <IonIcon icon={wine} slot="start" />
+                                <IonItem button onClick={() => handleLedger()} disabled>
+                                    <IonIcon icon={ledgerLogo} slot="start" />
                                     <IonLabel>Sign in with Ledger</IonLabel>
                                 </IonItem>
 
-                                <IonItem button>
+                                <IonItem button onClick={() => handleRawTx()}>
                                     <IonIcon icon={warning} slot="start" />
                                     <IonLabel>Direct import (Unsafe)</IonLabel>
                                 </IonItem>

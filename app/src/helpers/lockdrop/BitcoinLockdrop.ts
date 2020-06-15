@@ -14,7 +14,25 @@ import TrezorConnect from 'trezor-connect';
 
 export const MESSAGE = 'plasm network btc lock';
 
-export function daysToBlockSequence(days: number) {
+// initialize Trezor instance. This will return true if successful
+export function initTrezor() {
+    try {
+        TrezorConnect.init({
+            manifest: {
+                email: 'hoonkim@stake.co.jp',
+                appUrl: 'https://lockdrop.plasmnet.io',
+            },
+            debug: true,
+        });
+        return true;
+    } catch (e) {
+        console.log(e);
+        return false;
+    }
+}
+
+// used for CHECKSEQUENCEVERIFY relative time lock. converts days to bip68 encoded block number
+export function daysToBlocks(days: number) {
     const blocksPerDay = 144; //10 min per block. day = 6 * 24
     return bip68.encode({ blocks: days * blocksPerDay });
 }
@@ -31,16 +49,6 @@ export function btcLockScript(publicKeyHex: string, blocks: number): Buffer {
             .trim()
             .replace(/\s+/g, ' '),
     );
-}
-
-export function initTrezor() {
-    TrezorConnect.init({
-        manifest: {
-            email: 'hoonkim@stake.co.jp',
-            appUrl: 'https://lockdrop.plasmnet.io',
-        },
-        debug: true,
-    });
 }
 
 export function getPublicKey(address: string, signature: string) {

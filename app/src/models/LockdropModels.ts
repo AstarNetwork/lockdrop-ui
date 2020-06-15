@@ -8,6 +8,13 @@ export interface LockInput {
     rate: number;
 }
 
+export enum BtcWalletType {
+    Trezor,
+    Ledger,
+    Raw,
+    None,
+}
+
 export interface UnspentTx {
     value: number;
     txId: string;

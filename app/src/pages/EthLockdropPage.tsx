@@ -2,14 +2,14 @@
 /* eslint-disable react/prop-types */
 import { IonContent, IonPage, IonLoading } from '@ionic/react';
 import React from 'react';
-import LockdropForm from '../components/LockdropForm';
+import LockdropForm from '../components/EthLock/LockdropForm';
 import { connectWeb3, defaultAffiliation, getAllLockEvents } from '../helpers/lockdrop/EthereumLockdrop';
 import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
 import { LockInput, LockEvent, LockSeason } from '../models/LockdropModels';
-import LockedEthList from '../components/LockedEthList';
+import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
 import { isRegisteredEthAddress } from '../data/affiliationProgram';
 import 'react-toastify/dist/ReactToastify.css';
@@ -18,7 +18,7 @@ import LockdropCountdownPanel from '../components/LockdropCountdownPanel';
 import { firstLockdropEnd, firstLockdropStart } from '../data/lockInfo';
 import BN from 'bn.js';
 import moment from 'moment';
-import LockdropResult from '../components/LockdropResult';
+import LockdropResult from '../components/EthLock/LockdropResult';
 import { Divider } from '@material-ui/core';
 import AffiliationList from '../components/AffiliationList';
 import { removeWeb3Event } from '../helpers/getWeb3';

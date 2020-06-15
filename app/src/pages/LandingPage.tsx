@@ -125,7 +125,7 @@ export const LandingPage: React.FC = () => {
                         </IonButton>
                     </IonItem>
                     <IonItem>
-                        <IonIcon src={ethLogo} slot="start" />
+                        <IonIcon src={btcLogo} slot="start" />
                         <IonLabel>Dusty BTC Lock</IonLabel>
 
                         <IonButton fill="outline" slot="end">
