@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect, useCallback } from 'react';
-import { getTotalLockVal } from '../helpers/lockdrop/EthereumLockdrop';
+import { getTotalLockVal } from '../../helpers/lockdrop/EthereumLockdrop';
 //import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
-import SectionCard from '../components/SectionCard';
-import { LockEvent, TimeFormat } from '../models/LockdropModels';
+import SectionCard from '../SectionCard';
+import { LockEvent, TimeFormat } from '../../models/LockdropModels';
 import { createStyles, Theme, makeStyles, useTheme } from '@material-ui/core/styles';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
@@ -22,7 +22,7 @@ import SwipeableViews from 'react-swipeable-views';
 import LockIcon from '@material-ui/icons/Lock';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { defaultAddress } from '../data/affiliationProgram';
+import { defaultAddress } from '../../data/affiliationProgram';
 import Web3Utils from 'web3-utils';
 
 interface TabPanelProps {

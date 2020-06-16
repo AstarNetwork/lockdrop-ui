@@ -12,14 +12,9 @@ import { LockInput, LockEvent, LockSeason } from '../models/LockdropModels';
 import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import SectionCard from '../components/SectionCard';
-import LockdropCountdownPanel from '../components/LockdropCountdownPanel';
-import { firstLockdropEnd, firstLockdropStart } from '../data/lockInfo';
-import moment from 'moment';
-import LockdropResult from '../components/EthLock/LockdropResult';
-import { Divider } from '@material-ui/core';
-import AffiliationList from '../components/AffiliationList';
 import { removeWeb3Event } from '../helpers/getWeb3';
+import SectionCard from '../components/SectionCard';
+import { Typography } from '@material-ui/core';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -58,24 +53,7 @@ toast.configure({
     draggable: true,
 });
 
-const hasFirstLockdropStarted = () => {
-    const now = moment()
-        .utc()
-        .valueOf();
-    const start = firstLockdropStart.valueOf();
-    //const end = firstLockdropEnd.valueOf();
-    return start <= now;
-};
-
-const hasFirstLockdropEnded = () => {
-    const now = moment()
-        .utc()
-        .valueOf();
-    const end = firstLockdropEnd.valueOf();
-    return end <= now;
-};
-
-class EthLockdropPage extends React.Component<PageProps, PageStates> {
+class DustyEthLockPage extends React.Component<PageProps, PageStates> {
     constructor(props: PageProps) {
         super(props);
         // initialize with null values
@@ -91,6 +69,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             fetchingLockData: true,
         };
     }
+
     // used for fetching data periodically
     timerInterval: any;
 
@@ -106,13 +85,15 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
 
         this.setState({ networkType: await this.state.web3.eth.net.getNetworkType() });
 
-        //this.state.web3.eth.net.getNetworkType().then(i => this.setState({ networkType: i }));
-
         this.timerInterval = setInterval(() => {
             this.getLockData().then(() => {
                 this.setState({ isLoading: false });
             });
         }, 1000);
+    };
+
+    isMainnet = () => {
+        return this.state.networkType === 'main';
     };
 
     componentWillUnmount = () => {
@@ -150,8 +131,8 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             <IonPage>
                 <Navbar />
                 <IonContent>
-                    {hasFirstLockdropStarted() ? (
-                        this.state.isLoading ? (
+                    <>
+                        {this.state.isLoading ? (
                             <IonLoading isOpen={true} message={'Connecting to Wallet and fetching chain data...'} />
                         ) : (
                             <>
@@ -164,54 +145,40 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                     <></>
                                 )}
 
-                                <SectionCard maxWidth="lg">
-                                    <LockdropCountdownPanel
-                                        endTime={firstLockdropEnd}
-                                        startTime={firstLockdropStart}
-                                        lockData={this.state.allLockEvents}
-                                    />
-                                    {hasFirstLockdropEnded() ? (
+                                <>
+                                    {this.isMainnet() ? (
                                         <>
-                                            <Divider />
-                                            <LockdropResult
-                                                lockData={this.state.allLockEvents}
-                                                web3={this.state.web3}
-                                            />
+                                            <SectionCard maxWidth="lg">
+                                                <Typography variant="h2" component="h4" align="center">
+                                                    Please access this page with a Ethereum testnet wallet
+                                                </Typography>
+                                            </SectionCard>
                                         </>
                                     ) : (
-                                        <></>
-                                    )}
-                                </SectionCard>
-                                <AffiliationList lockData={this.state.allLockEvents} />
-                                {hasFirstLockdropEnded() ? (
-                                    <></>
-                                ) : (
-                                    <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
-                                )}
+                                        <>
+                                            <LockdropForm
+                                                token="ETH"
+                                                onSubmit={this.handleSubmit}
+                                                description={formInfo}
+                                                dusty
+                                            />
 
-                                <LockedEthList
-                                    web3={this.state.web3}
-                                    contractInstance={this.state.contract}
-                                    accounts={this.state.accounts}
-                                    lockData={this.state.allLockEvents}
-                                />
+                                            <LockedEthList
+                                                web3={this.state.web3}
+                                                contractInstance={this.state.contract}
+                                                accounts={this.state.accounts}
+                                                lockData={this.state.allLockEvents}
+                                            />
+                                        </>
+                                    )}
+                                </>
                             </>
-                        )
-                    ) : (
-                        <>
-                            <SectionCard maxWidth="lg">
-                                <LockdropCountdownPanel
-                                    endTime={firstLockdropEnd}
-                                    startTime={firstLockdropStart}
-                                    lockData={this.state.allLockEvents}
-                                />
-                            </SectionCard>
-                        </>
-                    )}
+                        )}
+                    </>
                     <Footer />
                 </IonContent>
             </IonPage>
         );
     }
 }
-export default EthLockdropPage;
+export default DustyEthLockPage;

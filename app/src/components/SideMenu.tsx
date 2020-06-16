@@ -1,14 +1,12 @@
 import React from 'react';
 import { IonMenu, IonListHeader, IonContent, IonList, IonItem, IonIcon, IonLabel, IonRouterLink } from '@ionic/react';
 import { Links } from '../data/links';
-
-import ethLogo from '../resources/ethereum_logo.svg';
-import btcLogo from '../resources/bitcoin_logo.svg';
 import homeIcon from '../resources/home-outline.svg';
 import twitter from '../resources/logo-twitter.svg';
 import discord from '../resources/logo-discord.svg';
 import telegram from '../resources/logo-telegram.svg';
 import github from '../resources/logo-github.svg';
+import { firstLock, secondLock, dustyLock } from '../data/lockInfo';
 
 const SideMenu: React.FC = () => {
     return (
@@ -26,23 +24,50 @@ const SideMenu: React.FC = () => {
                     </IonList>
                     <IonList>
                         <IonListHeader>First Lockdrop</IonListHeader>
-                        <IonRouterLink routerLink="/lock-form/first">
-                            <IonItem button detail>
+                        {firstLock.map((i, index) => (
+                            <IonRouterLink routerLink={i.uri} key={index}>
+                                <IonItem button detail>
+                                    <IonIcon src={i.icon} slot="start" />
+                                    <IonLabel>{i.title}</IonLabel>
+                                </IonItem>
+                            </IonRouterLink>
+                        ))}
+                    </IonList>
+                    <IonList>
+                        <IonListHeader>Second Lockdrop</IonListHeader>
+                        {secondLock.map((i, index) => (
+                            <IonRouterLink routerLink={i.uri} key={index}>
+                                <IonItem button disabled detail>
+                                    <IonIcon src={i.icon} slot="start" />
+                                    <IonLabel>{i.title}</IonLabel>
+                                </IonItem>
+                            </IonRouterLink>
+                        ))}
+
+                        {/* <IonRouterLink routerLink="/lock-form/first">
+                            <IonItem button disabled detail>
                                 <IonIcon src={ethLogo} slot="start" />
                                 <IonLabel>ETH Lock</IonLabel>
                             </IonItem>
                         </IonRouterLink>
+                        <IonRouterLink routerLink="/lock-form/first">
+                            <IonItem button disabled detail>
+                                <IonIcon src={btcLogo} slot="start" />
+                                <IonLabel>BTC Lock</IonLabel>
+                            </IonItem>
+                        </IonRouterLink> */}
                     </IonList>
+
                     <IonList>
-                        <IonListHeader>Second Lockdrop</IonListHeader>
-                        <IonItem button href={process.env.PUBLIC_URL + '/lock-form/first'} disabled detail>
-                            <IonIcon src={ethLogo} slot="start" />
-                            <IonLabel>ETH Lock</IonLabel>
-                        </IonItem>
-                        <IonItem button href={process.env.PUBLIC_URL + '/lock-form/first'} disabled detail>
-                            <IonIcon src={btcLogo} slot="start" />
-                            <IonLabel>BTC Lock</IonLabel>
-                        </IonItem>
+                        <IonListHeader>Dusty Lockdrop</IonListHeader>
+                        {dustyLock.map((i, index) => (
+                            <IonRouterLink routerLink={i.uri} key={index}>
+                                <IonItem button detail disabled={i.disabled}>
+                                    <IonIcon src={i.icon} slot="start" />
+                                    <IonLabel>{i.title}</IonLabel>
+                                </IonItem>
+                            </IonRouterLink>
+                        ))}
                     </IonList>
 
                     <IonList>

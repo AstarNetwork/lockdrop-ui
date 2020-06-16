@@ -111,6 +111,28 @@ export const LandingPage: React.FC = () => {
                         Lock End: TBA
                     </IonCardContent>
                 </SectionCard>
+
+                <SectionCard maxWidth="lg">
+                    <IonCardHeader>
+                        <IonCardTitle>Dusty Lockdrop</IonCardTitle>
+                    </IonCardHeader>
+                    <IonItem>
+                        <IonIcon src={ethLogo} slot="start" />
+                        <IonLabel>Dusty ETH Lock</IonLabel>
+
+                        <IonButton fill="outline" slot="end">
+                            <IonRouterLink routerLink="/lock-form/dusty-eth">View</IonRouterLink>
+                        </IonButton>
+                    </IonItem>
+                    <IonItem>
+                        <IonIcon src={btcLogo} slot="start" />
+                        <IonLabel>Dusty BTC Lock</IonLabel>
+
+                        <IonButton fill="outline" slot="end" disabled>
+                            <IonRouterLink routerLink="/lock-form/dusty-btc">View</IonRouterLink>
+                        </IonButton>
+                    </IonItem>
+                </SectionCard>
                 <Footer />
             </IonContent>
         </IonPage>

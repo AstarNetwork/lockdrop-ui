@@ -1,24 +1,25 @@
 import { IonLabel, IonButton, IonItem, IonInput, IonCard, IonCardContent, IonChip } from '@ionic/react';
 import React, { useState } from 'react';
-import { LockInput } from '../models/LockdropModels';
-import SectionCard from './SectionCard';
-import { DropdownOption } from '../components/DropdownOption';
+import { LockInput } from '../../models/LockdropModels';
+import SectionCard from '../SectionCard';
+import { DropdownOption } from '../DropdownOption';
 import Container from '@material-ui/core/Container';
 import BN from 'bn.js';
 import { Typography } from '@material-ui/core';
-import quantstampLogo from '../resources/quantstamp-logo.png';
+import quantstampLogo from '../../resources/quantstamp-logo.png';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import Link from '@material-ui/core/Link';
 import parse from 'html-react-parser';
-import { durations, rates } from '../data/lockInfo';
+import { durations, rates } from '../../data/lockInfo';
 
 type InputProps = {
     token: string;
     onSubmit: Function;
     description?: string;
+    dusty?: boolean;
 };
 // the main component function
-const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
+const LockdropForm = ({ token, onSubmit, description, dusty }: InputProps) => {
     // states used in this component
     const [lockAmount, setAmount] = useState<BN>(new BN(0));
     const [lockDuration, setDuration] = useState(0);
@@ -74,7 +75,7 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
             <SectionCard maxWidth="lg">
                 <div className={classes.formRoot}>
                     <Typography variant="h4" component="h1" align="center">
-                        Plasm Network Ethereum Lockdrop
+                        {dusty ? 'Dusty Plasm' : 'Plasm Main'} Network Ethereum Lockdrop
                     </Typography>
                     <Typography variant="body2" component="h2" align="center">
                         Audited by{' '}

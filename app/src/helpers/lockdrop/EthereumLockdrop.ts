@@ -6,7 +6,7 @@ import SecondLockdrop from '../../contracts/Lockdrop.json';
 import getWeb3 from '../getWeb3';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
-import { LockEvent, LockSeason } from '../../models/LockdropModels';
+import { LockEvent, LockSeason, LockInput } from '../../models/LockdropModels';
 import BN from 'bn.js';
 import BigNumber from 'bignumber.js';
 import { isRegisteredEthAddress, defaultAddress, affiliationRate } from '../../data/affiliationProgram';
@@ -16,6 +16,7 @@ import Web3Utils from 'web3-utils';
 import EthCrypto from 'eth-crypto';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { ecrecover, fromRpcSig, toBuffer, bufferToHex } from 'ethereumjs-util';
+import { Toast } from 'react-toastify';
 
 // exchange rate at the start of April 14 UTC (at the end of the lockdrop)
 // historical data was obtained from here https://coinmarketcap.com/currencies/ethereum/historical-data/
@@ -50,6 +51,7 @@ export async function getPubKey(web3: Web3) {
     const hash = web3.eth.accounts.hashMessage(msg);
     try {
         const addresses = await web3.eth.getAccounts();
+        // the password parameter is only used for minor cases
         const sig = '0x' + (await web3.eth.personal.sign(msg, addresses[0], 'SecureP4ssW0rd')).slice(2);
         const res = fromRpcSig(sig);
 
@@ -61,11 +63,11 @@ export async function getPubKey(web3: Web3) {
 
 // returns an array of the entire list of locked events for the contract only once
 export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<LockEvent[]> {
-    // this value can be set as the block number of where the contract was deployed
-    const startBlock = 0;
+    // todo: set this value as the block number of where the contract was deployed for each network
+    const mainnetStartBlock = 0;
     try {
         const ev = await instance.getPastEvents('Locked', {
-            fromBlock: startBlock,
+            fromBlock: mainnetStartBlock,
         });
 
         const eventHashes = await Promise.all(
@@ -80,7 +82,9 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
                 const blockHash = e[1];
                 const lockEvent = e[0];
 
-                const transactionString = await Promise.resolve(web3.eth.getBlock(blockHash.blockNumber));
+                const transactionString = await Promise.resolve(
+                    web3.eth.getBlock((blockHash.blockNumber as number).toString()),
+                );
                 const time = transactionString.timestamp.toString();
                 return {
                     eth: lockEvent.eth as BN,
@@ -90,7 +94,6 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
                     blockNo: blockHash.blockNumber,
                     timestamp: time,
                     lockOwner: e[1]['from'],
-                    blockHash: blockHash,
                 } as LockEvent;
             }),
         );
@@ -296,4 +299,40 @@ export async function connectWeb3(lockSeason: LockSeason) {
         accounts: [''],
         contract: {} as Contract,
     };
+}
+
+export async function submitLockTx(txInput: LockInput, address: string, contract: Contract, messageToast: Toast) {
+    // checks user input
+    if (txInput.amount > new BN(0) && txInput.duration) {
+        //console.log(formInputVal);
+        // return a default address if user input is empty
+        const introducer = defaultAffiliation(txInput.affiliation).toLowerCase();
+        try {
+            // check user input
+            if (introducer === address) {
+                messageToast.error('You cannot affiliate yourself');
+            } else if (introducer && !Web3.utils.isAddress(introducer)) {
+                messageToast.error('Please input a valid Ethereum address');
+            } else if (!isRegisteredEthAddress(introducer)) {
+                messageToast.error('The given introducer is not registered in the affiliation program!');
+            } else {
+                // convert user input to Wei
+                const amountToSend = Web3.utils.toWei(txInput.amount, 'ether');
+
+                // communicate with the smart contract
+                await contract.methods.lock(txInput.duration, introducer).send({
+                    from: address,
+                    value: amountToSend,
+                });
+
+                messageToast.success(`Successfully locked ${txInput.amount} ETH for ${txInput.duration} days!`);
+                return true;
+            }
+        } catch (error) {
+            messageToast.error('error!\n' + error.message);
+        }
+    } else {
+        messageToast.error('You are missing an input!');
+    }
+    return false;
 }

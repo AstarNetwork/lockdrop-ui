@@ -14,15 +14,20 @@ import {
     Collapse,
     Typography,
 } from '@material-ui/core';
-import { calculateTotalPlm, ethFinalExRate, getPubKey, generatePlmAddress } from '../helpers/lockdrop/EthereumLockdrop';
-import { PlmDrop } from '../models/PlasmDrop';
+import {
+    calculateTotalPlm,
+    ethFinalExRate,
+    getPubKey,
+    generatePlmAddress,
+} from '../../helpers/lockdrop/EthereumLockdrop';
+import { PlmDrop } from '../../models/PlasmDrop';
 import BigNumber from 'bignumber.js';
 import CountUp from 'react-countup';
-import { ThemeColors } from '../theme/themes';
+import { ThemeColors } from '../../theme/themes';
 import { IonPopover, IonList, IonListHeader, IonItem, IonLabel, IonChip, IonButton, IonLoading } from '@ionic/react';
-import { LockEvent } from '../models/LockdropModels';
+import { LockEvent } from '../../models/LockdropModels';
 import Web3 from 'web3';
-import SectionCard from './SectionCard';
+import SectionCard from '../SectionCard';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import VpnKeyIcon from '@material-ui/icons/VpnKey';
