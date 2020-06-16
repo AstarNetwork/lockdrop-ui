@@ -191,6 +191,7 @@ class DustyEthLockPage extends React.Component<PageProps, PageStates> {
                                                 token="ETH"
                                                 onSubmit={this.handleSubmit}
                                                 description={formInfo}
+                                                dusty
                                             />
 
                                             <LockedEthList

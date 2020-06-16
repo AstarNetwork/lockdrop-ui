@@ -16,9 +16,10 @@ type InputProps = {
     token: string;
     onSubmit: Function;
     description?: string;
+    dusty?: boolean;
 };
 // the main component function
-const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
+const LockdropForm = ({ token, onSubmit, description, dusty }: InputProps) => {
     // states used in this component
     const [lockAmount, setAmount] = useState<BN>(new BN(0));
     const [lockDuration, setDuration] = useState(0);
@@ -74,7 +75,7 @@ const LockdropForm = ({ token, onSubmit, description }: InputProps) => {
             <SectionCard maxWidth="lg">
                 <div className={classes.formRoot}>
                     <Typography variant="h4" component="h1" align="center">
-                        Plasm Network Ethereum Lockdrop
+                        {dusty ? 'Dusty Plasm' : 'Plasm Main'} Network Ethereum Lockdrop
                     </Typography>
                     <Typography variant="body2" component="h2" align="center">
                         Audited by{' '}
