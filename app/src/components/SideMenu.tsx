@@ -62,7 +62,7 @@ const SideMenu: React.FC = () => {
                         <IonListHeader>Dusty Lockdrop</IonListHeader>
                         {dustyLock.map((i, index) => (
                             <IonRouterLink routerLink={i.uri} key={index}>
-                                <IonItem button detail>
+                                <IonItem button detail disabled={i.disabled}>
                                     <IonIcon src={i.icon} slot="start" />
                                     <IonLabel>{i.title}</IonLabel>
                                 </IonItem>

@@ -29,6 +29,7 @@ export interface LockMenu {
     title: string;
     startDate: Moment;
     endDate: Moment;
+    disabled?: boolean;
 }
 
 export interface TimeFormat {

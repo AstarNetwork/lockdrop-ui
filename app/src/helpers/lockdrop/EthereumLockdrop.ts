@@ -62,9 +62,8 @@ export async function getPubKey(web3: Web3) {
 
 // returns an array of the entire list of locked events for the contract only once
 export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<LockEvent[]> {
-    // this value can be set as the block number of where the contract was deployed
-    // got from here https://etherscan.io/address/0x5b673e2ef319b388a3014702d17022c57fe5eb92
-    const mainnetStartBlock = 9662816;
+    // todo: set this value as the block number of where the contract was deployed for each network
+    const mainnetStartBlock = 0;
     try {
         const ev = await instance.getPastEvents('Locked', {
             fromBlock: mainnetStartBlock,

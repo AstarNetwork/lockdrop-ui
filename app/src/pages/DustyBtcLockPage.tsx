@@ -55,7 +55,7 @@ export default function DustyBtcLockPage() {
     const handleTrezor = async () => {
         if (initTrezor()) {
             const address = await TrezorConnect.getAddress({ path: "m/49'/0/'0'" });
-            console.log('logging in to trezor' + address.success);
+            console.log('logging in to trezor' + address.success + walletType);
             setWalletType(BtcWalletType.Trezor);
         } else {
             console.log('failed to login to trezor');
