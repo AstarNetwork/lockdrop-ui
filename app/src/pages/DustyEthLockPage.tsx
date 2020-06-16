@@ -3,7 +3,7 @@
 import { IonContent, IonPage, IonLoading } from '@ionic/react';
 import React from 'react';
 import LockdropForm from '../components/EthLock/LockdropForm';
-import { connectWeb3, defaultAffiliation, getAllLockEvents } from '../helpers/lockdrop/EthereumLockdrop';
+import { connectWeb3, getAllLockEvents, submitLockTx } from '../helpers/lockdrop/EthereumLockdrop';
 import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -11,9 +11,7 @@ import { Contract } from 'web3-eth-contract';
 import { LockInput, LockEvent, LockSeason } from '../models/LockdropModels';
 import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
-import { isRegisteredEthAddress } from '../data/affiliationProgram';
 import 'react-toastify/dist/ReactToastify.css';
-import BN from 'bn.js';
 import { removeWeb3Event } from '../helpers/getWeb3';
 import SectionCard from '../components/SectionCard';
 import { Typography } from '@material-ui/core';
@@ -121,39 +119,10 @@ class DustyEthLockPage extends React.Component<PageProps, PageStates> {
     };
 
     handleSubmit = async (formInputVal: LockInput) => {
-        // checks user input
-        if (formInputVal.amount > new BN(0) && formInputVal.duration) {
-            this.setState({ isProcessing: true });
-            //console.log(formInputVal);
-            // return a default address if user input is empty
-            const introducer = defaultAffiliation(formInputVal.affiliation).toLowerCase();
-            const { accounts, contract } = this.state;
-            try {
-                // check user input
-                if (introducer === accounts[0]) {
-                    toast.error('You cannot affiliate yourself');
-                } else if (introducer && !Web3.utils.isAddress(introducer)) {
-                    toast.error('Please input a valid Ethereum address');
-                } else if (!isRegisteredEthAddress(introducer)) {
-                    toast.error('The given introducer is not registered in the affiliation program!');
-                } else {
-                    // convert user input to Wei
-                    const amountToSend = Web3.utils.toWei(formInputVal.amount, 'ether');
+        this.setState({ isProcessing: true });
 
-                    // communicate with the smart contract
-                    await contract.methods.lock(formInputVal.duration, introducer).send({
-                        from: accounts[0],
-                        value: amountToSend,
-                    });
+        await submitLockTx(formInputVal, this.state.accounts[0], this.state.contract, toast);
 
-                    toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
-                }
-            } catch (error) {
-                toast.error('error!\n' + error.message);
-            }
-        } else {
-            toast.error('You are missing an input!');
-        }
         this.setState({ isProcessing: false });
     };
 
