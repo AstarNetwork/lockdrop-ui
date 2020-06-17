@@ -65,7 +65,6 @@ export const dustyLock: LockMenu[] = [
         icon: ethLogo,
         startDate: firstLockdropStart,
         endDate: firstLockdropEnd,
-        disabled: true,
     },
     {
         title: 'BTC Lock',

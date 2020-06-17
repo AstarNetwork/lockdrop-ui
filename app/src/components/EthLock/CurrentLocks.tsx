@@ -62,7 +62,7 @@ interface UnlockInfoProps {
     web3: Web3;
     address: string;
 }
-
+// displays a list of locks tha the current user has locked
 const CurrentLocks: React.FC<CurrentLockProps> = ({ web3, accounts, lockData }) => {
     const classes = useStyles();
     const [lockEvents, setEvents] = useState<LockEvent[]>([]);
@@ -120,6 +120,7 @@ const CurrentLocks: React.FC<CurrentLockProps> = ({ web3, accounts, lockData }) 
     );
 };
 
+// the individual lock item
 const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
     // 24 hours in epoch
     const epochDayMil = 86400000;
@@ -127,7 +128,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
     const getUnlockDate = useCallback(() => {
         // Ethereum timestamp is in seconds while JS Date is ms
         const lockedDay = Number(lockInfo.timestamp) * 1000;
-
+        // locked date + lock duration(epoch)
         const unlockDate = lockedDay + lockInfo.duration * epochDayMil;
 
         return unlockDate;
@@ -146,7 +147,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
 
     const [canUnlock, setLockState] = useState(false);
     const [tillUnlock, setUnlockDate] = useState<TimeFormat>(calculateTimeLeft());
-    const [lockIsClaimed, setLockClaim] = useState(false);
+    const [unlocked, setUnlockState] = useState(false);
     const [isLoading, setLoading] = useState(false);
 
     const checkUnlock = useCallback(async () => {
@@ -163,7 +164,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
         // check if the balance is 0 or not
         const lockClaimState = lockBalance === '0';
         // console.log(lockBalance);
-        setLockClaim(lockClaimState);
+        setUnlockState(lockClaimState);
         // manually change the loading state
         setLoading(false);
         return today > unlockDate;
@@ -246,17 +247,17 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
                                         <p>Left</p>
                                     </Grid>
                                 </Grid>
-                            ) : lockIsClaimed ? (
-                                <p>Lock already claimed!</p>
+                            ) : unlocked ? (
+                                <p>Lock already unlocked!</p>
                             ) : (
-                                <p>You can claim your lock!</p>
+                                <p>You can unlocked your lock!</p>
                             )}
                         </>
                     )}
                 </ListItemText>
 
                 <ListItemSecondaryAction>
-                    {lockIsClaimed ? (
+                    {unlocked ? (
                         <LockOpenIcon color="disabled" />
                     ) : canUnlock ? (
                         <IconButton edge="end" aria-label="unlock" onClick={() => handleClick()} color="primary">

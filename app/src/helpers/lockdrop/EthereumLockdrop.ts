@@ -17,11 +17,10 @@ import EthCrypto from 'eth-crypto';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { ecrecover, fromRpcSig, toBuffer, bufferToHex } from 'ethereumjs-util';
 import { Toast } from 'react-toastify';
-//import { ApiPromise } from '@polkadot/api';
 
 // exchange rate at the start of April 14 UTC (at the end of the lockdrop)
 // historical data was obtained from here https://coinmarketcap.com/currencies/ethereum/historical-data/
-export const ethFinalExRate = 205.56;
+export const ethFinalExRate = 205.56; // sued for the first lockdrop
 
 // the total amount of issueing PLMs at 1st Lockdrop.
 const totalAmountOfPLMs = new BigNumber('500000000.000000000000000');
@@ -46,12 +45,6 @@ export function generatePlmAddress(ethPubKey: string) {
     const plmAccountId = polkadotUtil.encodeAddress(plasmPubKey, 5);
     return plmAccountId;
 }
-
-// export async function getRealTimeLockState(ethPubKey: string) {
-//     const api = await ApiPromise.create();
-//     const address = generatePlmAddress(ethPubKey);
-//     //api.query.
-// }
 
 export async function getPubKey(web3: Web3) {
     const msg = 'Please Sign this message to generate Plasm Network address';
@@ -284,10 +277,6 @@ export async function connectWeb3(lockSeason: LockSeason) {
                     ) as Contract;
                     break;
             }
-
-            // assign current web3 instance to window global var
-            // window.web3 = web3;
-            // window.contract = instance;
 
             return {
                 web3: web3,

@@ -43,19 +43,6 @@ const SideMenu: React.FC = () => {
                                 </IonItem>
                             </IonRouterLink>
                         ))}
-
-                        {/* <IonRouterLink routerLink="/lock-form/first">
-                            <IonItem button disabled detail>
-                                <IonIcon src={ethLogo} slot="start" />
-                                <IonLabel>ETH Lock</IonLabel>
-                            </IonItem>
-                        </IonRouterLink>
-                        <IonRouterLink routerLink="/lock-form/first">
-                            <IonItem button disabled detail>
-                                <IonIcon src={btcLogo} slot="start" />
-                                <IonLabel>BTC Lock</IonLabel>
-                            </IonItem>
-                        </IonRouterLink> */}
                     </IonList>
 
                     <IonList>
