@@ -17,6 +17,7 @@ import EthCrypto from 'eth-crypto';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { ecrecover, fromRpcSig, toBuffer, bufferToHex } from 'ethereumjs-util';
 import { Toast } from 'react-toastify';
+//import { ApiPromise } from '@polkadot/api';
 
 // exchange rate at the start of April 14 UTC (at the end of the lockdrop)
 // historical data was obtained from here https://coinmarketcap.com/currencies/ethereum/historical-data/
@@ -45,6 +46,12 @@ export function generatePlmAddress(ethPubKey: string) {
     const plmAccountId = polkadotUtil.encodeAddress(plasmPubKey, 5);
     return plmAccountId;
 }
+
+// export async function getRealTimeLockState(ethPubKey: string) {
+//     const api = await ApiPromise.create();
+//     const address = generatePlmAddress(ethPubKey);
+//     //api.query.
+// }
 
 export async function getPubKey(web3: Web3) {
     const msg = 'Please Sign this message to generate Plasm Network address';

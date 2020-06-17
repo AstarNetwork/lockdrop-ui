@@ -2,20 +2,20 @@ import BigNumber from 'bignumber.js';
 import { LockEvent } from './LockdropModels';
 
 export class PlmDrop {
-    reciver: string;
+    receiver: string;
     basePlm: BigNumber;
     introducerAndBonuses: [string, BigNumber][];
     affiliationRefsBonuses: [string, BigNumber][];
     locks: LockEvent[];
 
     constructor(
-        reciver: string,
+        receiver: string,
         basePlm: BigNumber,
         introducerAndBonuses: [string, BigNumber][],
         affiliationRefsBonuses: [string, BigNumber][],
         locks: LockEvent[],
     ) {
-        this.reciver = reciver;
+        this.receiver = receiver;
         this.basePlm = basePlm;
         this.introducerAndBonuses = introducerAndBonuses;
         this.affiliationRefsBonuses = affiliationRefsBonuses;

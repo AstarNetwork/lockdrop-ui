@@ -147,13 +147,11 @@ class DustyEthLockPage extends React.Component<PageProps, PageStates> {
 
                                 <>
                                     {this.isMainnet() ? (
-                                        <>
-                                            <SectionCard maxWidth="lg">
-                                                <Typography variant="h2" component="h4" align="center">
-                                                    Please access this page with a Ethereum testnet wallet
-                                                </Typography>
-                                            </SectionCard>
-                                        </>
+                                        <SectionCard maxWidth="lg">
+                                            <Typography variant="h2" component="h4" align="center">
+                                                Please access this page with a Ethereum testnet wallet
+                                            </Typography>
+                                        </SectionCard>
                                     ) : (
                                         <>
                                             <LockdropForm
@@ -165,7 +163,6 @@ class DustyEthLockPage extends React.Component<PageProps, PageStates> {
 
                                             <LockedEthList
                                                 web3={this.state.web3}
-                                                contractInstance={this.state.contract}
                                                 accounts={this.state.accounts}
                                                 lockData={this.state.allLockEvents}
                                             />
