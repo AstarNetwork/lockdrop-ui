@@ -52,6 +52,8 @@ export interface LockEvent {
     blockNo: number;
     timestamp: string; // in Unix epoch
     lockOwner: string; // locker's address
+    blockHash: string;
+    transactionHash: string;
 }
 
 // option data is the type that is going to be passed to the component

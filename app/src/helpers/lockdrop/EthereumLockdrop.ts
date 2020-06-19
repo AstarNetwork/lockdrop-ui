@@ -46,8 +46,11 @@ export function generatePlmAddress(ethPubKey: string) {
     return plmAccountId;
 }
 
-export async function getPubKey(web3: Web3) {
-    const msg = 'Please Sign this message to generate Plasm Network address';
+export async function getPubKey(web3: Web3, message?: string) {
+    let msg = 'Please Sign this message to generate Plasm Network address';
+    if (message) {
+        msg = message;
+    }
     const hash = web3.eth.accounts.hashMessage(msg);
     try {
         const addresses = await web3.eth.getAccounts();
@@ -93,7 +96,9 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
                     introducer: lockEvent.introducer as string,
                     blockNo: blockHash.blockNumber,
                     timestamp: time,
-                    lockOwner: e[1]['from'],
+                    lockOwner: blockHash.from,
+                    blockHash: blockHash.blockHash,
+                    transactionHash: blockHash.hash,
                 } as LockEvent;
             }),
         );

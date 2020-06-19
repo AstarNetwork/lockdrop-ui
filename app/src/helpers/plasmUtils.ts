@@ -2,13 +2,34 @@
 import BigNumber from 'bignumber.js';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 
+export enum PlasmNetwork {
+    Local,
+    Dusty,
+    Main,
+}
+
 export function femtoToPlm(femto: BigNumber) {
     const plmDenominator = new BigNumber(10).pow(-15);
     return femto.times(plmDenominator);
 }
 
-export async function createDustyPlasmInstance() {
-    const wsProvider = new WsProvider('wss://rpc.plasmnet.io');
+export async function createDustyPlasmInstance(network?: PlasmNetwork) {
+    let endpoint = '';
+
+    switch (network) {
+        case PlasmNetwork.Local:
+            endpoint = 'ws://127.0.0.1:9944';
+            break;
+        case PlasmNetwork.Dusty:
+            endpoint = 'wss://rpc.dusty.plasmnet.io/';
+            break;
+        case PlasmNetwork.Main: // main net endpoint will be the default value
+        default:
+            endpoint = 'wss://rpc.plasmnet.io';
+            break;
+    }
+
+    const wsProvider = new WsProvider(endpoint);
 
     return await ApiPromise.create({
         provider: wsProvider,
@@ -41,6 +62,36 @@ export async function createDustyPlasmInstance() {
                 decline: 'AuthorityVote',
                 amount: 'u128',
                 complete: 'bool',
+            },
+        },
+        rpc: {
+            plasmLockdrop: {
+                request: {
+                    description: 'Request authorities to check locking transaction',
+                    params: [
+                        {
+                            name: 'type',
+                            type: 'u8',
+                        },
+                        {
+                            name: 'transaction_hash',
+                            type: 'H256',
+                        },
+                        {
+                            name: 'public_key',
+                            type: '[u8;33]',
+                        },
+                        {
+                            name: 'duration',
+                            type: 'u64',
+                        },
+                        {
+                            name: 'value',
+                            type: 'u128',
+                        },
+                    ],
+                    type: 'Balance',
+                },
             },
         },
     });
