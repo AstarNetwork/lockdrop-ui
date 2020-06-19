@@ -134,10 +134,10 @@ export function claimPoW(claimId: string) {
         const powByte = Buffer.from(hash).toString('binary');
         // bitwise comparison
         if ((parseInt(powByte, 2) & bitmask) > 0) {
-            found = true;
-        } else {
             nonce += 1;
             continue;
+        } else {
+            found = true;
         }
     }
 

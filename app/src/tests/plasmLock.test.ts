@@ -117,7 +117,15 @@ describe('Plasm lockdrop RPC tests', () => {
 
 describe('plasm PoW security', () => {
     it('performs a simple PoW check', () => {
-        const nonce = claimPoW('0xe691bbdbd57db92443d39897454b3cef8351450004b5258d03bf8fdcffb3748c');
+        const claimId = '0xe691bbdbd57db92443d39897454b3cef8351450004b5258d03bf8fdcffb3748c';
+        const bitmask = 0b0000_1111;
+        const nonce = claimPoW(claimId);
         console.log('nonce: ' + nonce);
+
+        const hash = polkadotUtil.blake2AsU8a(claimId + nonce.toString());
+
+        const powByte = Buffer.from(hash).toString('binary');
+
+        expect((parseInt(powByte, 2) & bitmask) <= 0).toBeTruthy();
     });
 });
