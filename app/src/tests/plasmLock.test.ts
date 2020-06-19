@@ -126,6 +126,6 @@ describe('plasm PoW security', () => {
 
         const powByte = Buffer.from(hash).toString('binary');
 
-        expect((parseInt(powByte, 2) & bitmask) <= 0).toBeTruthy();
+        expect(parseInt(powByte, 2) & bitmask).toEqual(0);
     });
 });

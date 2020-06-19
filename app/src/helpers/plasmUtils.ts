@@ -126,9 +126,9 @@ export async function sendLockClaim(api: ApiPromise, sender: string, lockParam: 
 export function claimPoW(claimId: string) {
     let nonce = polkadotUtil.randomAsNumber();
     let found = false;
+    const bitmask = 0b0000_1111;
 
     while (!found) {
-        const bitmask = 0b0000_1111;
         const hash = polkadotUtil.blake2AsU8a(claimId + nonce.toString());
 
         const powByte = Buffer.from(hash).toString('binary');
