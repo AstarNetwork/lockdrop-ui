@@ -20,12 +20,12 @@ import {
     getPubKey,
     generatePlmAddress,
 } from '../../helpers/lockdrop/EthereumLockdrop';
-import { PlmDrop } from '../../models/PlasmDrop';
+import { PlmDrop } from '../../types/PlasmDrop';
 import BigNumber from 'bignumber.js';
 import CountUp from 'react-countup';
 import { ThemeColors } from '../../theme/themes';
 import { IonPopover, IonList, IonListHeader, IonItem, IonLabel, IonChip, IonButton, IonLoading } from '@ionic/react';
-import { LockEvent } from '../../models/LockdropModels';
+import { LockEvent } from '../../types/LockdropModels';
 import Web3 from 'web3';
 import SectionCard from '../SectionCard';
 import ExpandLess from '@material-ui/icons/ExpandLess';

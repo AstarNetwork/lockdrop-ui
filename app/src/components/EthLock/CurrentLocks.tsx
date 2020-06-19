@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { getTotalLockVal, getPubKey } from '../../helpers/lockdrop/EthereumLockdrop';
 //import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
-import { LockEvent, TimeFormat } from '../../models/LockdropModels';
+import { LockEvent, TimeFormat } from '../../types/LockdropModels';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';

@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import BigNumber from 'bignumber.js';
 import { ApiPromise, WsProvider } from '@polkadot/api';
+import { Lockdrop } from '../types/LockdropModels';
+import { Hash } from '@polkadot/types/interfaces';
+import * as polkadotUtil from '@polkadot/util-crypto';
 
 export enum PlasmNetwork {
     Local,
@@ -109,4 +112,34 @@ export function lockDurationToRate(duration: number) {
     } else {
         return 1600;
     }
+}
+
+export async function sendLockClaim(api: ApiPromise, sender: string, lockParam: Lockdrop) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const claimRequestTx = await (api.tx as any).plasmLockdrop.request(lockParam);
+
+    const txHash = await claimRequestTx.signAndSend(sender);
+
+    return txHash as Hash;
+}
+
+export function claimPoW(claimId: string) {
+    let nonce = polkadotUtil.randomAsNumber();
+    let found = false;
+
+    while (!found) {
+        const bitmask = 0b0000_1111;
+        const hash = polkadotUtil.blake2AsU8a(claimId + nonce.toString());
+
+        const powByte = Buffer.from(hash).toString('binary');
+        // bitwise comparison
+        if ((parseInt(powByte, 2) & bitmask) > 0) {
+            found = true;
+        } else {
+            nonce += 1;
+            continue;
+        }
+    }
+
+    return nonce;
 }

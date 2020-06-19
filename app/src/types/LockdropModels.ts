@@ -67,3 +67,21 @@ export interface OptionItem {
     label: string; // the dropdown display label
     value: number | string; // dropdown select return value
 }
+
+// used for real-time lockdrop parameter
+// we use the snake case because substrate has the read it
+export interface Lockdrop {
+    type: number; //u8
+    transaction_hash: Uint8Array; //H256
+    public_key: Uint8Array; // [u8; 33]
+    duration: BN; // u64
+    value: BN; // u128
+}
+
+export interface Claim {
+    params: Lockdrop;
+    approve: BN; // AuthorityVote
+    decline: BN; // AuthorityVote
+    amount: BN; // u128
+    complete: boolean;
+}

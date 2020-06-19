@@ -8,7 +8,7 @@ import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
-import { LockInput, LockEvent, LockSeason } from '../models/LockdropModels';
+import { LockInput, LockEvent, LockSeason } from '../types/LockdropModels';
 import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';

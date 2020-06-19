@@ -6,7 +6,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import * as assert from 'assert';
 import { regtestUtils } from './_regtest';
 import { btcLockScript, btcUnlockTx, MESSAGE } from '../helpers/lockdrop/BitcoinLockdrop';
-import { UnspentTx } from '../models/LockdropModels';
+import { UnspentTx } from '../types/LockdropModels';
 
 const regtest = regtestUtils.network;
 

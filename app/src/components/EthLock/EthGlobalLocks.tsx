@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getTotalLockVal } from '../../helpers/lockdrop/EthereumLockdrop';
-import { LockEvent } from '../../models/LockdropModels';
+import { LockEvent } from '../../types/LockdropModels';
 import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';

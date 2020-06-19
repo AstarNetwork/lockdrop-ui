@@ -1,8 +1,8 @@
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect } from 'react';
 import { validEthAddressList, defaultAddress } from '../../data/affiliationProgram';
-import { LockEvent } from '../../models/LockdropModels';
-import { PlmDrop } from '../../models/PlasmDrop';
+import { LockEvent } from '../../types/LockdropModels';
+import { PlmDrop } from '../../types/PlasmDrop';
 import { calculateTotalPlm } from '../../helpers/lockdrop/EthereumLockdrop';
 import {
     List,

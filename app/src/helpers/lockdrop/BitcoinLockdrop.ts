@@ -1,7 +1,7 @@
 import { Message } from 'bitcore-lib';
 import * as bitcoin from 'bitcoinjs-lib';
 import bip68 from 'bip68';
-import { UnspentTx } from '../../models/LockdropModels';
+import { UnspentTx } from '../../types/LockdropModels';
 import { Transaction, Signer, Network } from 'bitcoinjs-lib';
 import TrezorConnect from 'trezor-connect';
 

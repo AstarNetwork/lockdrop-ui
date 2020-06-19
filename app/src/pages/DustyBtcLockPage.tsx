@@ -21,7 +21,7 @@ import trezorLogo from '../resources/trezor_logo.svg';
 import ledgerLogo from '../resources/ledger_logo.svg';
 import TrezorConnect from 'trezor-connect';
 import { initTrezor } from '../helpers/lockdrop/BitcoinLockdrop';
-import { BtcWalletType } from '../models/LockdropModels';
+import { BtcWalletType } from '../types/LockdropModels';
 
 const useStyles = makeStyles(theme =>
     createStyles({

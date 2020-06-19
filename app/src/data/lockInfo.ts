@@ -1,4 +1,4 @@
-import { OptionItem, LockMenu } from '../models/LockdropModels';
+import { OptionItem, LockMenu } from '../types/LockdropModels';
 import moment from 'moment';
 import ethLogo from '../resources/ethereum_logo.svg';
 import btcLogo from '../resources/bitcoin_logo.svg';

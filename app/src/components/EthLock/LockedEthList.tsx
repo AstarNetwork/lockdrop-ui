@@ -4,7 +4,7 @@ import React from 'react';
 //import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
 import SectionCard from '../SectionCard';
-import { LockEvent } from '../../models/LockdropModels';
+import { LockEvent } from '../../types/LockdropModels';
 import { createStyles, Theme, makeStyles, useTheme } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
