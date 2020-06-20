@@ -129,7 +129,7 @@ export function claimPoW(claimId: string) {
     const bitmask = 0b0000_1111;
 
     while (!found) {
-        const hash = polkadotUtil.blake2AsU8a(claimId + nonce.toString());
+        const hash = polkadotUtil.blake2AsU8a(claimId + nonce.toString(16));
 
         const powByte = Buffer.from(hash).toString('binary');
         // bitwise comparison

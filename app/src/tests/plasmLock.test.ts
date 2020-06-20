@@ -122,7 +122,7 @@ describe('plasm PoW security', () => {
         const nonce = claimPoW(claimId);
         console.log('nonce: ' + nonce);
 
-        const hash = polkadotUtil.blake2AsU8a(claimId + nonce.toString());
+        const hash = polkadotUtil.blake2AsU8a(claimId + nonce.toString(16));
 
         const powByte = Buffer.from(hash).toString('binary');
 

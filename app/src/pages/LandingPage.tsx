@@ -133,17 +133,6 @@ export const LandingPage: React.FC = () => {
                         </IonButton>
                     </IonItem>
                 </SectionCard>
-                <SectionCard maxWidth="lg">
-                    <IonCardHeader>
-                        <IonCardTitle>Dusty Lockdrop</IonCardTitle>
-                    </IonCardHeader>
-                    <IonItem>
-                        <IonIcon src={btcLogo} slot="start" />
-                        <IonLabel>Dusty PoW</IonLabel>
-
-                        <IonButton fill="outline" slot="end"></IonButton>
-                    </IonItem>
-                </SectionCard>
                 <Footer />
             </IonContent>
         </IonPage>
