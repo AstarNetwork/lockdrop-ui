@@ -2,8 +2,9 @@
 import BigNumber from 'bignumber.js';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Lockdrop } from '../types/LockdropModels';
-import { Hash, H256 } from '@polkadot/types/interfaces';
+import { Hash } from '@polkadot/types/interfaces';
 import * as polkadotUtil from '@polkadot/util-crypto';
+import { numberToHex } from '@polkadot/util';
 
 export const BITMASK = 0b0000_1111;
 
@@ -125,13 +126,13 @@ export async function sendLockClaim(api: ApiPromise, sender: string, lockParam: 
     return txHash as Hash;
 }
 
-export function claimPoW(claimId: string) {
+export function claimPowNonce(claimId: string) {
     let nonce = polkadotUtil.randomAsNumber();
     let found = false;
 
     //polkadotUtil.blake2AsU8a(53, 256);
     while (!found) {
-        const nonceHash = polkadotUtil.blake2AsHex(nonce.toString(16), 256);
+        const nonceHash = polkadotUtil.blake2AsHex(numberToHex(nonce), 256);
         const powByte = polkadotUtil.blake2AsU8a(claimId + nonceHash)[0];
 
         //const powByte = Buffer.from(hash).toString('binary');
@@ -143,5 +144,5 @@ export function claimPoW(claimId: string) {
             found = true;
         }
     }
-    return polkadotUtil.blake2AsHex(nonce.toString(16), 256);
+    return polkadotUtil.blake2AsHex(numberToHex(nonce), 256);
 }

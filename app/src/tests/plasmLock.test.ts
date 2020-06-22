@@ -3,7 +3,7 @@
 //import { generatePlmAddress } from '../helpers/lockdrop/EthereumLockdrop';
 import EthCrypto from 'eth-crypto';
 import * as polkadotUtil from '@polkadot/util-crypto';
-import { createDustyPlasmInstance, PlasmNetwork, claimPoW, BITMASK } from '../helpers/plasmUtils';
+import { createDustyPlasmInstance, PlasmNetwork, claimPowNonce, BITMASK } from '../helpers/plasmUtils';
 import { ApiPromise, Keyring } from '@polkadot/api';
 import BN from 'bn.js';
 
@@ -48,6 +48,9 @@ describe('Plasm ECDSA address tests', () => {
 describe('Plasm lockdrop RPC tests', () => {
     // initialize a connection with the blockchain
     let api: ApiPromise;
+    const keyring = new Keyring({
+        type: 'sr25519',
+    });
 
     beforeEach(async () => {
         api = await createDustyPlasmInstance(PlasmNetwork.Local);
@@ -60,16 +63,7 @@ describe('Plasm lockdrop RPC tests', () => {
         expect(plasmRewards).toEqual(6);
     });
 
-    it('obtain plasm untreated era value', async () => {
-        const totalBal = await (api.query as any).plasmValidator.untreatedEra();
-        console.log(totalBal.toString());
-        expect(totalBal).toBeTruthy();
-    });
-
     it('queries Alice account balance and make a transaction', async () => {
-        const keyring = new Keyring({
-            type: 'sr25519',
-        });
         // the alice wallet from a dev chain
         const alice = keyring.addFromUri('//Alice', { name: 'Alice default' });
         const bob = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
@@ -84,26 +78,21 @@ describe('Plasm lockdrop RPC tests', () => {
         const transfer = api.tx.balances.transfer(bob, 12345);
 
         // Sign and send the transaction using our account
-        await transfer.signAndSend(alice);
+        await transfer.signAndSend(alice).catch(e => console.log(e));
     });
 
     it('send lock claim transaction', async () => {
-        const keyring = new Keyring({
-            type: 'sr25519',
-        });
-
         // the alice wallet from a dev chain
         const alice = keyring.addFromUri('//Alice', {
             name: 'Alice default',
         });
+        const nonce = claimPowNonce(sampleClaimId);
 
-        const claimRequestTx = await (api.tx as any).plasmLockdrop.request(sampleLock, claimPoW(sampleClaimId));
+        const claimRequestTx = await (api.tx as any).plasmLockdrop.request(sampleLock, nonce);
 
-        const hash = await claimRequestTx.signAndSend(alice);
-
-        // const claimId = polkadotUtil.blake2AsU8a(Uint8Array.from(Buffer.from(sampleLock)), 256);
-        // console.log(claimId);
-        expect(hash.toHex()).toBeTruthy();
+        await claimRequestTx.signAndSend(alice).catch((e: Error) => {
+            console.log(e);
+        });
     });
     //todo: create lock claim ID https://docs.plasmnet.io/workshop-and-tutorial/real-time-lockdrop
 
@@ -113,17 +102,17 @@ describe('Plasm lockdrop RPC tests', () => {
         console.log('Receiving amount: ' + claimData.amount.toString());
         //expect(claimData.params.value.toString()).toEqual(sampleLock.value.toString());
     });
+});
 
+describe('real-time lockdrop claim hash tests', () => {
     it('checks claim request hashing', () => {
         const claimData = JSON.stringify(sampleLock);
         const claimId = polkadotUtil.blake2AsHex(claimData, 256);
         expect(claimId).toEqual(sampleClaimId);
     });
-});
 
-describe('plasm PoW security', () => {
-    it('performs a simple PoW check', () => {
-        const nonce = claimPoW(sampleClaimId);
+    it('performs a simple PoW security check', () => {
+        const nonce = claimPowNonce(sampleClaimId);
         console.log('nonce: ' + nonce);
 
         const powByte = polkadotUtil.blake2AsU8a(sampleClaimId + nonce)[0];
