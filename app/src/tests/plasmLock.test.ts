@@ -3,7 +3,7 @@
 //import { generatePlmAddress } from '../helpers/lockdrop/EthereumLockdrop';
 import EthCrypto from 'eth-crypto';
 import * as polkadotUtil from '@polkadot/util-crypto';
-import { createDustyPlasmInstance, PlasmNetwork, claimPoW } from '../helpers/plasmUtils';
+import { createDustyPlasmInstance, PlasmNetwork, claimPoW, BITMASK } from '../helpers/plasmUtils';
 import { ApiPromise, Keyring } from '@polkadot/api';
 import BN from 'bn.js';
 
@@ -22,6 +22,8 @@ function toByteArray(hexString: string) {
 const ethPubKey =
     'a27c1e09c563b1221636c7f69690a6e4d41e9c79d38518d00d5f6d3fb5d7a35407caff68e13fcd845646dc848e0649417b89acf1af435bd18f1ab2fcf20e2e61';
 const plasmPubKey = '215a9a3e38ba3dcaf8120046e3f4b385b25016575ab8564973edfdb64528493b';
+
+const sampleClaimId = '0xe691bbdbd57db92443d39897454b3cef8351450004b5258d03bf8fdcffb3748c';
 
 const sampleLock = {
     type: '1',
@@ -95,7 +97,7 @@ describe('Plasm lockdrop RPC tests', () => {
             name: 'Alice default',
         });
 
-        const claimRequestTx = await (api.tx as any).plasmLockdrop.request(sampleLock);
+        const claimRequestTx = await (api.tx as any).plasmLockdrop.request(sampleLock, claimPoW(sampleClaimId));
 
         const hash = await claimRequestTx.signAndSend(alice);
 
@@ -106,26 +108,26 @@ describe('Plasm lockdrop RPC tests', () => {
     //todo: create lock claim ID https://docs.plasmnet.io/workshop-and-tutorial/real-time-lockdrop
 
     it('queries plasm claim request event', async () => {
-        const claimId = '0xe691bbdbd57db92443d39897454b3cef8351450004b5258d03bf8fdcffb3748c';
-
-        const claimData = await (api.query as any).plasmLockdrop.claims(claimId);
+        const claimData = await (api.query as any).plasmLockdrop.claims(sampleClaimId);
 
         console.log('Receiving amount: ' + claimData.amount.toString());
         //expect(claimData.params.value.toString()).toEqual(sampleLock.value.toString());
+    });
+
+    it('checks claim request hashing', () => {
+        const claimData = JSON.stringify(sampleLock);
+        const claimId = polkadotUtil.blake2AsHex(claimData, 256);
+        expect(claimId).toEqual(sampleClaimId);
     });
 });
 
 describe('plasm PoW security', () => {
     it('performs a simple PoW check', () => {
-        const claimId = '0xe691bbdbd57db92443d39897454b3cef8351450004b5258d03bf8fdcffb3748c';
-        const bitmask = 0b0000_1111;
-        const nonce = claimPoW(claimId);
+        const nonce = claimPoW(sampleClaimId);
         console.log('nonce: ' + nonce);
 
-        const hash = polkadotUtil.blake2AsU8a(claimId + nonce.toString(16));
+        const powByte = polkadotUtil.blake2AsU8a(sampleClaimId + nonce)[0];
 
-        const powByte = Buffer.from(hash).toString('binary');
-
-        expect(parseInt(powByte, 2) & bitmask).toEqual(0);
+        expect(powByte & BITMASK).toEqual(0);
     });
 });

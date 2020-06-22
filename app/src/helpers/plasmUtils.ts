@@ -2,8 +2,10 @@
 import BigNumber from 'bignumber.js';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Lockdrop } from '../types/LockdropModels';
-import { Hash } from '@polkadot/types/interfaces';
+import { Hash, H256 } from '@polkadot/types/interfaces';
 import * as polkadotUtil from '@polkadot/util-crypto';
+
+export const BITMASK = 0b0000_1111;
 
 export enum PlasmNetwork {
     Local,
@@ -126,20 +128,20 @@ export async function sendLockClaim(api: ApiPromise, sender: string, lockParam: 
 export function claimPoW(claimId: string) {
     let nonce = polkadotUtil.randomAsNumber();
     let found = false;
-    const bitmask = 0b0000_1111;
 
+    //polkadotUtil.blake2AsU8a(53, 256);
     while (!found) {
-        const hash = polkadotUtil.blake2AsU8a(claimId + nonce.toString(16));
+        const nonceHash = polkadotUtil.blake2AsHex(nonce.toString(16), 256);
+        const powByte = polkadotUtil.blake2AsU8a(claimId + nonceHash)[0];
 
-        const powByte = Buffer.from(hash).toString('binary');
+        //const powByte = Buffer.from(hash).toString('binary');
         // bitwise comparison
-        if ((parseInt(powByte, 2) & bitmask) > 0) {
+        if ((powByte & BITMASK) > 0) {
             nonce += 1;
             continue;
         } else {
             found = true;
         }
     }
-
-    return nonce;
+    return polkadotUtil.blake2AsHex(nonce.toString(16), 256);
 }
