@@ -76,25 +76,20 @@ describe('Plasm lockdrop RPC tests', () => {
 
         // Create a extrinsic, transferring 12345 units to Bob
         const transfer = api.tx.balances.transfer(bob, 12345);
-
+        //await transfer.send();
         // Sign and send the transaction using our account
-        await transfer.signAndSend(alice).catch(e => console.log(e));
+        await transfer.signAndSend(alice, ({ status }) => {
+            console.log('tx status', status.toHuman());
+        });
     });
 
     it('send lock claim transaction', async () => {
-        // the alice wallet from a dev chain
-        const alice = keyring.addFromUri('//Alice', {
-            name: 'Alice default',
-        });
         const nonce = claimPowNonce(sampleClaimId);
 
         const claimRequestTx = await (api.tx as any).plasmLockdrop.request(sampleLock, nonce);
 
-        await claimRequestTx.signAndSend(alice).catch((e: Error) => {
-            console.log(e);
-        });
+        await claimRequestTx.send();
     });
-    //todo: create lock claim ID https://docs.plasmnet.io/workshop-and-tutorial/real-time-lockdrop
 
     it('queries plasm claim request event', async () => {
         const claimData = await (api.query as any).plasmLockdrop.claims(sampleClaimId);
