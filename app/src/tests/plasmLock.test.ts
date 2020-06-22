@@ -1,36 +1,72 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/camelcase */
-//import { generatePlmAddress } from '../helpers/lockdrop/EthereumLockdrop';
 import EthCrypto from 'eth-crypto';
-import * as polkadotUtil from '@polkadot/util-crypto';
+import * as polkadotCryptoUtil from '@polkadot/util-crypto';
+import * as polkadotUtil from '@polkadot/util';
 import { createDustyPlasmInstance, PlasmNetwork, claimPowNonce, BITMASK } from '../helpers/plasmUtils';
 import { ApiPromise, Keyring } from '@polkadot/api';
 import BN from 'bn.js';
+import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
 
-function toHexString(byteArray: Uint8Array) {
-    return Array.prototype.map
-        .call(byteArray, function(byte) {
-            return ('0' + (byte & 0xff).toString(16)).slice(-2);
-        })
-        .join('');
-}
-
-function toByteArray(hexString: string) {
-    return Uint8Array.from(Buffer.from(hexString, 'hex'));
-}
+const registry = new TypeRegistry();
 
 const ethPubKey =
     'a27c1e09c563b1221636c7f69690a6e4d41e9c79d38518d00d5f6d3fb5d7a35407caff68e13fcd845646dc848e0649417b89acf1af435bd18f1ab2fcf20e2e61';
 const plasmPubKey = '215a9a3e38ba3dcaf8120046e3f4b385b25016575ab8564973edfdb64528493b';
 
-const sampleClaimId = '0xe691bbdbd57db92443d39897454b3cef8351450004b5258d03bf8fdcffb3748c';
+const sampleClaimId = '0xa94710e9db798a7d1e977b9f748ae802031eee2400a77600c526158892cd93b8';
 
-const sampleLock = {
-    type: '1',
-    transaction_hash: '0x6c4364b2f5a847ffc69f787a0894191b75aa278a95020f02e4753c76119324e0',
-    public_key: '0x039360c9cbbede9ee771a55581d4a53cbcc4640953169549993a3b0e6ec7984061',
-    duration: '2592000',
-    value: new BN('100000000000000000'),
+const sampleLock = new Struct(
+    registry,
+    {
+        type: u8,
+        transactionHash: 'H256',
+        publicKey: U8aFixed, // [u8; 33]
+        duration: u64,
+        value: u128,
+    },
+    {
+        type: '1',
+        transactionHash: '0x6c4364b2f5a847ffc69f787a0894191b75aa278a95020f02e4753c76119324e0',
+        publicKey: new U8aFixed(registry, '0x039360c9cbbede9ee771a55581d4a53cbcc4640953169549993a3b0e6ec7984061'),
+        duration: new u64(registry, '2592000'),
+        value: new u128(registry, '100000000000000000'),
+    },
+);
+
+// converts a given hex string into Uint8Array
+const toByteArray = (hexString: string) => {
+    const result = [];
+    for (let i = 0; i < hexString.length; i += 2) {
+        result.push(parseInt(hexString.substr(i, 2), 16));
+    }
+    return new Uint8Array(result);
+};
+
+// blake2 hashes any given object
+const hashObject = (object: object) => {
+    const objVal = Object.values(object);
+    let serial = '';
+
+    objVal.map(i => {
+        if (typeof i === 'string') {
+            let hexVal = new Uint8Array();
+
+            if (i.match('0x')) {
+                // convert hex string to u8 array
+                hexVal = toByteArray(i);
+            } else {
+                // convert string number to hex and then u8 array
+                hexVal = toByteArray('0x' + new BN(i).toString('hex'));
+            }
+
+            serial += polkadotUtil.u8aToHex(hexVal).replace('0x', '');
+        } else {
+            throw new Error('object value must be string');
+        }
+    });
+
+    return polkadotCryptoUtil.blake2AsHex(serial, 256);
 };
 
 describe('Plasm ECDSA address tests', () => {
@@ -40,8 +76,8 @@ describe('Plasm ECDSA address tests', () => {
 
     it('checks blake hashed pub key', () => {
         const compressedPubKey = EthCrypto.publicKey.compress(ethPubKey);
-        const blakeHashed = polkadotUtil.blake2AsU8a(toByteArray(compressedPubKey), 256);
-        expect(toHexString(blakeHashed)).toEqual(plasmPubKey);
+        const blakeHashed = polkadotCryptoUtil.blake2AsU8a(toByteArray(compressedPubKey), 256);
+        expect(polkadotUtil.u8aToHex(blakeHashed)).toEqual('0x' + plasmPubKey);
     });
 });
 
@@ -94,23 +130,33 @@ describe('Plasm lockdrop RPC tests', () => {
     it('queries plasm claim request event', async () => {
         const claimData = await (api.query as any).plasmLockdrop.claims(sampleClaimId);
 
-        console.log('Receiving amount: ' + claimData.amount.toString());
+        const claimAmount = new BN(claimData.amount.toString());
+
+        console.log('Receiving amount: ' + claimAmount.toString());
         //expect(claimData.params.value.toString()).toEqual(sampleLock.value.toString());
     });
 });
 
 describe('real-time lockdrop claim hash tests', () => {
     it('checks claim request hashing', () => {
-        const claimData = JSON.stringify(sampleLock);
-        const claimId = polkadotUtil.blake2AsHex(claimData, 256);
+        const sample = {
+            type: '1',
+            transactionHash: '0x6c4364b2f5a847ffc69f787a0894191b75aa278a95020f02e4753c76119324e0',
+            publicKey: '0x039360c9cbbede9ee771a55581d4a53cbcc4640953169549993a3b0e6ec7984061',
+            duration: '2592000',
+            value: '100000000000000000',
+        };
+        const claimId = hashObject(sample);
+
         expect(claimId).toEqual(sampleClaimId);
     });
 
     it('performs a simple PoW security check', () => {
-        const nonce = claimPowNonce(sampleClaimId);
+        const id = polkadotCryptoUtil.blake2AsHex(sampleLock.toU8a(), 256);
+        const nonce = claimPowNonce(id);
         console.log('nonce: ' + nonce);
 
-        const powByte = polkadotUtil.blake2AsU8a(sampleClaimId + nonce)[0];
+        const powByte = polkadotCryptoUtil.blake2AsU8a(id + nonce)[0];
 
         expect(powByte & BITMASK).toEqual(0);
     });

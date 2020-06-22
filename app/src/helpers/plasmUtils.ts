@@ -5,6 +5,7 @@ import { Lockdrop } from '../types/LockdropModels';
 import { Hash } from '@polkadot/types/interfaces';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { numberToHex } from '@polkadot/util';
+import { TypeRegistry } from '@polkadot/types';
 
 export const BITMASK = 0b0000_1111;
 
@@ -18,6 +19,8 @@ export function femtoToPlm(femto: BigNumber) {
     const plmDenominator = new BigNumber(10).pow(-15);
     return femto.times(plmDenominator);
 }
+
+export const plasmTypeReg = new TypeRegistry();
 
 export async function createDustyPlasmInstance(network?: PlasmNetwork) {
     let endpoint = '';
@@ -39,7 +42,6 @@ export async function createDustyPlasmInstance(network?: PlasmNetwork) {
 
     return await ApiPromise.create({
         provider: wsProvider,
-        // add custom types
         types: {
             ClaimId: 'H256',
             Lockdrop: {
@@ -70,36 +72,6 @@ export async function createDustyPlasmInstance(network?: PlasmNetwork) {
                 complete: 'bool',
             },
         },
-        rpc: {
-            plasmLockdrop: {
-                request: {
-                    description: 'Request authorities to check locking transaction',
-                    params: [
-                        {
-                            name: 'type',
-                            type: 'u8',
-                        },
-                        {
-                            name: 'transaction_hash',
-                            type: 'H256',
-                        },
-                        {
-                            name: 'public_key',
-                            type: '[u8;33]',
-                        },
-                        {
-                            name: 'duration',
-                            type: 'u64',
-                        },
-                        {
-                            name: 'value',
-                            type: 'u128',
-                        },
-                    ],
-                    type: 'Balance',
-                },
-            },
-        },
     });
 }
 
@@ -117,9 +89,9 @@ export function lockDurationToRate(duration: number) {
     }
 }
 
-export async function sendLockClaim(api: ApiPromise, sender: string, lockParam: Lockdrop) {
+export async function sendLockClaim(api: ApiPromise, sender: string, lockParam: Lockdrop, nonce: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const claimRequestTx = await (api.tx as any).plasmLockdrop.request(lockParam);
+    const claimRequestTx = await (api.tx as any).plasmLockdrop.request(lockParam, nonce);
 
     const txHash = await claimRequestTx.signAndSend(sender);
 

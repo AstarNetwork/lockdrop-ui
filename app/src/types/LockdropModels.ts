@@ -1,5 +1,7 @@
 import BN from 'bn.js';
 import { Moment } from 'moment';
+import { u8, u64, u128, U8aFixed } from '@polkadot/types';
+import { H256 } from '@polkadot/types/interfaces';
 
 export interface LockInput {
     duration: number;
@@ -70,18 +72,18 @@ export interface OptionItem {
 
 // used for real-time lockdrop parameter
 // we use the snake case because substrate has the read it
-export interface Lockdrop {
-    type: number; //u8
-    transaction_hash: Uint8Array; //H256
-    public_key: Uint8Array; // [u8; 33]
-    duration: BN; // u64
-    value: BN; // u128
-}
+export type Lockdrop = {
+    type: u8; //u8
+    transaction_hash: H256; //H256
+    public_key: U8aFixed; // [u8; 33]
+    duration: u64; // u64
+    value: u128; // u128
+};
 
-export interface Claim {
+export type Claim = {
     params: Lockdrop;
     approve: BN; // AuthorityVote
     decline: BN; // AuthorityVote
     amount: BN; // u128
     complete: boolean;
-}
+};
