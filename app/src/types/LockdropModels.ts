@@ -17,6 +17,11 @@ export enum BtcWalletType {
     None,
 }
 
+export enum BtcNetwork {
+    TestNet,
+    MainNet,
+}
+
 export interface UnspentTx {
     value: number;
     txId: string;
@@ -44,6 +49,8 @@ export interface TimeFormat {
 export enum LockSeason {
     First,
     Second,
+    Dusty,
+    Third,
 }
 
 export interface LockEvent {

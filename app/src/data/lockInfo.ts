@@ -73,6 +73,6 @@ export const dustyLock: LockMenu[] = [
         icon: btcLogo,
         startDate: firstLockdropStart,
         endDate: firstLockdropEnd,
-        disabled: true,
+        disabled: false,
     },
 ];

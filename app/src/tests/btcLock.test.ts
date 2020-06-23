@@ -5,7 +5,13 @@ import wif from 'wif';
 import * as bitcoin from 'bitcoinjs-lib';
 import * as assert from 'assert';
 import { regtestUtils } from './_regtest';
-import { btcLockScript, btcUnlockTx, MESSAGE } from '../helpers/lockdrop/BitcoinLockdrop';
+import {
+    btcLockScript,
+    btcUnlockTx,
+    MESSAGE,
+    uncompressedPubKey,
+    getPublicKey,
+} from '../helpers/lockdrop/BitcoinLockdrop';
 import { UnspentTx } from '../types/LockdropModels';
 
 const regtest = regtestUtils.network;
@@ -71,11 +77,11 @@ describe('BTC signature tests', () => {
     it('recovers the public key from the signature', () => {
         const hashedMessage = new Message(MESSAGE);
 
-        const sig = hashedMessage.sign(new PrivateKey(testSet2.privateKey));
+        const pubKey1 = hashedMessage.recoverPublicKey(testSet1.address, testSet1.signature);
+        const pubKey2 = hashedMessage.recoverPublicKey(testSet2.address, testSet2.signature);
 
-        const pubKey = hashedMessage.recoverPublicKey(testSet2.address, sig);
-        //console.log(pubKey);
-        expect(pubKey).toEqual(testSet2.publicKey);
+        expect(uncompressedPubKey(pubKey1)).toEqual(testSet1.publicKey);
+        expect(uncompressedPubKey(pubKey2)).toEqual(testSet2.publicKey);
     });
 });
 

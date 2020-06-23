@@ -21,19 +21,11 @@ import trezorLogo from '../resources/trezor_logo.svg';
 import ledgerLogo from '../resources/ledger_logo.svg';
 import TrezorConnect from 'trezor-connect';
 import { initTrezor } from '../helpers/lockdrop/BitcoinLockdrop';
-import { BtcWalletType } from '../types/LockdropModels';
+import { BtcWalletType, BtcNetwork } from '../types/LockdropModels';
+import BtcRawSignature from '../components/BtcLock/BtcRawSignature';
 
 const useStyles = makeStyles(theme =>
     createStyles({
-        formRoot: {
-            padding: theme.spacing(4, 3, 0),
-        },
-        txButton: {
-            margin: theme.spacing(3),
-        },
-        formLabel: {
-            margin: theme.spacing(2),
-        },
         quantLogo: {
             marginRight: theme.spacing(2),
             maxHeight: 20,
@@ -70,29 +62,12 @@ export default function DustyBtcLockPage() {
         setWalletType(BtcWalletType.Raw);
     };
 
-    return (
-        <>
-            <IonPage>
-                <Navbar />
-                <IonContent>
-                    <SectionCard maxWidth="md">
-                        <div>
-                            <Typography variant="h4" component="h1" align="center">
-                                Dusty Plasm Network BTC Lockdrop
-                            </Typography>
-                            <Typography variant="body2" component="h2" align="center">
-                                Audited by{' '}
-                                <Link
-                                    color="inherit"
-                                    href="https://github.com/staketechnologies/lockdrop-ui/blob/16a2d495d85f2d311957b9cf366204fbfabadeaa/audit/quantstamp-audit.pdf"
-                                    rel="noopener noreferrer"
-                                    target="_blank"
-                                >
-                                    <img src={quantstampLogo} alt="" className={classes.quantLogo} />
-                                    {/*todo: This is a placeholder auditor, please change this to the actual one after the audit*/}
-                                </Link>
-                            </Typography>
-                        </div>
+    const ChangeSignView: React.FC = () => {
+        switch (walletType) {
+            default:
+            case BtcWalletType.None:
+                return (
+                    <>
                         <IonCard>
                             <IonCardHeader>
                                 <IonCardSubtitle>Choose your message signing method</IonCardSubtitle>
@@ -116,6 +91,37 @@ export default function DustyBtcLockPage() {
                                 </IonItem>
                             </IonCardContent>
                         </IonCard>
+                    </>
+                );
+            case BtcWalletType.Raw:
+                return <BtcRawSignature networkType={BtcNetwork.MainNet} />;
+        }
+    };
+
+    return (
+        <>
+            <IonPage>
+                <Navbar />
+                <IonContent>
+                    <SectionCard maxWidth="md">
+                        <div>
+                            <Typography variant="h4" component="h1" align="center">
+                                Dusty Plasm Network BTC Lockdrop
+                            </Typography>
+                            <Typography variant="body2" component="h2" align="center">
+                                Audited by{' '}
+                                <Link
+                                    color="inherit"
+                                    href="https://github.com/staketechnologies/lockdrop-ui/blob/16a2d495d85f2d311957b9cf366204fbfabadeaa/audit/quantstamp-audit.pdf"
+                                    rel="noopener noreferrer"
+                                    target="_blank"
+                                >
+                                    <img src={quantstampLogo} alt="" className={classes.quantLogo} />
+                                    {/*todo: This is a placeholder auditor, please change this to the actual one after the audit*/}
+                                </Link>
+                            </Typography>
+                        </div>
+                        <ChangeSignView />
                     </SectionCard>
                     <Footer />
                 </IonContent>
