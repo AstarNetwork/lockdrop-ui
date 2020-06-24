@@ -40,8 +40,8 @@ export interface UnspentTx {
 }
 
 export interface LockMenu {
-    uri: string;
-    icon: string;
+    uri?: string;
+    icon?: string;
     title: string;
     startDate: Moment;
     endDate: Moment;
