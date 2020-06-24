@@ -112,22 +112,6 @@ export function daysToBlocks(days: number) {
 }
 
 /**
- * returns a bitcoin pay 2 script hash from the given script and network
- * @param lockScript bitcoin lock script
- * @param network bitcoin network type
- */
-export function getLockP2SH(lockScript: Buffer, network: BtcNetwork) {
-    const netType = network === BtcNetwork.MainNet ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet;
-
-    return bitcoinjs.payments.p2sh({
-        network: netType,
-        redeem: {
-            output: lockScript,
-        },
-    });
-}
-
-/**
  * create a bitcoin lock script with the given public key.
  * this will lock the token for the given number of block sequence
  * @param publicKeyHex uncompressed BTC public key in hex string
@@ -145,6 +129,24 @@ export function btcLockScript(publicKeyHex: string, blocks: number): Buffer {
             .trim()
             .replace(/\s+/g, ' '),
     );
+}
+
+/**
+ * creates a P2SH instance that locks the sent token for the given duration.
+ * the locked tokens can only be claimed by the provided public key
+ * @param duration the lock duration in days
+ * @param publicKey uncompressed public key of the locker
+ * @param network bitcoin network the script will generate for
+ */
+export function getLockP2SH(duration: number, publicKey: string, network: BtcNetwork) {
+    const netType = network === BtcNetwork.MainNet ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet;
+
+    return bitcoinjs.payments.p2sh({
+        network: netType,
+        redeem: {
+            output: btcLockScript(publicKey, daysToBlocks(duration)),
+        },
+    });
 }
 
 export function btcUnlockTx(

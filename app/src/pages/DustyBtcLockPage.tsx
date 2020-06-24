@@ -87,7 +87,7 @@ export default function DustyBtcLockPage() {
 
                                 <IonItem button onClick={() => handleRawTx()}>
                                     <IonIcon icon={warning} slot="start" />
-                                    <IonLabel>Direct import (Unsafe)</IonLabel>
+                                    <IonLabel>Direct sign</IonLabel>
                                 </IonItem>
                             </IonCardContent>
                         </IonCard>
