@@ -42,8 +42,18 @@ const firstEthIntroducer = [
 
 const secondEthIntroducer = ['add Ethereum addresses'];
 
+const secondBtcIntroducer = ['add Bitcoin addresses'];
+
 export const validEthAddressList = [...firstEthIntroducer, ...secondEthIntroducer, defaultAddress];
 
-export function isRegisteredEthAddress(introducer: string) {
-    return validEthAddressList.includes(introducer.toLowerCase());
+export const validBtcAddressList = [...secondBtcIntroducer];
+
+/**
+ * Checks if the given introducer address is listed as a valid introducer for the lockdrop
+ * @param introducer a bitcoin or ethereum address
+ */
+export function isValidIntroducerAddress(introducer: string) {
+    return (
+        validEthAddressList.includes(introducer.toLowerCase()) || validBtcAddressList.includes(introducer.toLowerCase())
+    );
 }

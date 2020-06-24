@@ -4,7 +4,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
-import { TimeFormat, LockEvent } from '../models/LockdropModels';
+import { TimeFormat, LockEvent } from '../types/LockdropModels';
 import moment, { Moment, duration } from 'moment';
 import { getTotalLockVal } from '../helpers/lockdrop/EthereumLockdrop';
 

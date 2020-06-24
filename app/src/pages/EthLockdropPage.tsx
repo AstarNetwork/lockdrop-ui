@@ -8,7 +8,7 @@ import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
-import { LockInput, LockEvent, LockSeason } from '../models/LockdropModels';
+import { LockInput, LockEvent, LockSeason } from '../types/LockdropModels';
 import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -18,7 +18,7 @@ import { firstLockdropEnd, firstLockdropStart } from '../data/lockInfo';
 import moment from 'moment';
 import LockdropResult from '../components/EthLock/LockdropResult';
 import { Divider } from '@material-ui/core';
-import AffiliationList from '../components/AffiliationList';
+import AffiliationList from '../components/EthLock/AffiliationList';
 import { removeWeb3Event } from '../helpers/getWeb3';
 
 const formInfo = `This is the lockdrop form for Ethereum.
@@ -120,6 +120,10 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
         removeWeb3Event();
     };
 
+    isMainnet = () => {
+        return this.state.networkType === 'main';
+    };
+
     // called when the user changes MetaMask account
     handleAccountChange = () => {
         // refresh the page
@@ -170,7 +174,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                         startTime={firstLockdropStart}
                                         lockData={this.state.allLockEvents}
                                     />
-                                    {hasFirstLockdropEnded() ? (
+                                    {hasFirstLockdropEnded() && this.isMainnet() ? (
                                         <>
                                             <Divider />
                                             <LockdropResult
@@ -191,7 +195,6 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
 
                                 <LockedEthList
                                     web3={this.state.web3}
-                                    contractInstance={this.state.contract}
                                     accounts={this.state.accounts}
                                     lockData={this.state.allLockEvents}
                                 />

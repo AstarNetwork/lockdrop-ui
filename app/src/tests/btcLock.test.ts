@@ -5,8 +5,8 @@ import wif from 'wif';
 import * as bitcoin from 'bitcoinjs-lib';
 import * as assert from 'assert';
 import { regtestUtils } from './_regtest';
-import { btcLockScript, btcUnlockTx, MESSAGE } from '../helpers/lockdrop/BitcoinLockdrop';
-import { UnspentTx } from '../models/LockdropModels';
+import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
+import { UnspentTx } from '../types/LockdropModels';
 
 const regtest = regtestUtils.network;
 
@@ -63,19 +63,19 @@ describe('BTC signature tests', () => {
     });
 
     it('sign message with private key', () => {
-        const signature = new Message(MESSAGE).sign(new PrivateKey(testSet1.privateKey));
+        const signature = new Message(btcLockdrop.MESSAGE).sign(new PrivateKey(testSet1.privateKey));
 
-        expect(new Message(MESSAGE).verify(testSet1.address, signature)).toEqual(true);
+        expect(new Message(btcLockdrop.MESSAGE).verify(testSet1.address, signature)).toEqual(true);
     });
 
     it('recovers the public key from the signature', () => {
-        const hashedMessage = new Message(MESSAGE);
+        const hashedMessage = new Message(btcLockdrop.MESSAGE);
 
-        const sig = hashedMessage.sign(new PrivateKey(testSet2.privateKey));
+        const pubKey1 = hashedMessage.recoverPublicKey(testSet1.address, testSet1.signature);
+        const pubKey2 = hashedMessage.recoverPublicKey(testSet2.address, testSet2.signature);
 
-        const pubKey = hashedMessage.recoverPublicKey(testSet2.address, sig);
-        //console.log(pubKey);
-        expect(pubKey).toEqual(testSet2.publicKey);
+        expect(btcLockdrop.uncompressedPubKey(pubKey1)).toEqual(testSet1.publicKey);
+        expect(btcLockdrop.uncompressedPubKey(pubKey2)).toEqual(testSet2.publicKey);
     });
 });
 
@@ -85,18 +85,22 @@ describe('BTC lock script tests', () => {
         await regtestUtils.mine(11);
     });
 
-    it('signs a BTC transaction', () => {
-        const privkey = 'cQ6483mDWwoG8o4tn6nU9Jg52RKMjPUWXSY1vycAyPRXQJ1Pn2Rq';
-        const txhex =
-            '0100000001f7e6430096cd2790bac115aaab22c0a50fb0a1794305302e1a399e81d8d354f4020000006a47304402205793a862d193264afc32713e2e14541e1ff9ebb647dd7e7e6a0051d0faa87de302205216653741ecbbed573ea2fc053209dd6980616701c27be5b958a159fc97f45a012103e877e7deb32d19250dcfe534ea82c99ad739800295cd5429a7f69e2896c36fcdfeffffff0340420f00000000001976a9145c7b8d623fba952d2387703d051d8e931a6aa0a188ac8bda2702000000001976a9145a0ef60784137d03e7868d063b05424f2f43799f88ac40420f00000000001976a9145c7b8d623fba952d2387703d051d8e931a6aa0a188ac2fcc0e00';
+    it(
+        'signs a BTC transaction',
+        () => {
+            const privkey = 'cQ6483mDWwoG8o4tn6nU9Jg52RKMjPUWXSY1vycAyPRXQJ1Pn2Rq';
+            const txhex =
+                '0100000001f7e6430096cd2790bac115aaab22c0a50fb0a1794305302e1a399e81d8d354f4020000006a47304402205793a862d193264afc32713e2e14541e1ff9ebb647dd7e7e6a0051d0faa87de302205216653741ecbbed573ea2fc053209dd6980616701c27be5b958a159fc97f45a012103e877e7deb32d19250dcfe534ea82c99ad739800295cd5429a7f69e2896c36fcdfeffffff0340420f00000000001976a9145c7b8d623fba952d2387703d051d8e931a6aa0a188ac8bda2702000000001976a9145a0ef60784137d03e7868d063b05424f2f43799f88ac40420f00000000001976a9145c7b8d623fba952d2387703d051d8e931a6aa0a188ac2fcc0e00';
 
-        const privkeypair = bitcoin.ECPair.fromWIF(privkey, bitcoin.networks.testnet);
-        const transaction = bitcoin.Transaction.fromHex(txhex);
-        const builder = new bitcoin.TransactionBuilder(bitcoin.networks.testnet);
-        builder.addInput(transaction, 0, 0);
-        builder.addOutput('n4pSwWQZm8Wter1wD6n8RDhEwgCqtQgpcY', 6000);
-        builder.sign(0, privkeypair);
-    });
+            const privkeypair = bitcoin.ECPair.fromWIF(privkey, bitcoin.networks.testnet);
+            const transaction = bitcoin.Transaction.fromHex(txhex);
+            const builder = new bitcoin.TransactionBuilder(bitcoin.networks.testnet);
+            builder.addInput(transaction, 0, 0);
+            builder.addOutput('n4pSwWQZm8Wter1wD6n8RDhEwgCqtQgpcY', 6000);
+            builder.sign(0, privkeypair);
+        },
+        100 * 1000,
+    );
 
     it(
         'lock BTC on script and redeem',
@@ -111,14 +115,16 @@ describe('BTC lock script tests', () => {
             const p2sh = bitcoin.payments.p2sh({
                 network: regtest,
                 redeem: {
-                    output: btcLockScript(pubkey, DURATION),
+                    output: btcLockdrop.btcLockScript(pubkey, DURATION),
                 },
             });
 
-            // fund the P2SH(CCSV) address (THIS IS LOCK ACTION)
+            console.log('p2sh address: ' + p2sh.address!.toString());
+
+            // fund the P2SH(CSV) address (THIS IS LOCK ACTION)
             const unspent = (await regtestUtils.faucet(p2sh.address!, VALUE + FEE)) as UnspentTx;
 
-            const tx = btcUnlockTx(
+            const tx = btcLockdrop.btcUnlockTx(
                 alice,
                 regtest,
                 unspent,
@@ -127,6 +133,8 @@ describe('BTC lock script tests', () => {
                 regtestUtils.RANDOM_ADDRESS,
                 FEE,
             );
+
+            console.log(tx.toHex());
 
             // Try to redeem at lock time
             await regtestUtils.broadcast(tx.toHex()).catch(err => {
@@ -153,6 +161,6 @@ describe('BTC lock script tests', () => {
                 value: VALUE,
             });
         },
-        10 * 1000,
+        100 * 1000,
     ); // extend jest async resolve timeout
 });

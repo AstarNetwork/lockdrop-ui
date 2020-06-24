@@ -1,9 +1,9 @@
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect } from 'react';
-import { validEthAddressList, defaultAddress } from '../data/affiliationProgram';
-import { LockEvent } from '../models/LockdropModels';
-import { PlmDrop } from '../models/PlasmDrop';
-import { calculateTotalPlm } from '../helpers/lockdrop/EthereumLockdrop';
+import { validEthAddressList, defaultAddress } from '../../data/affiliationProgram';
+import { LockEvent } from '../../types/LockdropModels';
+import { PlmDrop } from '../../types/PlasmDrop';
+import { calculateTotalPlm } from '../../helpers/lockdrop/EthereumLockdrop';
 import {
     List,
     ListItemText,
@@ -15,7 +15,7 @@ import {
     Theme,
     Typography,
 } from '@material-ui/core';
-import SectionCard from './SectionCard';
+import SectionCard from '../SectionCard';
 
 interface Props {
     lockData: LockEvent[];
@@ -49,16 +49,16 @@ const AffiliationList: React.FC<Props> = ({ lockData }) => {
     const classes = useStyles();
     const [lockdropResult, setLockdropResult] = useState<PlmDrop[]>([]);
 
-    function getAffliationResults(lockData: LockEvent[]) {
+    function getAffiliationResults(lockData: LockEvent[]) {
         // filter out the 0x00 address from the list
         const validAddresses = validEthAddressList.filter(address => address !== defaultAddress);
 
-        // get the lockdrop result infromation
+        // get the lockdrop result
         const lockResults = validAddresses.map(i => {
             return calculateTotalPlm(i, lockData);
         });
 
-        // sort the array by the number of referencers
+        // sort the array by the number of references
         return lockResults.sort((a, b) =>
             a.affiliationRefsBonuses.length > b.affiliationRefsBonuses.length
                 ? -1
@@ -69,7 +69,7 @@ const AffiliationList: React.FC<Props> = ({ lockData }) => {
     }
 
     useEffect(() => {
-        setLockdropResult(getAffliationResults(lockData));
+        setLockdropResult(getAffiliationResults(lockData));
     }, [lockData]);
 
     return (
@@ -84,7 +84,7 @@ const AffiliationList: React.FC<Props> = ({ lockData }) => {
                             <ListSubheader>There are {validEthAddressList.length - 1} affiliators</ListSubheader>
                             <Divider />
                             {lockdropResult.map(i => (
-                                <IntroducerBonusesItems key={i.reciver} lockResult={i} />
+                                <IntroducerBonusesItems key={i.receiver} lockResult={i} />
                             ))}
                         </ul>
                     </li>
@@ -103,7 +103,7 @@ const IntroducerBonusesItems: React.FC<IntroducerPlanelProps> = ({ lockResult })
         <>
             <ListItem>
                 <ListItemText>
-                    <h2>{lockResult.reciver}</h2>
+                    <h2>{lockResult.receiver}</h2>
                     <p>{lockResult.affiliationRefsBonuses.length} lock(s) referenced this address</p>
                     <p>{lockResult.getAffBonus()} PLMs gained from this</p>
                 </ListItemText>
