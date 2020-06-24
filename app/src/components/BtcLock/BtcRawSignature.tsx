@@ -65,12 +65,14 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
     const onClickVerify = () => {
         try {
             if (!verifyAddressNetwork(addressInput, networkType)) {
-                throw new Error('Please use a Bitcoin test network address');
+                throw new Error('Please use a valid Bitcoin network address');
             }
-            console.log('verifying user:' + addressInput + '\nwith: ' + sigInput + getTokenRate());
+            console.log('verifying user:' + addressInput + '\nwith: ' + sigInput);
             if (new Message(MESSAGE).verify(addressInput, sigInput)) {
                 console.log('success!');
-                console.log('public key is: ' + getPublicKey(addressInput, sigInput));
+                console.log(
+                    'public key is: ' + getPublicKey(addressInput, sigInput) + '\nbonus rate: ' + getTokenRate(),
+                );
             } else {
                 toast.error('cannot verify signature!');
             }

@@ -119,6 +119,8 @@ describe('BTC lock script tests', () => {
                 },
             });
 
+            console.log('p2sh address: ' + p2sh.address!.toString());
+
             // fund the P2SH(CSV) address (THIS IS LOCK ACTION)
             const unspent = (await regtestUtils.faucet(p2sh.address!, VALUE + FEE)) as UnspentTx;
 
@@ -131,6 +133,8 @@ describe('BTC lock script tests', () => {
                 regtestUtils.RANDOM_ADDRESS,
                 FEE,
             );
+
+            console.log(tx.toHex());
 
             // Try to redeem at lock time
             await regtestUtils.broadcast(tx.toHex()).catch(err => {
