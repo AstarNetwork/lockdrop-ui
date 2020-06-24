@@ -14,10 +14,13 @@ import {
     IonButton,
 } from '@ionic/react';
 import { Container, Paper, Typography, makeStyles, createStyles } from '@material-ui/core';
-import { MESSAGE, verifiedInput, getPublicKey } from '../../helpers/lockdrop/BitcoinLockdrop';
+import { MESSAGE, getPublicKey, verifyAddressNetwork } from '../../helpers/lockdrop/BitcoinLockdrop';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { BtcNetwork } from '../../types/LockdropModels';
+import { DropdownOption } from '../DropdownOption';
+import { durations, rates } from '../../data/lockInfo';
+import { Message } from 'bitcore-lib';
 
 interface Props {
     networkType: BtcNetwork;
@@ -50,13 +53,26 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
     const classes = useStyles();
     const [addressInput, setAddress] = useState('');
     const [sigInput, setSig] = useState('');
+    const [lockDuration, setDuration] = useState(0);
+
+    const getTokenRate = () => {
+        if (lockDuration) {
+            return rates.filter(x => x.key === lockDuration)[0].value;
+        }
+        return 0;
+    };
 
     const onClickVerify = () => {
         try {
-            console.log('verifying user:' + addressInput + '\nwith: ' + sigInput);
-            if (verifiedInput(addressInput, sigInput, toast, networkType)) {
+            if (!verifyAddressNetwork(addressInput, networkType)) {
+                throw new Error('Please use a Bitcoin test network address');
+            }
+            console.log('verifying user:' + addressInput + '\nwith: ' + sigInput + getTokenRate());
+            if (new Message(MESSAGE).verify(addressInput, sigInput)) {
                 console.log('success!');
                 console.log('public key is: ' + getPublicKey(addressInput, sigInput));
+            } else {
+                toast.error('cannot verify signature!');
             }
         } catch (e) {
             console.log(e);
@@ -97,10 +113,19 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                             onIonChange={e => setSig(e.detail.value!)}
                         ></IonTextarea>
                     </IonItem>
+                    <IonLabel position="stacked">Lock Duration</IonLabel>
+                    <IonItem>
+                        <DropdownOption
+                            dataSets={durations}
+                            onChoose={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setDuration((e.target.value as unknown) as number)
+                            }
+                        ></DropdownOption>
+                    </IonItem>
                 </IonCardContent>
             </IonCard>
             <div className={classes.button}>
-                <IonButton onClick={onClickVerify}>Verify User</IonButton>
+                <IonButton onClick={onClickVerify}>Generate Lock Address</IonButton>
             </div>
         </div>
     );

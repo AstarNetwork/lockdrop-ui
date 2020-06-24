@@ -53,6 +53,7 @@ const LockdropForm = ({ token, onSubmit, description, dusty }: InputProps) => {
 
     function getTokenRate() {
         if (lockDuration) {
+            // convert the string value to numeric value for the lock parameter
             return rates.filter(x => x.key === lockDuration)[0].value;
         }
         return 0;

@@ -5,13 +5,7 @@ import wif from 'wif';
 import * as bitcoin from 'bitcoinjs-lib';
 import * as assert from 'assert';
 import { regtestUtils } from './_regtest';
-import {
-    btcLockScript,
-    btcUnlockTx,
-    MESSAGE,
-    uncompressedPubKey,
-    getPublicKey,
-} from '../helpers/lockdrop/BitcoinLockdrop';
+import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
 import { UnspentTx } from '../types/LockdropModels';
 
 const regtest = regtestUtils.network;
@@ -69,19 +63,19 @@ describe('BTC signature tests', () => {
     });
 
     it('sign message with private key', () => {
-        const signature = new Message(MESSAGE).sign(new PrivateKey(testSet1.privateKey));
+        const signature = new Message(btcLockdrop.MESSAGE).sign(new PrivateKey(testSet1.privateKey));
 
-        expect(new Message(MESSAGE).verify(testSet1.address, signature)).toEqual(true);
+        expect(new Message(btcLockdrop.MESSAGE).verify(testSet1.address, signature)).toEqual(true);
     });
 
     it('recovers the public key from the signature', () => {
-        const hashedMessage = new Message(MESSAGE);
+        const hashedMessage = new Message(btcLockdrop.MESSAGE);
 
         const pubKey1 = hashedMessage.recoverPublicKey(testSet1.address, testSet1.signature);
         const pubKey2 = hashedMessage.recoverPublicKey(testSet2.address, testSet2.signature);
 
-        expect(uncompressedPubKey(pubKey1)).toEqual(testSet1.publicKey);
-        expect(uncompressedPubKey(pubKey2)).toEqual(testSet2.publicKey);
+        expect(btcLockdrop.uncompressedPubKey(pubKey1)).toEqual(testSet1.publicKey);
+        expect(btcLockdrop.uncompressedPubKey(pubKey2)).toEqual(testSet2.publicKey);
     });
 });
 
@@ -121,14 +115,14 @@ describe('BTC lock script tests', () => {
             const p2sh = bitcoin.payments.p2sh({
                 network: regtest,
                 redeem: {
-                    output: btcLockScript(pubkey, DURATION),
+                    output: btcLockdrop.btcLockScript(pubkey, DURATION),
                 },
             });
 
-            // fund the P2SH(CCSV) address (THIS IS LOCK ACTION)
+            // fund the P2SH(CSV) address (THIS IS LOCK ACTION)
             const unspent = (await regtestUtils.faucet(p2sh.address!, VALUE + FEE)) as UnspentTx;
 
-            const tx = btcUnlockTx(
+            const tx = btcLockdrop.btcUnlockTx(
                 alice,
                 regtest,
                 unspent,

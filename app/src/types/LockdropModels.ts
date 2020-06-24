@@ -3,6 +3,9 @@ import { Moment } from 'moment';
 import { u8, u64, u128, U8aFixed } from '@polkadot/types';
 import { H256 } from '@polkadot/types/interfaces';
 
+/**
+ * lock contract parameter
+ */
 export interface LockInput {
     duration: number;
     amount: BN;
@@ -10,6 +13,9 @@ export interface LockInput {
     rate: number;
 }
 
+/**
+ * defines the method for creating a BTC transaction
+ */
 export enum BtcWalletType {
     Trezor,
     Ledger,
@@ -17,6 +23,9 @@ export enum BtcWalletType {
     None,
 }
 
+/**
+ * defines the Bitcoin network
+ */
 export enum BtcNetwork {
     TestNet,
     MainNet,
@@ -77,20 +86,22 @@ export interface OptionItem {
     value: number | string; // dropdown select return value
 }
 
-// used for real-time lockdrop parameter
-// we use the snake case because substrate has the read it
-export type Lockdrop = {
+/**
+ * used for real-time lockdrop parameter
+ * this data is used to communicate with Substrate
+ */
+export interface Lockdrop {
     type: u8; //u8
-    transaction_hash: H256; //H256
-    public_key: U8aFixed; // [u8; 33]
+    transactionHash: H256; //H256
+    publicKey: U8aFixed; // [u8; 33]
     duration: u64; // u64
     value: u128; // u128
-};
+}
 
-export type Claim = {
+export interface Claim {
     params: Lockdrop;
     approve: BN; // AuthorityVote
     decline: BN; // AuthorityVote
-    amount: BN; // u128
+    amount: u128; // u128
     complete: boolean;
-};
+}

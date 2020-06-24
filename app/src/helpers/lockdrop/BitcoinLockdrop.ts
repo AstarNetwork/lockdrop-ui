@@ -4,8 +4,6 @@ import bip68 from 'bip68';
 import { UnspentTx, BtcNetwork } from '../../types/LockdropModels';
 import { Transaction, Signer, Network } from 'bitcoinjs-lib';
 import TrezorConnect from 'trezor-connect';
-import { Toast } from 'react-toastify';
-//import bs58 from 'bs58';
 
 //const BTC_TX_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/txs/';
 //const BTC_ADDR_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/addrs/';
@@ -14,9 +12,15 @@ import { Toast } from 'react-toastify';
 //const BTC_ADDR_API_MAINNET = 'https://api.blockcypher.com/v1/btc/main/addrs/';
 //const QR_GEN_API = 'https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=';
 
+/**
+ * the message that will be hashed and signed by the client
+ */
 export const MESSAGE = 'plasm network btc lock';
 
-// initialize Trezor instance. This will return true if successful
+/**
+ * initialize Trezor instance.
+ * This will return true if successful
+ */
 export function initTrezor() {
     try {
         TrezorConnect.init({
@@ -33,43 +37,71 @@ export function initTrezor() {
     }
 }
 
-export function verifiedInput(address: string, signature: string, toast: Toast, network: BtcNetwork) {
-    if (network === BtcNetwork.MainNet && address[0] !== '1') {
-        toast.error('Please use a main net Bitcoin address');
-        return false;
-    } else if (network === BtcNetwork.TestNet && address[0] !== '2') {
-        toast.error('Please use a test net Bitcoin address');
-        return false;
+// export function verifySignature(address: string, signature: string, toast: Toast, network: BtcNetwork) {
+//     if (network === BtcNetwork.MainNet && address[0] !== '1') {
+//         toast.error('Please use a main net Bitcoin address');
+//         return false;
+//     } else if (network === BtcNetwork.TestNet && address[0] !== '2') {
+//         toast.error('Please use a test net Bitcoin address');
+//         return false;
+//     }
+
+//     return new Message(MESSAGE).verify(address, signature);
+// }
+
+/**
+ * checks the BTC address prefix with the given Bitcoin network
+ * @param address bitcoin address
+ * @param network bitcoin network
+ */
+export function verifyAddressNetwork(address: string, network: BtcNetwork) {
+    switch (network) {
+        case BtcNetwork.MainNet:
+            return address[0] === '1';
+        case BtcNetwork.TestNet:
+            return address[0] === '2';
+        default:
+            return false;
     }
-
-    return new Message(MESSAGE).verify(address, signature);
 }
 
-// converts an uncompressed public key to a compressed public key
-export function compressedPubKey(publicKey: string) {
-    const pubKeyPair = bitcoin.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'), { compressed: true });
-    return pubKeyPair.publicKey.toString('hex');
-}
-
-// converts an compressed public key to a uncompressed public key
+/**
+ * converts an compressed public key to a uncompressed public key
+ * @param publicKey compressed BTC public key
+ */
 export function uncompressedPubKey(publicKey: string) {
     const pubKeyPair = bitcoin.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'), { compressed: false });
     return pubKeyPair.publicKey.toString('hex');
 }
 
-// returns a public key from the given address and signature
-// by default this will return an uncompressed public key
-export function getPublicKey(address: string, signature: string, compressed?: boolean) {
+/**
+ * returns a public key from the given address and signature
+ * by default this will return an uncompressed public key
+ * @param address bitcoin address
+ * @param signature signature for signing the plasm network message
+ * @param compression should the public key be compressed or not
+ */
+export function getPublicKey(address: string, signature: string, compression?: 'compressed' | 'uncompressed') {
     const compressedPubKey = new Message(MESSAGE).recoverPublicKey(address, signature.replace(/(\r\n|\n|\r)/gm, ''));
-    return compressed ? compressedPubKey : uncompressedPubKey(compressedPubKey);
+    return compression === 'compressed' ? compressedPubKey : uncompressedPubKey(compressedPubKey);
 }
 
-// used for CHECKSEQUENCEVERIFY relative time lock. converts days to bip68 encoded block number
+/**
+ * used for CHECKSEQUENCEVERIFY relative time lock.
+ * this converts days to bip68 encoded block number.
+ * @param days number of days to be converted to sequence number
+ */
 export function daysToBlocks(days: number) {
     const blocksPerDay = 144; //10 min per block. day = 6 * 24
     return bip68.encode({ blocks: days * blocksPerDay });
 }
 
+/**
+ * create a bitcoin lock script with the given public key.
+ * this will lock the token for the given number of block sequence
+ * @param publicKeyHex uncompressed BTC public key in hex string
+ * @param blocks number of block sequence the token will be locked for
+ */
 export function btcLockScript(publicKeyHex: string, blocks: number): Buffer {
     return bitcoin.script.fromASM(
         `

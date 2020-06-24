@@ -7,6 +7,9 @@ import * as polkadotUtil from '@polkadot/util-crypto';
 import { numberToHex } from '@polkadot/util';
 import { TypeRegistry } from '@polkadot/types';
 
+/**
+ * bitmask used for real-time lockdrop claim request Pow security
+ */
 export const BITMASK = 0b0000_1111;
 
 export enum PlasmNetwork {
@@ -15,13 +18,25 @@ export enum PlasmNetwork {
     Main,
 }
 
+/**
+ * converts the plasm network minimum denominator to PLM
+ * @param femto minimum token value
+ */
 export function femtoToPlm(femto: BigNumber) {
     const plmDenominator = new BigNumber(10).pow(-15);
     return femto.times(plmDenominator);
 }
 
+/**
+ * used for adding new polkadot-js api types for communicating with plasm node
+ */
 export const plasmTypeReg = new TypeRegistry();
 
+/**
+ * establishes a connection between the client and the plasm node with the given endpoint.
+ * this will default to the main net node
+ * @param network end point for the client to connect to
+ */
 export async function createDustyPlasmInstance(network?: PlasmNetwork) {
     let endpoint = '';
 
@@ -75,6 +90,10 @@ export async function createDustyPlasmInstance(network?: PlasmNetwork) {
     });
 }
 
+/**
+ * convert the given lock duration in to PLM issue bonus rate
+ * @param duration token lock duration
+ */
 export function lockDurationToRate(duration: number) {
     if (duration < 30) {
         return 0;
@@ -89,15 +108,28 @@ export function lockDurationToRate(duration: number) {
     }
 }
 
-export async function sendLockClaim(api: ApiPromise, sender: string, lockParam: Lockdrop, nonce: string) {
+/**
+ * submits a real-time lockdrop claim request to plasm node and returns the transaction hash.
+ * this is a unsigned transaction that is only authenticated by a simple PoW to prevent spamming
+ * @param api plasm node api instance (polkadot-js api)
+ * @param lockParam lockdrop parameter that contains the lock data
+ * @param nonce nonce for PoW authentication with the node
+ */
+export async function sendLockClaim(api: ApiPromise, lockParam: Lockdrop, nonce: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const claimRequestTx = await (api.tx as any).plasmLockdrop.request(lockParam, nonce);
 
-    const txHash = await claimRequestTx.signAndSend(sender);
+    const txHash = await claimRequestTx.sign();
 
     return txHash as Hash;
 }
 
+/**
+ * a Proof-of-Work function that hashes the lockdrop claim ID and the nonce
+ * together to verify the unsigned transaction.
+ * this will return the correct nonce in hex string
+ * @param claimId the real-time lockdrop claim ID (blake2 hashed lock parameter)
+ */
 export function claimPowNonce(claimId: string) {
     let nonce = polkadotUtil.randomAsNumber();
     let found = false;
