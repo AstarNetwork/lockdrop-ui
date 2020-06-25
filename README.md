@@ -1,7 +1,7 @@
 Plasm Network Genesis Lockdrop
 ==============================
 
-[![Build Status](https://travis-ci.org/staketechnologies/genesis-lockdrop.svg?branch=master)](https://travis-ci.org/staketechnologies/genesis-lockdrop)
+[![Build Status](https://travis-ci.org/github/staketechnologies/lockdrop-ui.svg?branch=master)](https://travis-ci.org/github/staketechnologies/lockdrop-ui)
 
 This repository contains smart contracts and DApp helper to make participation a bit easy.
 
