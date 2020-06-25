@@ -4,14 +4,12 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Lockdrop } from '../types/LockdropModels';
 import { Hash } from '@polkadot/types/interfaces';
 import * as polkadotUtil from '@polkadot/util-crypto';
-import { numberToHex } from '@polkadot/util';
+import { u8aConcat } from '@polkadot/util';
 import { TypeRegistry } from '@polkadot/types';
 
 /**
  * bitmask used for real-time lockdrop claim request Pow security
  */
-export const BITMASK = 0b0000_1111;
-
 export enum PlasmNetwork {
     Local,
     Dusty,
@@ -130,23 +128,17 @@ export async function sendLockClaim(api: ApiPromise, lockParam: Lockdrop, nonce:
  * this will return the correct nonce in hex string
  * @param claimId the real-time lockdrop claim ID (blake2 hashed lock parameter)
  */
-export function claimPowNonce(claimId: string) {
-    let nonce = polkadotUtil.randomAsNumber();
-    let found = false;
-
-    //polkadotUtil.blake2AsU8a(53, 256);
-    while (!found) {
-        const nonceHash = polkadotUtil.blake2AsHex(numberToHex(nonce), 256);
-        const powByte = polkadotUtil.blake2AsU8a(claimId + nonceHash)[0];
-
-        //const powByte = Buffer.from(hash).toString('binary');
-        // bitwise comparison
-        if ((powByte & BITMASK) > 0) {
-            nonce += 1;
-            continue;
+export function claimPowNonce(claimId: Uint8Array): Uint8Array {
+    //console.log('ClaimId: ' + u8aToHex(claimId));
+    let nonce = polkadotUtil.randomAsU8a();
+    while (true) {
+        const hash = polkadotUtil.blake2AsU8a(u8aConcat(claimId, nonce));
+        //console.log('PoW hash: ' + u8aToHex(hash));
+        if (hash[0] > 0) {
+            nonce = polkadotUtil.randomAsU8a();
+            //console.log('Next nonce: ' + u8aToHex(nonce));
         } else {
-            found = true;
+            return nonce;
         }
     }
-    return polkadotUtil.blake2AsHex(numberToHex(nonce), 256);
 }
