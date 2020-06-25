@@ -1,8 +1,9 @@
 /* eslint-disable react/prop-types */
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent } from '@ionic/react';
 import { qrEncodeUri } from '../../helpers/lockdrop/BitcoinLockdrop';
 import { Typography, makeStyles, createStyles } from '@material-ui/core';
+import Skeleton from '@material-ui/lab/Skeleton';
 
 interface Props {
     address: string;
@@ -24,11 +25,24 @@ const useStyles = makeStyles(() =>
 
 const QrEncodedAddress: React.FC<Props> = ({ address }) => {
     const classes = useStyles();
+    const [imageUri, setUri] = useState('');
+
+    useEffect(() => {
+        qrEncodeUri(address).then(img => {
+            setUri(img);
+        });
+    }, []);
+
     return (
         <>
             <IonCard>
                 <IonCardHeader>
-                    <img src={qrEncodeUri(address)} className={classes.qrImage} />
+                    {imageUri ? (
+                        <img src={imageUri} className={classes.qrImage} />
+                    ) : (
+                        <Skeleton variant="rect" className={classes.qrImage} />
+                    )}
+
                     <IonCardSubtitle>Please send the funds you like to lock to this P2SH address</IonCardSubtitle>
                     <IonCardTitle>Sign Message</IonCardTitle>
                 </IonCardHeader>

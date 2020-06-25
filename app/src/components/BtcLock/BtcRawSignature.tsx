@@ -21,7 +21,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { BtcNetwork } from '../../types/LockdropModels';
 import { DropdownOption } from '../DropdownOption';
-import { durations, rates } from '../../data/lockInfo';
+import { btcDurations, rates } from '../../data/lockInfo';
 import { Message } from 'bitcore-lib';
 import QrEncodedAddress from './QrEncodedAddress';
 import FileCopyIcon from '@material-ui/icons/FileCopy';
@@ -77,9 +77,12 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
 
     const onSubmit = () => {
         try {
-            if (!verifyAddressNetwork(addressInput, networkType)) {
+            // throws error for user input validations
+            // this is easier to look, but might need to refactor this later
+            if (!verifyAddressNetwork(addressInput, networkType))
                 throw new Error('Please use a valid Bitcoin network address');
-            }
+            if (!lockDuration || !sigInput || !addressInput) throw new Error('Please fill in all the inputs');
+
             console.log('verifying user:' + addressInput + '\nwith: ' + sigInput);
             if (new Message(MESSAGE).verify(addressInput, sigInput)) {
                 const pub = getPublicKey(addressInput, sigInput);
@@ -162,7 +165,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                     <IonLabel position="stacked">Lock Duration</IonLabel>
                     <IonItem>
                         <DropdownOption
-                            dataSets={durations}
+                            dataSets={btcDurations}
                             onChoose={(e: React.ChangeEvent<HTMLInputElement>) =>
                                 setDuration((e.target.value as unknown) as number)
                             }

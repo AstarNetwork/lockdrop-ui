@@ -15,8 +15,14 @@ import TrezorConnect from 'trezor-connect';
  * returns a url for the qr encoded bitcoin address
  * @param btcAddress bitcoin address
  */
-export function qrEncodeUri(btcAddress: string, size = 300) {
-    return `https://chart.googleapis.com/chart?chs=${size}x${size}&cht=qr&chl=${btcAddress}`;
+export async function qrEncodeUri(btcAddress: string, size = 300) {
+    const qrCode = URL.createObjectURL(
+        await fetch(`https://chart.googleapis.com/chart?chs=${size}x${size}&cht=qr&chl=${btcAddress}`).then(res =>
+            res.blob(),
+        ),
+    );
+
+    return qrCode;
 }
 
 /**
