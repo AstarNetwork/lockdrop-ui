@@ -4,6 +4,7 @@ import bip68 from 'bip68';
 import { UnspentTx, BtcNetwork } from '../../types/LockdropModels';
 import { Transaction, Signer, Network } from 'bitcoinjs-lib';
 import TrezorConnect from 'trezor-connect';
+import { BlockCypherApi } from '../../types/BlockCypherTypes';
 
 //const BTC_TX_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/txs/';
 //const BTC_ADDR_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/addrs/';
@@ -12,7 +13,7 @@ import TrezorConnect from 'trezor-connect';
 //const BTC_ADDR_API_MAINNET = 'https://api.blockcypher.com/v1/btc/main/addrs/';
 
 /**
- * returns a url for the qr encoded bitcoin address
+ * returns a blob url for the qr encoded bitcoin address
  * @param btcAddress bitcoin address
  */
 export async function qrEncodeUri(btcAddress: string, size = 300) {
@@ -23,6 +24,32 @@ export async function qrEncodeUri(btcAddress: string, size = 300) {
     );
 
     return qrCode;
+}
+
+export async function getAddressEndpoint(address: string, network: 'main' | 'test3', full?: boolean) {
+    const api = `https://api.blockcypher.com/v1/btc/${network}/addrs/${address}${full ? '/full' : ''}`;
+
+    const res = await (await fetch(api)).text();
+
+    if (res.includes('error')) {
+        throw new Error(res);
+    }
+
+    const addressEndpoint: BlockCypherApi.BtcAddress = JSON.parse(res);
+    return addressEndpoint;
+}
+
+export async function getTransactionEndpoint(txHash: string, network: 'main' | 'test3', limit = 20) {
+    const api = `https://api.blockcypher.com/v1/btc/${network}/txs/${txHash}?limit=${limit}`;
+
+    const res = await (await fetch(api)).text();
+
+    if (res.includes('error')) {
+        throw new Error(res);
+    }
+
+    const hashEndpoint: BlockCypherApi.BtcTxHash = JSON.parse(res);
+    return hashEndpoint;
 }
 
 /**

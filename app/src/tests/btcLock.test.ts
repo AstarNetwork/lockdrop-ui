@@ -6,7 +6,8 @@ import * as bitcoin from 'bitcoinjs-lib';
 import * as assert from 'assert';
 import { regtestUtils } from './_regtest';
 import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
-import { UnspentTx } from '../types/LockdropModels';
+import { UnspentTx, BtcNetwork } from '../types/LockdropModels';
+import { getAddressEndpoint, getTransactionEndpoint } from '../helpers/lockdrop/BitcoinLockdrop';
 
 const regtest = regtestUtils.network;
 
@@ -76,6 +77,30 @@ describe('BTC signature tests', () => {
 
         expect(btcLockdrop.uncompressedPubKey(pubKey1)).toEqual(testSet1.publicKey);
         expect(btcLockdrop.uncompressedPubKey(pubKey2)).toEqual(testSet2.publicKey);
+    });
+});
+
+describe('Bitcoin API fetch tests', () => {
+    it('fetches address data from block cypher', async () => {
+        const addressInfo = await getAddressEndpoint('13XXaBufpMvqRqLkyDty1AXqueZHVe6iyy', 'main');
+        expect(addressInfo.total_received).toEqual(293710000);
+
+        const addressInfoTestnet = await getAddressEndpoint('2Mubm96PDzLyzcXJvfqX8kdyn2WHa7ssJ67', 'test3');
+        expect(addressInfoTestnet.total_received).toEqual(284780111);
+    });
+
+    it('fetches hash data from block cypher', async () => {
+        const txInfo = await getTransactionEndpoint(
+            'f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449',
+            'main',
+        );
+        expect(txInfo.total).toEqual(70320221545);
+
+        const txInfoTestnet = await getTransactionEndpoint(
+            '2336a60b02f69a892b797b21aedafa128779338e9f69650fc87373a4f8036611',
+            'test3',
+        );
+        expect(txInfoTestnet.total).toEqual(284852111);
     });
 });
 
