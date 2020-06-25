@@ -102,31 +102,37 @@ describe('Plasm lockdrop RPC tests', () => {
     it('checks plasm constants', async () => {
         const sessionDuration = api.consts.babe.epochDuration.toNumber();
         const plasmRewards = (api.consts as any).plasmRewards.sessionsPerEra.toNumber();
+        const maxBlockLength = api.consts.system.maximumBlockLength.toNumber();
         expect(sessionDuration).toEqual(1440);
         expect(plasmRewards).toEqual(6);
+        expect(maxBlockLength).toEqual(5242880);
     });
 
-    it('queries Alice account balance', async () => {
+    it('queries plasm account balance', async () => {
         // the alice wallet from a dev chain
         const alice = keyring.addFromUri('//Alice', {
             name: 'Alice default',
         });
-        const bob = 'Wh2nf6F5ZNJguoQu22Z361xo6VFqX1Y2BuQMcJBSJxERh5E';
+        // account that has tokens both on main net and dusty
+        const bob =
+            (plasmEndpoint as PlasmNetwork) === PlasmNetwork.Dusty
+                ? 'Wh2nf6F5ZNJguoQu22Z361xo6VFqX1Y2BuQMcJBSJxERh5E'
+                : '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
 
         // only make a transfer if it's connected to a local node
         if ((plasmEndpoint as PlasmNetwork) === PlasmNetwork.Local) {
             // Create a extrinsic, transferring 12345 units to Bob
-            const transfer = api.tx.balances.transfer(bob, 12345);
+            const transfer = api.tx.balances.transfer(bob, '100000000000');
 
             // Sign and send the transaction using our account
             await transfer.signAndSend(alice, ({ status }) => {
                 console.log('tx status', status.toHuman());
             });
-        } else {
-            const { data: balance } = await api.query.system.account(bob);
-
-            console.log(`has balance of ${balance.free}`);
         }
+        const { data: balance } = await api.query.system.account(bob);
+
+        console.log(`has balance of ${balance.free}`);
+        expect(new BN('100000000000').lte(balance.free.toBn())).toBeTruthy();
     });
     // dusty does not implement the lock claim module yet
     if ((plasmEndpoint as PlasmNetwork) === PlasmNetwork.Local) {
@@ -137,6 +143,8 @@ describe('Plasm lockdrop RPC tests', () => {
                 sampleLock,
                 polkadotUtil.u8aToHex(nonce),
             );
+
+            console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
 
             await claimRequestTx.send();
         });
