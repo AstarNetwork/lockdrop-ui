@@ -4,6 +4,7 @@ import { IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent }
 import { qrEncodeUri } from '../../helpers/lockdrop/BitcoinLockdrop';
 import { Typography, makeStyles, createStyles } from '@material-ui/core';
 import Skeleton from '@material-ui/lab/Skeleton';
+import LockStatus from './LockStatus';
 
 interface Props {
     address: string;
@@ -49,6 +50,7 @@ const QrEncodedAddress: React.FC<Props> = ({ address }) => {
 
                 <IonCardContent>
                     <Typography component="h4">{address}</Typography>
+                    <LockStatus scriptAddress={address} />
                 </IonCardContent>
             </IonCard>
         </>

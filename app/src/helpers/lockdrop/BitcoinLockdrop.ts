@@ -119,27 +119,26 @@ export function initTrezor() {
 // }
 
 /**
- * checks the BTC address prefix with the given Bitcoin network
+ * returns the network type that the given address belongs to.
  * @param address bitcoin address
- * @param network bitcoin network
  */
-export function verifyAddressNetwork(address: string, network: BtcNetwork) {
+export function getNetworkFromAddress(address: string) {
+    // sources: https://en.bitcoin.it/wiki/List_of_address_prefixes
     // main net public key hash prefixes
-    const pubkeyHash = '1';
-    const bech32 = 'bc1';
-
+    const mainNetPref = ['1', '3', 'bc1'];
     // test net public key hash prefixes
-    const testPubkeyHash = 'm' || 'n';
-    const testBech32 = 'tb1';
+    const testNetPref = ['m', 'n', 'tb1', '2'];
 
-    switch (network) {
-        case BtcNetwork.MainNet:
-            return address.startsWith(pubkeyHash) || address.startsWith(bech32);
-        case BtcNetwork.TestNet:
-            return address.startsWith(testPubkeyHash) || address.startsWith(testBech32);
-        default:
-            return false;
+    // check for regex match from the given address and array
+    if (new RegExp(`^(${mainNetPref.join('|')})`).test(address)) {
+        return BtcNetwork.MainNet;
+    } else if (new RegExp(`^(${testNetPref.join('|')})`).test(address)) {
+        return BtcNetwork.TestNet;
+    } else {
+        throw new Error('Invalid Bitcoin address');
     }
+    //todo: refactor all functions to automatically detect the network using this function
+    // rather than having to provide it manually
 }
 
 /**

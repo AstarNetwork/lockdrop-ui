@@ -94,7 +94,7 @@ export default function DustyBtcLockPage() {
                     </>
                 );
             case BtcWalletType.Raw:
-                return <BtcRawSignature networkType={BtcNetwork.MainNet} />;
+                return <BtcRawSignature networkType={BtcNetwork.TestNet} />;
         }
     };
 

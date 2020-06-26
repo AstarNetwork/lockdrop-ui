@@ -16,7 +16,7 @@ import {
     IonChip,
 } from '@ionic/react';
 import { Paper, Typography, makeStyles, createStyles, Tooltip, IconButton } from '@material-ui/core';
-import { MESSAGE, getPublicKey, verifyAddressNetwork, getLockP2SH } from '../../helpers/lockdrop/BitcoinLockdrop';
+import { MESSAGE, getPublicKey, getLockP2SH, getNetworkFromAddress } from '../../helpers/lockdrop/BitcoinLockdrop';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { BtcNetwork } from '../../types/LockdropModels';
@@ -79,7 +79,8 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
         try {
             // throws error for user input validations
             // this is easier to look, but might need to refactor this later
-            if (!verifyAddressNetwork(addressInput, networkType))
+            console.log(getNetworkFromAddress(addressInput));
+            if ((getNetworkFromAddress(addressInput) as BtcNetwork) !== networkType)
                 throw new Error('Please use a valid Bitcoin network address');
             if (!lockDuration || !sigInput || !addressInput) throw new Error('Please fill in all the inputs');
 
