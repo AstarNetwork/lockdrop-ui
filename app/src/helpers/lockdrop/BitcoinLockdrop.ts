@@ -5,12 +5,18 @@ import { UnspentTx, BtcNetwork } from '../../types/LockdropModels';
 import { Transaction, Signer, Network } from 'bitcoinjs-lib';
 import TrezorConnect from 'trezor-connect';
 import { BlockCypherApi } from '../../types/BlockCypherTypes';
+import { BN } from 'ethereumjs-util';
 
 //const BTC_TX_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/txs/';
 //const BTC_ADDR_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/addrs/';
 
 //const BTC_TX_API_MAINNET = 'https://api.blockcypher.com/v1/btc/main/txs/';
 //const BTC_ADDR_API_MAINNET = 'https://api.blockcypher.com/v1/btc/main/addrs/';
+
+/**
+ * the message that will be hashed and signed by the client
+ */
+export const MESSAGE = 'plasm network btc lock';
 
 /**
  * returns a blob url for the qr encoded bitcoin address
@@ -26,8 +32,15 @@ export async function qrEncodeUri(btcAddress: string, size = 300) {
     return qrCode;
 }
 
-export async function getAddressEndpoint(address: string, network: 'main' | 'test3', full?: boolean) {
-    const api = `https://api.blockcypher.com/v1/btc/${network}/addrs/${address}${full ? '/full' : ''}`;
+/**
+ * returns the detailed information of the given address via blockcypher API calls.
+ * such information includes transaction references, account balances, and more
+ * @param address bitcoin address
+ * @param network network type
+ * @param limit filters the number of transaction references
+ */
+export async function getAddressEndpoint(address: string, network: 'main' | 'test3', limit = 20) {
+    const api = `https://api.blockcypher.com/v1/btc/${network}/addrs/${address}?limit=${limit}`;
 
     const res = await (await fetch(api)).text();
 
@@ -39,6 +52,13 @@ export async function getAddressEndpoint(address: string, network: 'main' | 'tes
     return addressEndpoint;
 }
 
+/**
+ * returns the detailed information of the given transaction hash via blockcypher API calls.
+ * such information includes transaction input, output, addresses, and more
+ * @param txHash bitcoin transaction hash
+ * @param network network type
+ * @param limit filters the number of TX inputs and outputs
+ */
 export async function getTransactionEndpoint(txHash: string, network: 'main' | 'test3', limit = 20) {
     const api = `https://api.blockcypher.com/v1/btc/${network}/txs/${txHash}?limit=${limit}`;
 
@@ -53,9 +73,18 @@ export async function getTransactionEndpoint(txHash: string, network: 'main' | '
 }
 
 /**
- * the message that will be hashed and signed by the client
+ * converts satoshis to bitcoin
+ * @param satoshi number of satoshis
  */
-export const MESSAGE = 'plasm network btc lock';
+export function satoshiToBitcoin(satoshi: BN | number) {
+    // 1 bitcoin = 100,000,000 satoshis
+    const denominator = new BN(10).pow(new BN(8));
+
+    if (typeof satoshi === 'number') {
+        return new BN(satoshi).div(denominator);
+    }
+    return satoshi.div(denominator);
+}
 
 /**
  * initialize Trezor instance.

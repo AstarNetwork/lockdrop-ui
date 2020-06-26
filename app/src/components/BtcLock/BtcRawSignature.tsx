@@ -123,7 +123,8 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                 <IonCardHeader>
                     <IonCardSubtitle>
                         Please sign the following message with your tool of choice and copy and paste the following
-                        input
+                        input. The provided address will be the one that will receive the tokens once it has been
+                        unlocked.
                     </IonCardSubtitle>
                     <IonCardTitle>Sign Message</IonCardTitle>
                 </IonCardHeader>
