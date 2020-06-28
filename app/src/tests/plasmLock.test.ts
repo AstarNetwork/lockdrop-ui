@@ -88,7 +88,7 @@ describe('Plasm ECDSA address tests', () => {
 describe('Plasm lockdrop RPC tests', () => {
     // initialize a connection with the blockchain
     // change this to either local of dusty to switch networks and tests
-    const plasmEndpoint = PlasmNetwork.Local;
+    const plasmEndpoint = PlasmNetwork.Dusty;
 
     let api: ApiPromise;
     const keyring = new Keyring({

@@ -29,7 +29,7 @@ const QrEncodedAddress: React.FC<Props> = ({ address }) => {
     const [imageUri, setUri] = useState('');
 
     useEffect(() => {
-        qrEncodeUri(address).then(img => {
+        qrEncodeUri(address).then((img) => {
             setUri(img);
         });
     }, []);

@@ -28,7 +28,7 @@ interface Props {
     networkType: BtcNetwork;
 }
 
-const useStyles = makeStyles(theme =>
+const useStyles = makeStyles((theme) =>
     createStyles({
         button: {
             textAlign: 'center',
@@ -67,7 +67,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
 
     const getTokenRate = () => {
         if (lockDuration) {
-            return rates.filter(x => x.key === lockDuration)[0].value;
+            return rates.filter((x) => x.key === lockDuration)[0].value;
         }
         return 0;
     };
@@ -124,7 +124,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                         <IonInput
                             value={addressInput}
                             placeholder="Enter BTC Address"
-                            onIonChange={e => setAddress(e.detail.value!)}
+                            onIonChange={(e) => setAddress(e.detail.value!)}
                         ></IonInput>
                     </IonItem>
 
@@ -132,7 +132,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                         <IonTextarea
                             placeholder="Paste your base64 message signature here..."
                             value={sigInput}
-                            onIonChange={e => setSig(e.detail.value!)}
+                            onIonChange={(e) => setSig(e.detail.value!)}
                         ></IonTextarea>
                     </IonItem>
                     <IonLabel position="stacked">Lock Duration</IonLabel>

@@ -24,7 +24,7 @@ import { initTrezor } from '../helpers/lockdrop/BitcoinLockdrop';
 import { BtcWalletType, BtcNetwork } from '../types/LockdropModels';
 import BtcRawSignature from '../components/BtcLock/BtcRawSignature';
 
-const useStyles = makeStyles(theme =>
+const useStyles = makeStyles((theme) =>
     createStyles({
         quantLogo: {
             marginRight: theme.spacing(2),
