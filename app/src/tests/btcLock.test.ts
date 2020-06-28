@@ -184,7 +184,7 @@ describe('BTC lock script tests', () => {
             console.log(tx.toHex());
 
             // Try to redeem at lock time
-            await regtestUtils.broadcast(tx.toHex()).catch((err) => {
+            await regtestUtils.broadcast(tx.toHex()).catch(err => {
                 assert.throws(() => {
                     if (err) throw err;
                 }, /Error: non-BIP68-final \(code 64\)/);
@@ -192,7 +192,7 @@ describe('BTC lock script tests', () => {
 
             // Try to redeem for few blocks before unlocking
             await regtestUtils.mine(DURATION - 2);
-            await regtestUtils.broadcast(tx.toHex()).catch((err) => {
+            await regtestUtils.broadcast(tx.toHex()).catch(err => {
                 assert.throws(() => {
                     if (err) throw err;
                 }, /Error: non-BIP68-final \(code 64\)/);

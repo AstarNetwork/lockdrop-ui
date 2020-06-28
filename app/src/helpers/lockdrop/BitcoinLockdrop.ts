@@ -24,7 +24,7 @@ export const MESSAGE = 'plasm network btc lock';
  */
 export async function qrEncodeUri(btcAddress: string, size = 300) {
     const qrCode = URL.createObjectURL(
-        await fetch(`https://chart.googleapis.com/chart?chs=${size}x${size}&cht=qr&chl=${btcAddress}`).then((res) =>
+        await fetch(`https://chart.googleapis.com/chart?chs=${size}x${size}&cht=qr&chl=${btcAddress}`).then(res =>
             res.blob(),
         ),
     );
