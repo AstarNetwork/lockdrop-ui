@@ -44,7 +44,7 @@ const QrEncodedAddress: React.FC<Props> = ({ address }) => {
                         <Skeleton variant="rect" className={classes.qrImage} />
                     )}
 
-                    <IonCardSubtitle>Please send the funds you like to lock to this P2SH address</IonCardSubtitle>
+                    <IonCardSubtitle>Please send the amount you want to lock to this P2SH address</IonCardSubtitle>
                     <IonCardTitle>Sign Message</IonCardTitle>
                 </IonCardHeader>
 

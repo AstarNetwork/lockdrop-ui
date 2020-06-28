@@ -10,16 +10,7 @@ interface Props {
     scriptAddress: string;
 }
 
-// const useStyles = makeStyles(() =>
-//     createStyles({
-//         qrImage: {
-//         },
-//     }),
-// );
-
 const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
-    //const classes = useStyles();
-    //const [hasLocked, setLockedState] = useState(false);
     const [lockedValue, setLockedValue] = useState('');
 
     useEffect(() => {
@@ -31,8 +22,11 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
                     : 'test3';
             // check the transactions in the P2SH address
             const lockTxData = await btcLockdrop.getAddressEndpoint(scriptAddress, networkToken);
-            setLockedValue(btcLockdrop.satoshiToBitcoin(lockTxData.final_balance).toString());
+            if (lockTxData.final_balance > 0) {
+                setLockedValue(btcLockdrop.satoshiToBitcoin(lockTxData.final_balance).toFixed());
+            }
         }, 3000); // fetch every 3 seconds
+
         // cleanup hook
         return () => {
             clearInterval(interval);

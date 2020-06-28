@@ -5,7 +5,7 @@ import { UnspentTx, BtcNetwork } from '../../types/LockdropModels';
 import { Transaction, Signer, Network } from 'bitcoinjs-lib';
 import TrezorConnect from 'trezor-connect';
 import { BlockCypherApi } from '../../types/BlockCypherTypes';
-import { BN } from 'ethereumjs-util';
+import BigNumber from 'bignumber.js';
 
 //const BTC_TX_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/txs/';
 //const BTC_ADDR_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/addrs/';
@@ -76,12 +76,14 @@ export async function getTransactionEndpoint(txHash: string, network: 'main' | '
  * converts satoshis to bitcoin
  * @param satoshi number of satoshis
  */
-export function satoshiToBitcoin(satoshi: BN | number) {
+export function satoshiToBitcoin(satoshi: BigNumber | number) {
     // 1 bitcoin = 100,000,000 satoshis
-    const denominator = new BN(10).pow(new BN(8));
 
+    const denominator = new BigNumber(10).pow(new BigNumber(8));
+
+    // if the parameter is a number, convert it to BN
     if (typeof satoshi === 'number') {
-        return new BN(satoshi).div(denominator);
+        return new BigNumber(satoshi).div(denominator);
     }
     return satoshi.div(denominator);
 }
@@ -106,16 +108,14 @@ export function initTrezor() {
     }
 }
 
-// export function verifySignature(address: string, signature: string, toast: Toast, network: BtcNetwork) {
-//     if (network === BtcNetwork.MainNet && address[0] !== '1') {
-//         toast.error('Please use a main net Bitcoin address');
-//         return false;
-//     } else if (network === BtcNetwork.TestNet && address[0] !== '2') {
-//         toast.error('Please use a test net Bitcoin address');
-//         return false;
-//     }
-
-//     return new Message(MESSAGE).verify(address, signature);
+// export function createLockdropClaim() {
+//     const lockdropClaim: Lockdrop = {
+//         type: 1, //u8
+//         transactionHash: H256, //H256
+//         publicKey: U8aFixed, // [u8; 33]
+//         duration: u64, // u64
+//         value: u128, // u128
+//     };
 // }
 
 /**

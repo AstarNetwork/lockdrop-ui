@@ -12,10 +12,9 @@ import {
     IonLabel,
     IonTextarea,
     IonButton,
-    IonToast,
     IonChip,
 } from '@ionic/react';
-import { Paper, Typography, makeStyles, createStyles, Tooltip, IconButton } from '@material-ui/core';
+import { makeStyles, createStyles } from '@material-ui/core';
 import { MESSAGE, getPublicKey, getLockP2SH, getNetworkFromAddress } from '../../helpers/lockdrop/BitcoinLockdrop';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -24,8 +23,7 @@ import { DropdownOption } from '../DropdownOption';
 import { btcDurations, rates } from '../../data/lockInfo';
 import { Message } from 'bitcore-lib';
 import QrEncodedAddress from './QrEncodedAddress';
-import FileCopyIcon from '@material-ui/icons/FileCopy';
-
+import CopyMessageBox from '../CopyMessageBox';
 interface Props {
     networkType: BtcNetwork;
 }
@@ -66,7 +64,6 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
     const [sigInput, setSig] = useState('');
     const [lockDuration, setDuration] = useState(0);
     const [p2shAddress, setP2sh] = useState('');
-    const [showCopyToast, setCopyToast] = useState(false);
 
     const getTokenRate = () => {
         if (lockDuration) {
@@ -82,6 +79,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
             console.log(getNetworkFromAddress(addressInput));
             if ((getNetworkFromAddress(addressInput) as BtcNetwork) !== networkType)
                 throw new Error('Please use a valid Bitcoin network address');
+
             if (!lockDuration || !sigInput || !addressInput) throw new Error('Please fill in all the inputs');
 
             console.log('verifying user:' + addressInput + '\nwith: ' + sigInput);
@@ -106,17 +104,6 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
         }
     };
 
-    const clickCopyMessage = () => {
-        navigator.clipboard.writeText(MESSAGE).then(
-            function() {
-                setCopyToast(true);
-            },
-            function(err) {
-                console.error('Async: Could not copy text: ', err);
-            },
-        );
-    };
-
     return (
         <div>
             {p2shAddress ? <QrEncodedAddress address={p2shAddress} /> : <></>}
@@ -131,23 +118,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                 </IonCardHeader>
 
                 <IonCardContent>
-                    <Paper elevation={1} className={classes.messageBox}>
-                        <Typography component="h4" variant="h3">
-                            Message:
-                        </Typography>
-                        <div className={classes.signMessage}>
-                            <Typography component="h1" variant="h2">
-                                {MESSAGE}
-                            </Typography>
-                            <div className={classes.copyIcon}>
-                                <Tooltip title="Copy Message" aria-label="copy">
-                                    <IconButton color="inherit" component="span" onClick={() => clickCopyMessage()}>
-                                        <FileCopyIcon />
-                                    </IconButton>
-                                </Tooltip>
-                            </div>
-                        </div>
-                    </Paper>
+                    <CopyMessageBox header="message" message={MESSAGE} />
                     <IonLabel position="stacked">Bitcoin Address</IonLabel>
                     <IonItem>
                         <IonInput
@@ -183,12 +154,6 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
             <div className={classes.button}>
                 <IonButton onClick={onSubmit}>Generate Lock Script</IonButton>
             </div>
-            <IonToast
-                isOpen={showCopyToast}
-                onDidDismiss={() => setCopyToast(false)}
-                message="Copied message to clipboard"
-                duration={2000}
-            />
         </div>
     );
 };
