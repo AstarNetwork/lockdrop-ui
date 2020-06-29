@@ -31,6 +31,15 @@ export const durations: OptionItem[] = [
 ];
 
 /**
+ * BTC lockdrop does not support 1000 days lock due to CSV lock scheme
+ */
+export const btcDurations: OptionItem[] = [
+    { label: '30 Days', value: 30 },
+    { label: '100 Days', value: 100 },
+    { label: '300 Days', value: 300 },
+];
+
+/**
  * the token increase rate for lock durations
  */
 export const rates = [

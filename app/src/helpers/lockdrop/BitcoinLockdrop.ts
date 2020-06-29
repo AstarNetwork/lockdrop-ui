@@ -4,6 +4,8 @@ import bip68 from 'bip68';
 import { UnspentTx, BtcNetwork } from '../../types/LockdropModels';
 import { Transaction, Signer, Network } from 'bitcoinjs-lib';
 import TrezorConnect from 'trezor-connect';
+import { BlockCypherApi } from '../../types/BlockCypherTypes';
+import BigNumber from 'bignumber.js';
 
 //const BTC_TX_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/txs/';
 //const BTC_ADDR_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/addrs/';
@@ -12,17 +14,79 @@ import TrezorConnect from 'trezor-connect';
 //const BTC_ADDR_API_MAINNET = 'https://api.blockcypher.com/v1/btc/main/addrs/';
 
 /**
- * returns a url for the qr encoded bitcoin address
- * @param btcAddress bitcoin address
- */
-export function qrEncodeUri(btcAddress: string, size = 300) {
-    return `https://chart.googleapis.com/chart?chs=${size}x${size}&cht=qr&chl=${btcAddress}`;
-}
-
-/**
  * the message that will be hashed and signed by the client
  */
 export const MESSAGE = 'plasm network btc lock';
+
+/**
+ * returns a blob url for the qr encoded bitcoin address
+ * @param btcAddress bitcoin address
+ */
+export async function qrEncodeUri(btcAddress: string, size = 300) {
+    const qrCode = URL.createObjectURL(
+        await fetch(`https://chart.googleapis.com/chart?chs=${size}x${size}&cht=qr&chl=${btcAddress}`).then(res =>
+            res.blob(),
+        ),
+    );
+
+    return qrCode;
+}
+
+/**
+ * returns the detailed information of the given address via blockcypher API calls.
+ * such information includes transaction references, account balances, and more
+ * @param address bitcoin address
+ * @param network network type
+ * @param limit filters the number of transaction references
+ */
+export async function getAddressEndpoint(address: string, network: 'main' | 'test3', limit = 20) {
+    const api = `https://api.blockcypher.com/v1/btc/${network}/addrs/${address}?limit=${limit}`;
+
+    const res = await (await fetch(api)).text();
+
+    if (res.includes('error')) {
+        throw new Error(res);
+    }
+
+    const addressEndpoint: BlockCypherApi.BtcAddress = JSON.parse(res);
+    return addressEndpoint;
+}
+
+/**
+ * returns the detailed information of the given transaction hash via blockcypher API calls.
+ * such information includes transaction input, output, addresses, and more
+ * @param txHash bitcoin transaction hash
+ * @param network network type
+ * @param limit filters the number of TX inputs and outputs
+ */
+export async function getTransactionEndpoint(txHash: string, network: 'main' | 'test3', limit = 20) {
+    const api = `https://api.blockcypher.com/v1/btc/${network}/txs/${txHash}?limit=${limit}`;
+
+    const res = await (await fetch(api)).text();
+
+    if (res.includes('error')) {
+        throw new Error(res);
+    }
+
+    const hashEndpoint: BlockCypherApi.BtcTxHash = JSON.parse(res);
+    return hashEndpoint;
+}
+
+/**
+ * converts satoshis to bitcoin
+ * @param satoshi number of satoshis
+ */
+export function satoshiToBitcoin(satoshi: BigNumber | number) {
+    // 1 bitcoin = 100,000,000 satoshis
+
+    const denominator = new BigNumber(10).pow(new BigNumber(8));
+
+    // if the parameter is a number, convert it to BN
+    if (typeof satoshi === 'number') {
+        return new BigNumber(satoshi).div(denominator);
+    }
+    return satoshi.div(denominator);
+}
 
 /**
  * initialize Trezor instance.
@@ -44,40 +108,37 @@ export function initTrezor() {
     }
 }
 
-// export function verifySignature(address: string, signature: string, toast: Toast, network: BtcNetwork) {
-//     if (network === BtcNetwork.MainNet && address[0] !== '1') {
-//         toast.error('Please use a main net Bitcoin address');
-//         return false;
-//     } else if (network === BtcNetwork.TestNet && address[0] !== '2') {
-//         toast.error('Please use a test net Bitcoin address');
-//         return false;
-//     }
-
-//     return new Message(MESSAGE).verify(address, signature);
+// export function createLockdropClaim() {
+//     const lockdropClaim: Lockdrop = {
+//         type: 1, //u8
+//         transactionHash: H256, //H256
+//         publicKey: U8aFixed, // [u8; 33]
+//         duration: u64, // u64
+//         value: u128, // u128
+//     };
 // }
 
 /**
- * checks the BTC address prefix with the given Bitcoin network
+ * returns the network type that the given address belongs to.
  * @param address bitcoin address
- * @param network bitcoin network
  */
-export function verifyAddressNetwork(address: string, network: BtcNetwork) {
+export function getNetworkFromAddress(address: string) {
+    // sources: https://en.bitcoin.it/wiki/List_of_address_prefixes
     // main net public key hash prefixes
-    const pubkeyHash = '1';
-    const bech32 = 'bc1';
-
+    const mainNetPref = ['1', '3', 'bc1'];
     // test net public key hash prefixes
-    const testPubkeyHash = 'm' || 'n';
-    const testBech32 = 'tb1';
+    const testNetPref = ['m', 'n', 'tb1', '2'];
 
-    switch (network) {
-        case BtcNetwork.MainNet:
-            return address.startsWith(pubkeyHash) || address.startsWith(bech32);
-        case BtcNetwork.TestNet:
-            return address.startsWith(testPubkeyHash) || address.startsWith(testBech32);
-        default:
-            return false;
+    // check for regex match from the given address and array
+    if (new RegExp(`^(${mainNetPref.join('|')})`).test(address)) {
+        return BtcNetwork.MainNet;
+    } else if (new RegExp(`^(${testNetPref.join('|')})`).test(address)) {
+        return BtcNetwork.TestNet;
+    } else {
+        throw new Error('Invalid Bitcoin address');
     }
+    //todo: refactor all functions to automatically detect the network using this function
+    // rather than having to provide it manually
 }
 
 /**
@@ -112,22 +173,6 @@ export function daysToBlocks(days: number) {
 }
 
 /**
- * returns a bitcoin pay 2 script hash from the given script and network
- * @param lockScript bitcoin lock script
- * @param network bitcoin network type
- */
-export function getLockP2SH(lockScript: Buffer, network: BtcNetwork) {
-    const netType = network === BtcNetwork.MainNet ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet;
-
-    return bitcoinjs.payments.p2sh({
-        network: netType,
-        redeem: {
-            output: lockScript,
-        },
-    });
-}
-
-/**
  * create a bitcoin lock script with the given public key.
  * this will lock the token for the given number of block sequence
  * @param publicKeyHex uncompressed BTC public key in hex string
@@ -145,6 +190,24 @@ export function btcLockScript(publicKeyHex: string, blocks: number): Buffer {
             .trim()
             .replace(/\s+/g, ' '),
     );
+}
+
+/**
+ * creates a P2SH instance that locks the sent token for the given duration.
+ * the locked tokens can only be claimed by the provided public key
+ * @param duration the lock duration in days
+ * @param publicKey uncompressed public key of the locker
+ * @param network bitcoin network the script will generate for
+ */
+export function getLockP2SH(duration: number, publicKey: string, network: BtcNetwork) {
+    const netType = network === BtcNetwork.MainNet ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet;
+
+    return bitcoinjs.payments.p2sh({
+        network: netType,
+        redeem: {
+            output: btcLockScript(publicKey, daysToBlocks(duration)),
+        },
+    });
 }
 
 export function btcUnlockTx(

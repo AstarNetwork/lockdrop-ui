@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { PrivateKey, Message } from 'bitcore-lib';
+import { PrivateKey, Message, Networks } from 'bitcore-lib';
 import eccrypto from 'eccrypto';
 import wif from 'wif';
 import * as bitcoin from 'bitcoinjs-lib';
@@ -7,6 +7,7 @@ import * as assert from 'assert';
 import { regtestUtils } from './_regtest';
 import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
 import { UnspentTx } from '../types/LockdropModels';
+import { getAddressEndpoint, getTransactionEndpoint } from '../helpers/lockdrop/BitcoinLockdrop';
 
 const regtest = regtestUtils.network;
 
@@ -24,6 +25,15 @@ const testSet2 = {
     privateKey: '5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss', // WIF
     publicKey:
         '04a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd5b8dec5235a0fa8722476c7709c02559e3aa73aa03918ba2d492eea75abea235',
+};
+
+// testnet address information
+const testSet3 = {
+    address: 'mzUQaN6vnYDYNNYJVpRz2ipxLcWsQg6b8z',
+    signature: 'IJDLVVK3kEMZwC7pvHlSkT2TBFo0LSmvcJwqAbjW+OPtdq5umACvI2RkbZUjBO7CKMrJMNLqPFVNYGqVGwOxRds=',
+    privateKey: 'cN1tduTMTGcvg3bQvyuTVbgeDHTmnDU1nPeHPWN3q9wZDbJ129nb',
+    publicKey:
+        '0431e12c2db27f3b07fcc560cdbff90923bf9b5b03769103a44b38426f9469172f3eef59e4f01df729428161c33ec5b32763e2e5a0072551b7808ae9d89286b37b',
 };
 
 // tests
@@ -74,8 +84,45 @@ describe('BTC signature tests', () => {
         const pubKey1 = hashedMessage.recoverPublicKey(testSet1.address, testSet1.signature);
         const pubKey2 = hashedMessage.recoverPublicKey(testSet2.address, testSet2.signature);
 
+        const testSig = new Message(btcLockdrop.MESSAGE).sign(new PrivateKey(testSet3.privateKey, Networks.testnet));
+        const testPub = btcLockdrop.getPublicKey(testSet3.address, testSig);
+
+        console.log('testnet signature: ' + testSig);
+        console.log('testnet public key: ' + testPub);
+
         expect(btcLockdrop.uncompressedPubKey(pubKey1)).toEqual(testSet1.publicKey);
         expect(btcLockdrop.uncompressedPubKey(pubKey2)).toEqual(testSet2.publicKey);
+        expect(testPub).toEqual(testSet3.publicKey);
+    });
+});
+
+describe('Bitcoin API fetch tests', () => {
+    it('fetches address data from block cypher', async () => {
+        const addressInfo = await getAddressEndpoint('13XXaBufpMvqRqLkyDty1AXqueZHVe6iyy', 'main');
+        expect(addressInfo.total_received).toEqual(293710000);
+        expect(addressInfo.txrefs[0].tx_hash).toEqual(
+            'f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449',
+        );
+
+        const addressInfoTestnet = await getAddressEndpoint('2Mubm96PDzLyzcXJvfqX8kdyn2WHa7ssJ67', 'test3');
+        expect(addressInfoTestnet.total_received).toEqual(284780111);
+        expect(addressInfoTestnet.txrefs[0].tx_hash).toEqual(
+            'f02a3881823238cd4290a8e18bf45db5dd7d9f23a6a8e3d64e307f68085e0929',
+        );
+    });
+
+    it('fetches transaction hash data from block cypher', async () => {
+        const txInfo = await getTransactionEndpoint(
+            'f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449',
+            'main',
+        );
+        expect(txInfo.total).toEqual(70320221545);
+
+        const txInfoTestnet = await getTransactionEndpoint(
+            '2336a60b02f69a892b797b21aedafa128779338e9f69650fc87373a4f8036611',
+            'test3',
+        );
+        expect(txInfoTestnet.total).toEqual(284852111);
     });
 });
 
