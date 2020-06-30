@@ -26,7 +26,7 @@ const HDWalletProvider = require('truffle-hdwallet-provider');
 const infuraKey = 'e673f1634f174971890bf13130751704';
 
 module.exports = {
-  contracts_build_directory: path.join(__dirname, 'app/src/contracts'),
+  contracts_build_directory: path.join(__dirname, '../src/contracts'),
 
   /**
    * Networks define how you connect to your ethereum client and let you set the
@@ -46,19 +46,19 @@ module.exports = {
     // options below to some value.
     //
     development: {
-        host: '127.0.0.1',     // Localhost (default: none)
-        port: 8545,            // Standard Ethereum port (default: none)
-        network_id: '*',       // Any network (default: none)
+      host: '127.0.0.1',     // Localhost (default: none)
+      port: 8545,            // Standard Ethereum port (default: none)
+      network_id: '*',       // Any network (default: none)
     },
 
     // Another network with more advanced options...
     // advanced: {
-      // port: 8777,             // Custom port
-      // network_id: 1342,       // Custom network
-      // gas: 8500000,           // Gas sent with each transaction (default: ~6700000)
-      // gasPrice: 20000000000,  // 20 gwei (in wei) (default: 100 gwei)
-      // from: <address>,        // Account to send txs from (default: accounts[0])
-      // websockets: true        // Enable EventEmitter interface for web3 (default: false)
+    // port: 8777,             // Custom port
+    // network_id: 1342,       // Custom network
+    // gas: 8500000,           // Gas sent with each transaction (default: ~6700000)
+    // gasPrice: 20000000000,  // 20 gwei (in wei) (default: 100 gwei)
+    // from: <address>,        // Account to send txs from (default: accounts[0])
+    // websockets: true        // Enable EventEmitter interface for web3 (default: false)
     // },
 
     // Useful for deploying to a public network.
@@ -66,7 +66,7 @@ module.exports = {
     ropsten: {
       provider: () => {
         const mnemonic = fs.readFileSync(path.join(__dirname, '.secret')).toString().trim();
-        return new HDWalletProvider(mnemonic, 'https://ropsten.infura.io/v3/'+infuraKey)
+        return new HDWalletProvider(mnemonic, 'https://ropsten.infura.io/v3/' + infuraKey)
       },
       network_id: 3,       // Ropsten's id
       gas: 5500000,        // Ropsten has a lower block limit than mainnet
@@ -78,7 +78,7 @@ module.exports = {
     mainnet: {
       provider: () => {
         const mnemonic = fs.readFileSync(path.join(__dirname, '.secret')).toString().trim();
-        return new HDWalletProvider(mnemonic, 'https://mainnet.infura.io/v3/'+infuraKey)
+        return new HDWalletProvider(mnemonic, 'https://mainnet.infura.io/v3/' + infuraKey)
       },
       network_id: 1,       // Ethereum mainnet id
       confirmations: 2,    // # of confs to wait between deployments. (default: 0)
@@ -89,14 +89,14 @@ module.exports = {
 
     // Useful for private networks
     // private: {
-      // provider: () => new HDWalletProvider(mnemonic, `https://network.io`),
-      // network_id: 2111,   // This network is yours, in the cloud.
+    // provider: () => new HDWalletProvider(mnemonic, `https://network.io`),
+    // network_id: 2111,   // This network is yours, in the cloud.
 
     // Useful for private networks
     // private: {
-      // provider: () => new HDWalletProvider(mnemonic, `https://network.io`),
-      // network_id: 2111,   // This network is yours, in the cloud.
-      // production: true    // Treats this network as if it was a public net. (default: false)
+    // provider: () => new HDWalletProvider(mnemonic, `https://network.io`),
+    // network_id: 2111,   // This network is yours, in the cloud.
+    // production: true    // Treats this network as if it was a public net. (default: false)
     // }
   },
 
@@ -116,8 +116,8 @@ module.exports = {
       version: '0.5.15',
       settings: {
         optimizer: {
-            enabled: true,
-            runs: 200
+          enabled: true,
+          runs: 200
         },
       }
     }
