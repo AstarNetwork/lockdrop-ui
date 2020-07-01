@@ -176,12 +176,19 @@ export function daysToBlocks(days: number) {
  * create a bitcoin lock script with the given public key.
  * this will lock the token for the given number of block sequence
  * @param publicKeyHex uncompressed BTC public key in hex string
- * @param blocks number of block sequence the token will be locked for
+ * @param blockSequence bip68 encoded block sequence
  */
-export function btcLockScript(publicKeyHex: string, blocks: number): Buffer {
+export function btcLockScript(publicKeyHex: string, blockSequence: number): Buffer {
+    const pubKeyBuffer = Buffer.from(publicKeyHex, 'hex');
+    // verify public key
+    const ecPair = bitcoinjs.ECPair.fromPublicKey(pubKeyBuffer);
+    if (!ecPair.publicKey.equals(pubKeyBuffer)) {
+        throw new Error('Invalid public key');
+    }
+
     return bitcoinjs.script.fromASM(
         `
-        ${bitcoinjs.script.number.encode(bip68.encode({ blocks })).toString('hex')}
+        ${bitcoinjs.script.number.encode(blockSequence).toString('hex')}
         OP_CHECKSEQUENCEVERIFY
         OP_DROP
         ${publicKeyHex}
