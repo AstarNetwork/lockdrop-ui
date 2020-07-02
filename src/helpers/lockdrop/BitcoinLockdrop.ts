@@ -163,6 +163,19 @@ export function getPublicKey(address: string, signature: string, compression?: '
 }
 
 /**
+ * Validates the given BTC address by checking if it's in the correct format
+ * @param address Bitcoin public address
+ */
+function validateBtcAddress(address: string) {
+    try {
+        bitcoinjs.address.toOutputScript(address);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
  * used for CHECKSEQUENCEVERIFY relative time lock.
  * this converts days to bip68 encoded block number.
  * @param days number of days to be converted to sequence number
@@ -172,7 +185,7 @@ export function daysToBlocks(days: number) {
     if (days < 0) {
         throw new Error('Lock days cannot be a negative number');
     }
-    if (!Number.isSafeInteger(days)) {
+    if (!Number.isInteger(days) || !Number.isFinite(days)) {
         throw new Error('Lock days must be a valid integer, but received: ' + days);
     }
     const blocksPerDay = 144; //10 min per block. day = 6 * 24
@@ -186,17 +199,21 @@ export function daysToBlocks(days: number) {
  * @param blockSequence bip68 encoded block sequence
  */
 export function btcLockScript(publicKeyHex: string, blockSequence: number): Buffer {
-    const pubKeyBuffer = Buffer.from(publicKeyHex, 'hex');
     // verify block sequence value
     if (blockSequence < 0) {
         throw new Error('Block sequence cannot be a negative number');
     }
-    if (!Number.isSafeInteger(blockSequence)) {
+    if (!Number.isInteger(blockSequence) && !Number.isFinite(blockSequence)) {
         throw new Error('Block sequence must be a valid integer, but received: ' + blockSequence);
     }
-    // verify public key
-    const ecPair = bitcoinjs.ECPair.fromPublicKey(pubKeyBuffer, { compressed: false });
-    if (ecPair.publicKey.toString('hex') !== publicKeyHex) {
+    if (blockSequence > 65535) {
+        // maximum lock time https://en.bitcoin.it/wiki/Timelock
+        throw new Error('Block sequence cannot be more than 65535');
+    }
+    const pubKeyBuffer = Buffer.from(publicKeyHex, 'hex');
+    // verify public key by converting to an address
+    const { address } = bitcoinjs.payments.p2pkh({ pubkey: pubKeyBuffer });
+    if (typeof address === 'string' && !validateBtcAddress(address)) {
         throw new Error('Invalid public key');
     }
 
@@ -216,17 +233,17 @@ export function btcLockScript(publicKeyHex: string, blockSequence: number): Buff
 /**
  * creates a P2SH instance that locks the sent token for the given duration.
  * the locked tokens can only be claimed by the provided public key
- * @param duration the lock duration in days
+ * @param lockDays the lock duration in days
  * @param publicKey uncompressed public key of the locker
  * @param network bitcoin network the script will generate for
  */
-export function getLockP2SH(duration: number, publicKey: string, network: BtcNetwork) {
+export function getLockP2SH(lockDays: number, publicKey: string, network: BtcNetwork) {
     const netType = network === BtcNetwork.MainNet ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet;
 
     return bitcoinjs.payments.p2sh({
         network: netType,
         redeem: {
-            output: btcLockScript(publicKey, daysToBlocks(duration)),
+            output: btcLockScript(publicKey, daysToBlocks(lockDays)),
         },
     });
 }
