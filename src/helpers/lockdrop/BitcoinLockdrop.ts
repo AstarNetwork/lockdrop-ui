@@ -203,7 +203,7 @@ export function btcLockScript(publicKeyHex: string, blockSequence: number): Buff
     if (blockSequence < 0) {
         throw new Error('Block sequence cannot be a negative number');
     }
-    if (!Number.isInteger(blockSequence) && !Number.isFinite(blockSequence)) {
+    if (!Number.isInteger(blockSequence) || !Number.isFinite(blockSequence)) {
         throw new Error('Block sequence must be a valid integer, but received: ' + blockSequence);
     }
     if (blockSequence > 65535) {
