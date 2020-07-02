@@ -168,21 +168,35 @@ export function getPublicKey(address: string, signature: string, compression?: '
  * @param days number of days to be converted to sequence number
  */
 export function daysToBlocks(days: number) {
+    // verify lock days value
+    if (days < 0) {
+        throw new Error('Lock days cannot be a negative number');
+    }
+    if (!Number.isSafeInteger(days)) {
+        throw new Error('Lock days must be a valid integer, but received: ' + days);
+    }
     const blocksPerDay = 144; //10 min per block. day = 6 * 24
     return bip68.encode({ blocks: days * blocksPerDay });
 }
 
 /**
- * create a bitcoin lock script with the given public key.
+ * create a bitcoin lock script buffer with the given public key.
  * this will lock the token for the given number of block sequence
  * @param publicKeyHex uncompressed BTC public key in hex string
  * @param blockSequence bip68 encoded block sequence
  */
 export function btcLockScript(publicKeyHex: string, blockSequence: number): Buffer {
     const pubKeyBuffer = Buffer.from(publicKeyHex, 'hex');
+    // verify block sequence value
+    if (blockSequence < 0) {
+        throw new Error('Block sequence cannot be a negative number');
+    }
+    if (!Number.isSafeInteger(blockSequence)) {
+        throw new Error('Block sequence must be a valid integer, but received: ' + blockSequence);
+    }
     // verify public key
-    const ecPair = bitcoinjs.ECPair.fromPublicKey(pubKeyBuffer);
-    if (!ecPair.publicKey.equals(pubKeyBuffer)) {
+    const ecPair = bitcoinjs.ECPair.fromPublicKey(pubKeyBuffer, { compressed: false });
+    if (ecPair.publicKey.toString('hex') !== publicKeyHex) {
         throw new Error('Invalid public key');
     }
 
