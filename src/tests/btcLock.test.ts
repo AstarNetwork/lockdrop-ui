@@ -149,6 +149,20 @@ describe('BTC lock script tests', () => {
         100 * 1000,
     );
 
+    it('validates lock script inputs', () => {
+        expect(btcLockdrop.daysToBlocks(4)).toEqual(576);
+
+        expect(() => btcLockdrop.daysToBlocks(3.4)).toThrowError(
+            'Lock days must be a valid integer, but received: 3.4',
+        );
+
+        expect(() => btcLockdrop.btcLockScript(testSet2.publicKey, 655356)).toThrowError(
+            'Block sequence cannot be more than 65535',
+        );
+
+        expect(() => btcLockdrop.btcLockScript(testSet2.privateKey, btcLockdrop.daysToBlocks(3))).toThrowError();
+    });
+
     it(
         'lock BTC on script and redeem',
         async () => {
