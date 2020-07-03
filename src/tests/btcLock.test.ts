@@ -90,8 +90,8 @@ describe('BTC signature tests', () => {
         console.log('testnet signature: ' + testSig);
         console.log('testnet public key: ' + testPub);
 
-        expect(btcLockdrop.uncompressedPubKey(pubKey1)).toEqual(testSet1.publicKey);
-        expect(btcLockdrop.uncompressedPubKey(pubKey2)).toEqual(testSet2.publicKey);
+        expect(btcLockdrop.decompressPubKey(pubKey1)).toEqual(testSet1.publicKey);
+        expect(btcLockdrop.decompressPubKey(pubKey2)).toEqual(testSet2.publicKey);
         expect(testPub).toEqual(testSet3.publicKey);
     });
 });

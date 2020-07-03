@@ -84,7 +84,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
 
             console.log('verifying user:' + addressInput + '\nwith: ' + sigInput);
             if (new Message(MESSAGE).verify(addressInput, sigInput)) {
-                const pub = getPublicKey(addressInput, sigInput);
+                const pub = getPublicKey(addressInput, sigInput, 'compressed');
                 console.log('success!');
                 console.log('public key is: ' + pub + '\nbonus rate: ' + getTokenRate());
 

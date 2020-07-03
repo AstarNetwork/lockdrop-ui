@@ -25,7 +25,7 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
             if (lockTxData.final_balance > 0) {
                 setLockedValue(btcLockdrop.satoshiToBitcoin(lockTxData.final_balance).toFixed());
             }
-        }, 3000); // fetch every 3 seconds
+        }, 30000); // fetch every 30 seconds
 
         // cleanup hook
         return () => {

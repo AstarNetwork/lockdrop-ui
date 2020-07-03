@@ -99,7 +99,7 @@ export function initTrezor() {
                 email: 'hoonkim@stake.co.jp',
                 appUrl: 'https://lockdrop.plasmnet.io',
             },
-            debug: true,
+            debug: false,
         });
         return true;
     } catch (e) {
@@ -107,16 +107,6 @@ export function initTrezor() {
         return false;
     }
 }
-
-// export function createLockdropClaim() {
-//     const lockdropClaim: Lockdrop = {
-//         type: 1, //u8
-//         transactionHash: H256, //H256
-//         publicKey: U8aFixed, // [u8; 33]
-//         duration: u64, // u64
-//         value: u128, // u128
-//     };
-// }
 
 /**
  * returns the network type that the given address belongs to.
@@ -145,8 +135,17 @@ export function getNetworkFromAddress(address: string) {
  * converts an compressed public key to a uncompressed public key
  * @param publicKey compressed BTC public key
  */
-export function uncompressedPubKey(publicKey: string) {
+export function decompressPubKey(publicKey: string) {
     const pubKeyPair = bitcoinjs.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'), { compressed: false });
+    return pubKeyPair.publicKey.toString('hex');
+}
+
+/**
+ * compresses the given BTC public key
+ * @param publicKey uncompressed BTC public key
+ */
+export function compressPubKey(publicKey: string) {
+    const pubKeyPair = bitcoinjs.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'), { compressed: true });
     return pubKeyPair.publicKey.toString('hex');
 }
 
@@ -159,7 +158,7 @@ export function uncompressedPubKey(publicKey: string) {
  */
 export function getPublicKey(address: string, signature: string, compression?: 'compressed' | 'uncompressed') {
     const compressedPubKey = new Message(MESSAGE).recoverPublicKey(address, signature.replace(/(\r\n|\n|\r)/gm, ''));
-    return compression === 'compressed' ? compressedPubKey : uncompressedPubKey(compressedPubKey);
+    return compression === 'compressed' ? compressedPubKey : decompressPubKey(compressedPubKey);
 }
 
 /**
@@ -199,8 +198,9 @@ export function daysToBlocks(days: number) {
 
 /**
  * create a bitcoin lock script buffer with the given public key.
- * this will lock the token for the given number of block sequence
- * @param publicKeyHex uncompressed BTC public key in hex string
+ * this will lock the token for the given number of block sequence.
+ * if the given public key is not compressed, this function will compress it.
+ * @param publicKeyHex compressed BTC public key in hex string
  * @param blockSequence bip68 encoded block sequence
  */
 export function btcLockScript(publicKeyHex: string, blockSequence: number): Buffer {
@@ -215,7 +215,11 @@ export function btcLockScript(publicKeyHex: string, blockSequence: number): Buff
         // maximum lock time https://en.bitcoin.it/wiki/Timelock
         throw new Error('Block sequence cannot be more than 65535');
     }
-    const pubKeyBuffer = Buffer.from(publicKeyHex, 'hex');
+
+    // compresses the given public key
+    // this will return itself (in buffer) if the given key is already compressed
+    const pubKeyBuffer = Buffer.from(compressPubKey(publicKeyHex), 'hex');
+
     // verify public key by converting to an address
     const { address } = bitcoinjs.payments.p2pkh({ pubkey: pubKeyBuffer });
     if (typeof address === 'string' && !validateBtcAddress(address)) {
@@ -227,7 +231,7 @@ export function btcLockScript(publicKeyHex: string, blockSequence: number): Buff
         ${bitcoinjs.script.number.encode(blockSequence).toString('hex')}
         OP_CHECKSEQUENCEVERIFY
         OP_DROP
-        ${publicKeyHex}
+        ${pubKeyBuffer.toString('hex')}
         OP_CHECKSIG
         `
             .trim()
