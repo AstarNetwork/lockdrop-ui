@@ -32,7 +32,7 @@ const QrEncodedAddress: React.FC<Props> = ({ address }) => {
         qrEncodeUri(address).then(img => {
             setUri(img);
         });
-    }, []);
+    }, [address]);
 
     return (
         <>
