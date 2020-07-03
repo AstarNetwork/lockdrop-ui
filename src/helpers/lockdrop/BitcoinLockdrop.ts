@@ -189,7 +189,12 @@ export function daysToBlocks(days: number) {
         throw new Error('Lock days must be a valid integer, but received: ' + days);
     }
     const blocksPerDay = 144; //10 min per block. day = 6 * 24
-    return bip68.encode({ blocks: days * blocksPerDay });
+    const blockSequence = bip68.encode({ blocks: days * blocksPerDay });
+    if (blockSequence > 65535) {
+        // maximum lock time https://en.bitcoin.it/wiki/Timelock
+        throw new Error('Block sequence cannot be more than 65535');
+    }
+    return blockSequence;
 }
 
 /**
