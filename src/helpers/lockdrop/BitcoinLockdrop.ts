@@ -93,19 +93,24 @@ export function satoshiToBitcoin(satoshi: BigNumber | number) {
  * This will return true if successful
  */
 export function initTrezor() {
-    try {
-        TrezorConnect.init({
-            manifest: {
-                email: 'hoonkim@stake.co.jp',
-                appUrl: 'https://lockdrop.plasmnet.io',
-            },
-            debug: false,
+    TrezorConnect.init({
+        manifest: {
+            email: 'developers@stake.co.jp',
+            appUrl: 'https://lockdrop.plasmnet.io',
+        },
+        debug: true,
+        webusb: false,
+        lazyLoad: true,
+    })
+        .then(() => {
+            console.log('connected to Trezor');
+            return true;
+        })
+        .catch(e => {
+            console.log('something went wrong');
+            console.log(e);
+            return false;
         });
-        return true;
-    } catch (e) {
-        console.log(e);
-        return false;
-    }
 }
 
 /**
@@ -127,8 +132,6 @@ export function getNetworkFromAddress(address: string) {
     } else {
         throw new Error('Invalid Bitcoin address');
     }
-    //todo: refactor all functions to automatically detect the network using this function
-    // rather than having to provide it manually
 }
 
 /**

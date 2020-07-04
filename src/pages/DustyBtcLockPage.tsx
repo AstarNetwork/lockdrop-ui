@@ -19,10 +19,11 @@ import { Typography, Link, makeStyles, createStyles } from '@material-ui/core';
 import quantstampLogo from '../resources/quantstamp-logo.png';
 import trezorLogo from '../resources/trezor_logo.svg';
 import ledgerLogo from '../resources/ledger_logo.svg';
-import TrezorConnect from 'trezor-connect';
-import { initTrezor } from '../helpers/lockdrop/BitcoinLockdrop';
+//import * as btcLock from '../helpers/lockdrop/BitcoinLockdrop';
 import { BtcWalletType, BtcNetwork } from '../types/LockdropModels';
 import BtcRawSignature from '../components/BtcLock/BtcRawSignature';
+import TrezorLock from '../components/BtcLock/TrezorLock';
+import TrezorConnect from 'trezor-connect';
 
 const useStyles = makeStyles(theme =>
     createStyles({
@@ -43,20 +44,38 @@ export default function DustyBtcLockPage() {
     const classes = useStyles();
 
     const [walletType, setWalletType] = useState<BtcWalletType>(BtcWalletType.None);
+    const [startedTrezor, setTrezorInst] = useState(false);
 
-    const handleTrezor = async () => {
-        if (initTrezor()) {
-            const address = await TrezorConnect.getAddress({ path: "m/49'/0/'0'" });
-            console.log('logging in to trezor' + address.success + walletType);
+    const handleTrezor = () => {
+        // only initialize if there isn't a instance
+        if (startedTrezor) {
             setWalletType(BtcWalletType.Trezor);
         } else {
-            console.log('failed to login to trezor');
+            TrezorConnect.init({
+                manifest: {
+                    email: 'developers@stake.co.jp',
+                    appUrl: 'https://lockdrop.plasmnet.io',
+                },
+                debug: true,
+                webusb: false,
+                lazyLoad: true,
+            })
+                .then(() => {
+                    console.log('connected to Trezor');
+                    setWalletType(BtcWalletType.Trezor);
+                    setTrezorInst(true);
+                })
+                .catch(e => {
+                    console.log('something went wrong\n' + e);
+                });
         }
     };
+
     const handleLedger = () => {
         console.log('logging in to Ledger');
         setWalletType(BtcWalletType.Ledger);
     };
+
     const handleRawTx = () => {
         console.log('logging in to raw transaction');
         setWalletType(BtcWalletType.Raw);
@@ -66,35 +85,11 @@ export default function DustyBtcLockPage() {
         switch (walletType) {
             default:
             case BtcWalletType.None:
-                return (
-                    <>
-                        <IonCard>
-                            <IonCardHeader>
-                                <IonCardSubtitle>Choose your message signing method</IonCardSubtitle>
-                                <IonCardTitle>Sign in</IonCardTitle>
-                            </IonCardHeader>
-
-                            <IonCardContent>
-                                <IonItem button onClick={() => handleTrezor()} disabled>
-                                    <IonIcon icon={trezorLogo} slot="start" />
-                                    <IonLabel>Sign in with Trezor</IonLabel>
-                                </IonItem>
-
-                                <IonItem button onClick={() => handleLedger()} disabled>
-                                    <IonIcon icon={ledgerLogo} slot="start" />
-                                    <IonLabel>Sign in with Ledger</IonLabel>
-                                </IonItem>
-
-                                <IonItem button onClick={() => handleRawTx()}>
-                                    <IonIcon icon={warning} slot="start" />
-                                    <IonLabel>Direct sign</IonLabel>
-                                </IonItem>
-                            </IonCardContent>
-                        </IonCard>
-                    </>
-                );
+                return <></>;
             case BtcWalletType.Raw:
                 return <BtcRawSignature networkType={BtcNetwork.TestNet} />;
+            case BtcWalletType.Trezor:
+                return <TrezorLock />;
         }
     };
 
@@ -122,6 +117,30 @@ export default function DustyBtcLockPage() {
                             </Typography>
                         </div>
                         <ChangeSignView />
+
+                        <IonCard>
+                            <IonCardHeader>
+                                <IonCardSubtitle>Choose your message signing method</IonCardSubtitle>
+                                <IonCardTitle>Sign in</IonCardTitle>
+                            </IonCardHeader>
+
+                            <IonCardContent>
+                                <IonItem button onClick={() => handleTrezor()}>
+                                    <IonIcon icon={trezorLogo} slot="start" />
+                                    <IonLabel>Sign in with Trezor</IonLabel>
+                                </IonItem>
+
+                                <IonItem button onClick={() => handleLedger()} disabled>
+                                    <IonIcon icon={ledgerLogo} slot="start" />
+                                    <IonLabel>Sign in with Ledger</IonLabel>
+                                </IonItem>
+
+                                <IonItem button onClick={() => handleRawTx()}>
+                                    <IonIcon icon={warning} slot="start" />
+                                    <IonLabel>Direct sign</IonLabel>
+                                </IonItem>
+                            </IonCardContent>
+                        </IonCard>
                     </SectionCard>
                     <Footer />
                 </IonContent>
