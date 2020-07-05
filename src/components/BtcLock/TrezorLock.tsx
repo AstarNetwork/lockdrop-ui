@@ -27,9 +27,6 @@ import QrEncodedAddress from './QrEncodedAddress';
 interface Props {
     networkType: BtcNetwork;
 }
-function printLog(data: object) {
-    console.log(JSON.stringify(data));
-}
 
 toast.configure({
     position: 'top-right',
@@ -53,41 +50,71 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
     const [lockDuration, setDuration] = useState(0);
     const [p2shAddress, setP2sh] = useState('');
     const [lockAmount, setAmount] = useState('');
-    const [addressPath, setAddressPath] = useState("m/44'/0'/0'");
+    // changing the path to n/49'/x'/x' will return a signature error
+    // this may be due to compatibility issues with BIP49
+    const [addressPath, setAddressPath] = useState(networkType === BtcNetwork.MainNet ? "m/44'/0'/0'" : "m/44'/1'/0'");
     const [isLoading, setLoading] = useState(false);
 
-    const signMessage = () => {
-        try {
-            if (lockDuration <= 0) {
-                throw new Error('Please provide a lock duration');
-            }
-            const lockVal = new BigNumber(lockAmount);
-            if (lockVal.isLessThanOrEqualTo(0)) {
-                throw new Error('Lock value must be greater than 0');
-            }
-            setLoading(true);
+    const inputValidation = () => {
+        if (lockDuration <= 0) {
+            return { valid: false, message: 'Please provide a lock duration' };
+        }
+        if (isNaN(parseInt(lockAmount))) {
+            return { valid: false, message: 'Please input a valid number' };
+        }
+        const lockVal = new BigNumber(lockAmount);
+        if (lockVal.isLessThanOrEqualTo(0)) {
+            return { valid: false, message: 'Lock value must be greater than 0' };
+        }
+        return { valid: true, message: 'valid input' };
+    };
 
-            TrezorConnect.signMessage({
-                path: addressPath,
-                message: btcLock.MESSAGE,
-                coin: 'btc',
-            }).then(res => {
-                printLog(res);
-                setLoading(false);
+    const signMessage = () => {
+        setLoading(true);
+
+        if (!inputValidation().valid) {
+            toast.error(inputValidation().message);
+            setLoading(false);
+            return;
+        }
+
+        TrezorConnect.signMessage({
+            path: addressPath,
+            message: btcLock.MESSAGE,
+            coin: networkType === BtcNetwork.MainNet ? 'BTC' : 'Testnet',
+        }).then(res => {
+            try {
                 if (res.success) {
-                    const pubKey = btcLock.getPublicKey(res.payload.address, res.payload.signature);
+                    console.log(res.payload);
+
+                    const pubKey = btcLock.getPublicKey(res.payload.address, res.payload.signature, 'compressed');
 
                     const lockScript = btcLock.getLockP2SH(lockDuration, pubKey, networkType);
 
                     setP2sh(lockScript.address!);
+
+                    // TrezorConnect.getPublicKey({ coin: 'Testnet', path: addressPath }).then(r => {
+                    //     console.log(r);
+                    //     if (r.success) {
+                    //         const pubKey = r.payload.publicKey;
+
+                    //         const lockScript = btcLock.getLockP2SH(lockDuration, pubKey, networkType);
+
+                    //         setP2sh(lockScript.address!);
+                    //     }
+                    // });
+
                     //todo: add send transaction method
                 } else {
                     throw new Error(res.payload.error);
                 }
-            });
-        } catch (e) {
-            toast.error(e.toString());
-        }
+                setLoading(false);
+            } catch (e) {
+                toast.error(e.toString());
+                console.log(e);
+                setLoading(false);
+            }
+        });
     };
 
     const getTokenRate = () => {

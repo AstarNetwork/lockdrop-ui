@@ -128,7 +128,9 @@ export function compressPubKey(publicKey: string) {
 
 /**
  * returns a public key from the given address and signature
- * by default this will return an uncompressed public key
+ * by default this will return an uncompressed public key.
+ * this function will only work with BIP44 encoded address. BIP49 or BIP84 will return
+ * an error.
  * @param address bitcoin address
  * @param signature signature for signing the plasm network message
  * @param compression should the public key be compressed or not
