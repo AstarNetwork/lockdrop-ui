@@ -3,7 +3,6 @@ import * as bitcoinjs from 'bitcoinjs-lib';
 import bip68 from 'bip68';
 import { UnspentTx, BtcNetwork } from '../../types/LockdropModels';
 import { Transaction, Signer, Network } from 'bitcoinjs-lib';
-import TrezorConnect from 'trezor-connect';
 import { BlockCypherApi } from '../../types/BlockCypherTypes';
 import BigNumber from 'bignumber.js';
 
@@ -16,7 +15,7 @@ import BigNumber from 'bignumber.js';
 /**
  * the message that will be hashed and signed by the client
  */
-export const MESSAGE = 'plasm network btc lock';
+export const MESSAGE = 'plasm network btc lock'; //todo: add nonce for security
 
 /**
  * returns a blob url for the qr encoded bitcoin address
@@ -89,26 +88,6 @@ export function satoshiToBitcoin(satoshi: BigNumber | number) {
 }
 
 /**
- * initialize Trezor instance.
- * This will return true if successful
- */
-export function initTrezor() {
-    try {
-        TrezorConnect.init({
-            manifest: {
-                email: 'hoonkim@stake.co.jp',
-                appUrl: 'https://lockdrop.plasmnet.io',
-            },
-            debug: false,
-        });
-        return true;
-    } catch (e) {
-        console.log(e);
-        return false;
-    }
-}
-
-/**
  * returns the network type that the given address belongs to.
  * @param address bitcoin address
  */
@@ -127,8 +106,6 @@ export function getNetworkFromAddress(address: string) {
     } else {
         throw new Error('Invalid Bitcoin address');
     }
-    //todo: refactor all functions to automatically detect the network using this function
-    // rather than having to provide it manually
 }
 
 /**
@@ -151,7 +128,9 @@ export function compressPubKey(publicKey: string) {
 
 /**
  * returns a public key from the given address and signature
- * by default this will return an uncompressed public key
+ * by default this will return an uncompressed public key.
+ * this function will only work with BIP44 encoded address. BIP49 or BIP84 will return
+ * an error.
  * @param address bitcoin address
  * @param signature signature for signing the plasm network message
  * @param compression should the public key be compressed or not

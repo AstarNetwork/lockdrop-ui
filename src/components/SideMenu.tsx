@@ -51,22 +51,30 @@ const SideMenu: React.FC = () => {
 
                     <IonList>
                         <IonListHeader>External Links</IonListHeader>
-                        <IonItem button href={Links.discord} detail>
-                            <IonIcon src={discord} slot="start" />
-                            <IonLabel>Discord</IonLabel>
-                        </IonItem>
-                        <IonItem button href={Links.telegram} detail>
-                            <IonIcon src={telegram} slot="start" />
-                            <IonLabel>Telegram</IonLabel>
-                        </IonItem>
-                        <IonItem button href={Links.twitter} detail>
-                            <IonIcon src={twitter} slot="start" />
-                            <IonLabel>Twitter</IonLabel>
-                        </IonItem>
-                        <IonItem button href={Links.github} detail>
-                            <IonIcon src={github} slot="start" />
-                            <IonLabel>Github</IonLabel>
-                        </IonItem>
+                        <a href={Links.discord} rel="noopener noreferrer" target="_blank">
+                            <IonItem button detail>
+                                <IonIcon src={discord} slot="start" />
+                                <IonLabel>Discord</IonLabel>
+                            </IonItem>
+                        </a>
+                        <a href={Links.telegram} rel="noopener noreferrer" target="_blank">
+                            <IonItem button detail>
+                                <IonIcon src={telegram} slot="start" />
+                                <IonLabel>Telegram</IonLabel>
+                            </IonItem>
+                        </a>
+                        <a href={Links.twitter} rel="noopener noreferrer" target="_blank">
+                            <IonItem button detail>
+                                <IonIcon src={twitter} slot="start" />
+                                <IonLabel>Twitter</IonLabel>
+                            </IonItem>
+                        </a>
+                        <a href={Links.github} rel="noopener noreferrer" target="_blank">
+                            <IonItem button detail>
+                                <IonIcon src={github} slot="start" />
+                                <IonLabel>Github</IonLabel>
+                            </IonItem>
+                        </a>
                     </IonList>
                 </IonContent>
             </IonMenu>

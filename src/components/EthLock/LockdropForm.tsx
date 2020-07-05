@@ -95,7 +95,7 @@ const LockdropForm = ({ token, onSubmit, description, dusty }: InputProps) => {
                             <IonCardContent>{parse(description)}</IonCardContent>
                         </IonCard>
                     ) : (
-                        <div></div>
+                        <></>
                     )}
 
                     <IonItem>
