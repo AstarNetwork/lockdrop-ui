@@ -97,7 +97,7 @@ export default function DustyBtcLockPage() {
             case BtcWalletType.Raw:
                 return <BtcRawSignature networkType={BtcNetwork.TestNet} />;
             case BtcWalletType.Trezor:
-                return <TrezorLock />;
+                return <TrezorLock networkType={BtcNetwork.TestNet} />;
         }
     };
 

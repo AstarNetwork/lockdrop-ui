@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import React, { useState } from 'react';
 import TrezorConnect from 'trezor-connect';
@@ -23,6 +24,9 @@ import { makeStyles, createStyles } from '@material-ui/core';
 import { BtcNetwork } from '../../types/LockdropModels';
 import QrEncodedAddress from './QrEncodedAddress';
 
+interface Props {
+    networkType: BtcNetwork;
+}
 function printLog(data: object) {
     console.log(JSON.stringify(data));
 }
@@ -44,7 +48,7 @@ const useStyles = makeStyles(() =>
     }),
 );
 
-export default function TrezorLock() {
+const TrezorLock: React.FC<Props> = ({ networkType }) => {
     const classes = useStyles();
     const [lockDuration, setDuration] = useState(0);
     const [p2shAddress, setP2sh] = useState('');
@@ -73,7 +77,7 @@ export default function TrezorLock() {
                 if (res.success) {
                     const pubKey = btcLock.getPublicKey(res.payload.address, res.payload.signature);
 
-                    const lockScript = btcLock.getLockP2SH(lockDuration, pubKey, BtcNetwork.MainNet);
+                    const lockScript = btcLock.getLockP2SH(lockDuration, pubKey, networkType);
 
                     setP2sh(lockScript.address!);
                     //todo: add send transaction method
@@ -157,4 +161,6 @@ export default function TrezorLock() {
             </IonCard>
         </div>
     );
-}
+};
+
+export default TrezorLock;
