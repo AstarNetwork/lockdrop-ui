@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent } from '@ionic/react';
 import { qrEncodeUri } from '../../helpers/lockdrop/BitcoinLockdrop';
-import { Typography, makeStyles, createStyles } from '@material-ui/core';
+import { makeStyles, createStyles } from '@material-ui/core';
 import Skeleton from '@material-ui/lab/Skeleton';
 import LockStatus from './LockStatus';
+import CopyMessageBox from '../CopyMessageBox';
 
 interface Props {
     address: string;
@@ -39,17 +40,17 @@ const QrEncodedAddress: React.FC<Props> = ({ address }) => {
             <IonCard>
                 <IonCardHeader>
                     {imageUri ? (
-                        <img src={imageUri} className={classes.qrImage} />
+                        <img src={imageUri} className={classes.qrImage} alt="" />
                     ) : (
                         <Skeleton variant="rect" className={classes.qrImage} />
                     )}
 
                     <IonCardSubtitle>Please send the amount you want to lock to this P2SH address</IonCardSubtitle>
-                    <IonCardTitle>Sign Message</IonCardTitle>
+                    <IonCardTitle>Lock Script Address</IonCardTitle>
                 </IonCardHeader>
 
                 <IonCardContent>
-                    <Typography component="h4">{address}</Typography>
+                    <CopyMessageBox header="P2SH Address" message={address} />
                     <LockStatus scriptAddress={address} />
                 </IonCardContent>
             </IonCard>

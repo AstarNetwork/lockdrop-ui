@@ -3,7 +3,6 @@ import * as bitcoinjs from 'bitcoinjs-lib';
 import bip68 from 'bip68';
 import { UnspentTx, BtcNetwork } from '../../types/LockdropModels';
 import { Transaction, Signer, Network } from 'bitcoinjs-lib';
-import TrezorConnect from 'trezor-connect';
 import { BlockCypherApi } from '../../types/BlockCypherTypes';
 import BigNumber from 'bignumber.js';
 
@@ -16,7 +15,7 @@ import BigNumber from 'bignumber.js';
 /**
  * the message that will be hashed and signed by the client
  */
-export const MESSAGE = 'plasm network btc lock';
+export const MESSAGE = 'plasm network btc lock'; //todo: add nonce for security
 
 /**
  * returns a blob url for the qr encoded bitcoin address
@@ -86,31 +85,6 @@ export function satoshiToBitcoin(satoshi: BigNumber | number) {
         return new BigNumber(satoshi).div(denominator);
     }
     return satoshi.div(denominator);
-}
-
-/**
- * initialize Trezor instance.
- * This will return true if successful
- */
-export function initTrezor() {
-    TrezorConnect.init({
-        manifest: {
-            email: 'developers@stake.co.jp',
-            appUrl: 'https://lockdrop.plasmnet.io',
-        },
-        debug: true,
-        webusb: false,
-        lazyLoad: true,
-    })
-        .then(() => {
-            console.log('connected to Trezor');
-            return true;
-        })
-        .catch(e => {
-            console.log('something went wrong');
-            console.log(e);
-            return false;
-        });
 }
 
 /**

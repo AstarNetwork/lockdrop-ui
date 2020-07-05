@@ -28,23 +28,10 @@ interface Props {
     networkType: BtcNetwork;
 }
 
-const useStyles = makeStyles(theme =>
+const useStyles = makeStyles(() =>
     createStyles({
         button: {
             textAlign: 'center',
-        },
-        messageBox: {
-            padding: theme.spacing(2, 4),
-            alignItems: 'center',
-        },
-        signMessage: {
-            alignItems: 'center',
-            display: 'flex',
-            justifyContent: 'center',
-            height: '100%',
-        },
-        copyIcon: {
-            verticalAlign: 'middle',
         },
     }),
 );
@@ -100,7 +87,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
             }
         } catch (e) {
             console.log(e);
-            toast.error(e.toString());
+            toast.error(e.message);
         }
     };
 
@@ -149,11 +136,11 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                             </IonLabel>
                         </IonChip>
                     </IonItem>
+                    <div className={classes.button}>
+                        <IonButton onClick={onSubmit}>Generate Lock Script</IonButton>
+                    </div>
                 </IonCardContent>
             </IonCard>
-            <div className={classes.button}>
-                <IonButton onClick={onSubmit}>Generate Lock Script</IonButton>
-            </div>
         </div>
     );
 };

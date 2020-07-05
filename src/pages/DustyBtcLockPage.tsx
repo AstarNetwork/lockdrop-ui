@@ -23,7 +23,7 @@ import ledgerLogo from '../resources/ledger_logo.svg';
 import { BtcWalletType, BtcNetwork } from '../types/LockdropModels';
 import BtcRawSignature from '../components/BtcLock/BtcRawSignature';
 import TrezorLock from '../components/BtcLock/TrezorLock';
-import TrezorConnect from 'trezor-connect';
+import TrezorConnect, { DEVICE } from 'trezor-connect';
 
 const useStyles = makeStyles(theme =>
     createStyles({
@@ -51,14 +51,22 @@ export default function DustyBtcLockPage() {
         if (startedTrezor) {
             setWalletType(BtcWalletType.Trezor);
         } else {
+            TrezorConnect.on('DEVICE_EVENT', event => {
+                if (event.type === DEVICE.CONNECT) {
+                    console.log('connected to Trezor device');
+                } else if (event.type === DEVICE.DISCONNECT) {
+                    console.log('disconnected to Trezor device');
+                }
+            });
+
             TrezorConnect.init({
                 manifest: {
                     email: 'developers@stake.co.jp',
                     appUrl: 'https://lockdrop.plasmnet.io',
                 },
                 debug: true,
-                webusb: false,
                 lazyLoad: true,
+                popup: true,
             })
                 .then(() => {
                     console.log('connected to Trezor');
