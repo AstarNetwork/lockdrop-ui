@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TrezorConnect from 'trezor-connect';
 import {
     IonCard,
@@ -46,15 +46,15 @@ const useStyles = makeStyles(() =>
 
 const TrezorLock: React.FC<Props> = ({ networkType }) => {
     const classes = useStyles();
+    const defaultPath = networkType === bitcoinjs.networks.bitcoin ? "m/44'/0'/0'" : "m/44'/1'/0'";
     const [lockDuration, setDuration] = useState(0);
     const [p2shAddress, setP2sh] = useState('');
     const [lockAmount, setAmount] = useState('');
     // changing the path to n/49'/x'/x' will return a signature error
     // this may be due to compatibility issues with BIP49
-    const [addressPath, setAddressPath] = useState(
-        networkType === bitcoinjs.networks.bitcoin ? "m/44'/0'/0'" : "m/44'/1'/0'",
-    );
+    const [addressPath, setAddressPath] = useState(defaultPath);
     const [isLoading, setLoading] = useState(false);
+    const [publicKey, setPublicKey] = useState('');
 
     const inputValidation = () => {
         if (lockDuration <= 0) {
@@ -88,9 +88,10 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                 if (res.success) {
                     console.log(res.payload);
 
-                    const pubKey = btcLock.getPublicKey(res.payload.address, res.payload.signature, 'compressed');
+                    const _pubKey = btcLock.getPublicKey(res.payload.address, res.payload.signature, 'compressed');
+                    setPublicKey(_pubKey);
 
-                    const lockScript = btcLock.getLockP2SH(lockDuration, pubKey, networkType);
+                    const lockScript = btcLock.getLockP2SH(lockDuration, _pubKey, networkType);
 
                     setP2sh(lockScript.address!);
 
@@ -114,6 +115,14 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
         return 0;
     };
 
+    useEffect(() => {
+        if (publicKey && p2shAddress) {
+            const lockScript = btcLock.getLockP2SH(lockDuration, publicKey, networkType);
+
+            setP2sh(lockScript.address!);
+        }
+    }, [lockDuration, publicKey, networkType, p2shAddress]);
+
     return (
         <div>
             {p2shAddress ? <QrEncodedAddress address={p2shAddress} /> : <></>}
@@ -122,7 +131,7 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                 <IonCardHeader>
                     <IonCardSubtitle>
                         Please fill in the following form with the correct information. Your address path will default
-                        to <code>{addressPath}</code> if none is given. For more information, please check{' '}
+                        to <code>{defaultPath}</code> if none is given. For more information, please check{' '}
                         <a href="https://wiki.trezor.io/Address_path_(BIP32)" rel="noopener noreferrer" target="_blank">
                             this page
                         </a>
@@ -145,7 +154,7 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                     <IonItem>
                         <IonLabel position="floating">BIP32 Address Path</IonLabel>
                         <IonInput
-                            placeholder={addressPath}
+                            placeholder={defaultPath}
                             onIonChange={e => setAddressPath(e.detail.value!)}
                         ></IonInput>
                     </IonItem>

@@ -13,6 +13,27 @@ interface Props {
 const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
     const [lockedValue, setLockedValue] = useState('');
 
+    const getLockedValue = async () => {
+        // check what network this address belongs to
+        const networkToken =
+            btcLockdrop.getNetworkFromAddress(scriptAddress) === bitcoinjs.networks.bitcoin ? 'main' : 'test3';
+        // check the transactions in the P2SH address
+        const lockTxData = await btcLockdrop.getAddressEndpoint(scriptAddress, networkToken);
+        if (lockTxData.final_balance > 0) {
+            setLockedValue(btcLockdrop.satoshiToBitcoin(lockTxData.final_balance).toFixed());
+        } else {
+            // we need this to display the correct value when the user changes param
+            setLockedValue('');
+        }
+    };
+
+    // initial fetch
+    useEffect(() => {
+        getLockedValue().then(e => {
+            console.log(e);
+        });
+    }, [scriptAddress]);
+
     useEffect(() => {
         const interval = setInterval(async () => {
             // check what network this address belongs to
@@ -23,7 +44,7 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
             if (lockTxData.final_balance > 0) {
                 setLockedValue(btcLockdrop.satoshiToBitcoin(lockTxData.final_balance).toFixed());
             }
-        }, 30000); // fetch every 30 seconds
+        }, 20000); // fetch every 20 seconds
 
         // cleanup hook
         return () => {

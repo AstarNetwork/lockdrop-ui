@@ -228,7 +228,7 @@ describe('BTC lock script tests', () => {
     it(
         'lock BTC on script and redeem',
         async () => {
-            const DURATION = 10; // Lock duration in days
+            const DURATION = 2; // Lock duration in days
             const VALUE = 2000000; // Lock value in Satoshi
             const FEE = 200; // Relay fee
 

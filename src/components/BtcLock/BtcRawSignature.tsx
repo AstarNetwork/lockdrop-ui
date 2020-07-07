@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     IonCard,
     IonCardHeader,
@@ -51,6 +51,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
     const [sigInput, setSig] = useState('');
     const [lockDuration, setDuration] = useState(0);
     const [p2shAddress, setP2sh] = useState('');
+    const [publicKey, setPublicKey] = useState('');
 
     const getTokenRate = () => {
         if (lockDuration) {
@@ -72,6 +73,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
             console.log('verifying user:' + addressInput + '\nwith: ' + sigInput);
             if (new Message(MESSAGE).verify(addressInput, sigInput)) {
                 const pub = getPublicKey(addressInput, sigInput, 'compressed');
+                setPublicKey(pub);
                 console.log('success!');
                 console.log('public key is: ' + pub + '\nbonus rate: ' + getTokenRate());
 
@@ -90,6 +92,14 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
             toast.error(e.message);
         }
     };
+
+    useEffect(() => {
+        if (publicKey && p2shAddress) {
+            const lockScript = getLockP2SH(lockDuration, publicKey, networkType);
+
+            setP2sh(lockScript.address!);
+        }
+    }, [lockDuration, publicKey, networkType, p2shAddress]);
 
     return (
         <div>

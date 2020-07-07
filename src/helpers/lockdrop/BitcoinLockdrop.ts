@@ -230,17 +230,7 @@ export function btcLockScript(publicKeyHex: string, blockSequence: number, netwo
         // maximum lock time https://en.bitcoin.it/wiki/Timelock
         throw new Error('Block sequence cannot be more than 65535');
     }
-    let pubKeyBuffer = Buffer.from(publicKeyHex, 'hex');
-
-    // uncompressed public key has a prefix of 04
-    if (new RegExp(`^04`).test(publicKeyHex.replace('0x', ''))) {
-        // compresses the given public key
-        pubKeyBuffer = Buffer.from(compressPubKey(publicKeyHex, network), 'hex');
-    } else if (!new RegExp(`^03`).test(publicKeyHex.replace('0x', ''))) {
-        // throws an error if the public key does not start with 03
-        // this includes BIP32 public keys like xpub and tpub
-        throw new Error('Invalid public key');
-    }
+    const pubKeyBuffer = Buffer.from(compressPubKey(publicKeyHex, network), 'hex');
 
     // verify public key by converting to an address
     const { address } = bitcoinjs.payments.p2pkh({ pubkey: pubKeyBuffer, network: network });
