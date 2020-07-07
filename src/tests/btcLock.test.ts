@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { PrivateKey, Message, Networks } from 'bitcore-lib';
+import { PrivateKey, Message } from 'bitcore-lib';
 import eccrypto from 'eccrypto';
 import wif from 'wif';
 import * as bitcoin from 'bitcoinjs-lib';
@@ -36,7 +36,7 @@ const testSet3 = {
         '0431e12c2db27f3b07fcc560cdbff90923bf9b5b03769103a44b38426f9469172f3eef59e4f01df729428161c33ec5b32763e2e5a0072551b7808ae9d89286b37b',
 };
 
-describe('BTC signature tests', () => {
+describe('BTC signature and key validation tests', () => {
     it('verifies the signature from address', () => {
         //verify the first set of signature
         expect(
@@ -44,7 +44,7 @@ describe('BTC signature tests', () => {
                 '1En7wYxwUiuFfma1Pu3N6d5gopRPvWoj4q',
                 'IAqCpjxYFTl/OtYzLYb8VVYgyspmiEj43GQoG8R10hLKVOWF6YNXdBlx2U08HEG+oyyu3eZGoYoAfFcRFcQ+dBM=',
             ),
-        ).toEqual(true);
+        ).toBeTruthy();
 
         // verify the second set of signature
         expect(
@@ -52,7 +52,12 @@ describe('BTC signature tests', () => {
                 '16R2kAxaUNM4xj6ykKbxEugpJdYyJzTP13',
                 'H0b22gIQIfutUzm7Z9qchdfhUtaO52alhNPK3emrkGOfbOzGHVPuWD9rMIphxniwBNgF/YN4c5C/dMwXz3yJz5k=',
             ),
-        ).toEqual(true);
+        ).toBeTruthy();
+
+        expect(new Message(btcLockdrop.MESSAGE).verify(testSet1.address, testSet2.signature)).toBeFalsy();
+        expect(
+            new Message(btcLockdrop.MESSAGE).verify('16R2kAxaUNM4xj6ykKbxEugpJdYyJzTP13', testSet3.signature),
+        ).toBeFalsy();
     });
 
     it('verifies public key', () => {
@@ -77,7 +82,7 @@ describe('BTC signature tests', () => {
         expect(new Message(btcLockdrop.MESSAGE).verify(testSet1.address, signature)).toEqual(true);
     });
 
-    it('validates the given Bitcoin address and public key', () => {
+    it('validates the given Bitcoin address', () => {
         expect(btcLockdrop.getNetworkFromAddress(testSet1.address)).toEqual(bitcoin.networks.bitcoin);
         expect(btcLockdrop.getNetworkFromAddress(testSet3.address)).toEqual(bitcoin.networks.testnet);
 
@@ -87,20 +92,49 @@ describe('BTC signature tests', () => {
     });
 
     it('recovers the public key from the signature', () => {
-        const hashedMessage = new Message(btcLockdrop.MESSAGE);
+        const pubKey1 = btcLockdrop.getPublicKey(testSet1.address, testSet1.signature);
+        const pubKey2 = btcLockdrop.getPublicKey(testSet2.address, testSet2.signature);
+        const pubKey3 = btcLockdrop.getPublicKey(testSet3.address, testSet3.signature);
 
-        const pubKey1 = hashedMessage.recoverPublicKey(testSet1.address, testSet1.signature);
-        const pubKey2 = hashedMessage.recoverPublicKey(testSet2.address, testSet2.signature);
+        expect(btcLockdrop.decompressPubKey(pubKey1, bitcoin.networks.bitcoin)).toEqual(testSet1.publicKey);
+        expect(pubKey2).toEqual(testSet2.publicKey);
+        expect(pubKey3).toEqual(testSet3.publicKey);
+    });
 
-        const testSig = new Message(btcLockdrop.MESSAGE).sign(new PrivateKey(testSet3.privateKey, Networks.testnet));
-        const testPub = btcLockdrop.getPublicKey(testSet3.address, testSig);
+    it('compresses public key', () => {
+        expect(btcLockdrop.compressPubKey(testSet1.publicKey, bitcoin.networks.bitcoin)).toEqual(
+            '03550f849a0b0865334dcefcc3b6bc668572e2c6205b406e9cdb57c56661fb3e29',
+        );
+        expect(btcLockdrop.compressPubKey(testSet3.publicKey, bitcoin.networks.testnet)).toEqual(
+            '0331e12c2db27f3b07fcc560cdbff90923bf9b5b03769103a44b38426f9469172f',
+        );
 
-        console.log('testnet signature: ' + testSig);
-        console.log('testnet public key: ' + testPub);
+        expect(
+            btcLockdrop.decompressPubKey(
+                '03550f849a0b0865334dcefcc3b6bc668572e2c6205b406e9cdb57c56661fb3e29',
+                bitcoin.networks.bitcoin,
+            ),
+        ).toEqual(testSet1.publicKey);
+        expect(
+            btcLockdrop.decompressPubKey(
+                '0331e12c2db27f3b07fcc560cdbff90923bf9b5b03769103a44b38426f9469172f',
+                bitcoin.networks.testnet,
+            ),
+        ).toEqual(testSet3.publicKey);
 
-        expect(btcLockdrop.decompressPubKey(pubKey1)).toEqual(testSet1.publicKey);
-        expect(btcLockdrop.decompressPubKey(pubKey2)).toEqual(testSet2.publicKey);
-        expect(testPub).toEqual(testSet3.publicKey);
+        const compressedKey = btcLockdrop.compressPubKey(testSet3.publicKey, bitcoin.networks.testnet);
+        // checks if double compression will return the first compressed value
+        expect(btcLockdrop.compressPubKey(compressedKey, bitcoin.networks.testnet)).toEqual(compressedKey);
+    });
+});
+
+describe('Bitcoin lockdrop helper tests', () => {
+    it('converts bitcoin to satoshi and back', () => {
+        expect(btcLockdrop.satoshiToBitcoin('65462605489').toFixed()).toEqual('654.62605489');
+        expect(btcLockdrop.bitcoinToSatoshi(156).toFixed()).toEqual('15600000000');
+
+        expect(btcLockdrop.bitcoinToSatoshi(btcLockdrop.satoshiToBitcoin('95')).toNumber()).toEqual(95);
+        expect(btcLockdrop.satoshiToBitcoin(btcLockdrop.bitcoinToSatoshi(10)).toNumber()).toEqual(10);
     });
 });
 
@@ -164,11 +198,31 @@ describe('BTC lock script tests', () => {
             'Lock days must be a valid integer, but received: 3.4',
         );
 
-        expect(() => btcLockdrop.btcLockScript(testSet2.publicKey, 655356)).toThrowError(
+        expect(() => btcLockdrop.btcLockScript(testSet2.publicKey, 655356, bitcoin.networks.bitcoin)).toThrowError(
             'Block sequence cannot be more than 65535',
         );
+    });
 
-        expect(() => btcLockdrop.btcLockScript(testSet2.privateKey, btcLockdrop.daysToBlockSequence(3))).toThrowError();
+    it('validates generating lock script', () => {
+        expect(() =>
+            btcLockdrop.btcLockScript(
+                testSet2.privateKey,
+                btcLockdrop.daysToBlockSequence(3),
+                bitcoin.networks.bitcoin,
+            ),
+        ).toThrowError('Invalid public key');
+
+        expect(() => {
+            btcLockdrop.getLockP2SH(
+                10,
+                'cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe',
+                bitcoin.networks.testnet,
+            );
+        }).toThrowError('Invalid public key');
+
+        expect(() => {
+            btcLockdrop.getLockP2SH(-10, testSet3.publicKey, bitcoin.networks.testnet);
+        }).toThrowError('Lock days cannot be a negative number');
     });
 
     it(
@@ -224,6 +278,57 @@ describe('BTC lock script tests', () => {
                 vout: 0,
                 value: VALUE,
             });
+        },
+        200 * 1000,
+    ); // extend jest async resolve timeout
+
+    it(
+        'tries to lock with Alice and redeem it with Bob',
+        async () => {
+            const DURATION = 1; // Lock duration in days
+            const VALUE = 2000000; // Lock value in Satoshi
+            const FEE = 200; // Relay fee
+
+            const alice = bitcoin.ECPair.fromWIF('cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe', regtest);
+            const bob = bitcoin.ECPair.makeRandom({ network: regtest });
+
+            const pubkey = alice.publicKey.toString('hex');
+
+            // create a P2SH from the given data
+            const p2sh = btcLockdrop.getLockP2SH(DURATION, pubkey, regtest);
+
+            // fund the P2SH(CSV) address (this will lock the token with VALUE + FEE)
+            const unspent = (await regtestUtils.faucet(p2sh.address!, VALUE + FEE)) as UnspentTx;
+
+            // create the redeem UTXO
+            const tx = btcLockdrop.btcUnlockTx(
+                bob,
+                regtest,
+                unspent,
+                p2sh.redeem!.output!,
+                btcLockdrop.daysToBlockSequence(DURATION),
+                regtestUtils.RANDOM_ADDRESS,
+                FEE,
+            );
+
+            // mine the number of blocks needed for unlocking
+            await regtestUtils.mine(btcLockdrop.daysToBlockSequence(DURATION));
+            // Try to redeem at unlocking time
+            await regtestUtils.broadcast(tx.toHex());
+
+            // this method should throw an error
+            // await regtestUtils
+            //     .verify({
+            //         txId: tx.getId(),
+            //         address: regtestUtils.RANDOM_ADDRESS,
+            //         vout: 0,
+            //         value: VALUE,
+            //     })
+            //     .catch(err => {
+            //         assert.throws(() => {
+            //             if (err) throw err;
+            //         }, /mandatory-script-verify-flag-failed \(Signature must be zero for failed CHECK\(MULTI\)SIG operation\) \(code 16\)/);
+            //     });
         },
         200 * 1000,
     ); // extend jest async resolve timeout

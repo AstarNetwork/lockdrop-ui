@@ -72,54 +72,6 @@ export async function getTransactionEndpoint(txHash: string, network: 'main' | '
 }
 
 /**
- * converts satoshis to bitcoin
- * @param satoshi number of satoshis
- */
-export function satoshiToBitcoin(satoshi: BigNumber | number) {
-    // 1 bitcoin = 100,000,000 satoshis
-
-    const denominator = new BigNumber(10).pow(new BigNumber(8));
-
-    // if the parameter is a number, convert it to BN
-    if (typeof satoshi === 'number') {
-        return new BigNumber(satoshi).div(denominator);
-    }
-    return satoshi.div(denominator);
-}
-
-/**
- * converts an compressed public key to a uncompressed public key
- * @param publicKey compressed BTC public key
- */
-export function decompressPubKey(publicKey: string) {
-    const pubKeyPair = bitcoinjs.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'), { compressed: false });
-    return pubKeyPair.publicKey.toString('hex');
-}
-
-/**
- * compresses the given BTC public key
- * @param publicKey uncompressed BTC public key
- */
-export function compressPubKey(publicKey: string) {
-    const pubKeyPair = bitcoinjs.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'), { compressed: true });
-    return pubKeyPair.publicKey.toString('hex');
-}
-
-/**
- * returns a public key from the given address and signature
- * by default this will return an uncompressed public key.
- * this function will only work with BIP44 encoded address. BIP49 or BIP84 will return
- * an error.
- * @param address bitcoin address
- * @param signature signature for signing the plasm network message
- * @param compression should the public key be compressed or not
- */
-export function getPublicKey(address: string, signature: string, compression?: 'compressed' | 'uncompressed') {
-    const compressedPubKey = new Message(MESSAGE).recoverPublicKey(address, signature.replace(/(\r\n|\n|\r)/gm, ''));
-    return compression === 'compressed' ? compressedPubKey : decompressPubKey(compressedPubKey);
-}
-
-/**
  * Validates the given BTC address by checking if it's in the correct format.
  * The default network is set to mainnet, byt anything else will require you to explicitly
  * pass it as the parameter.
@@ -167,6 +119,76 @@ export function getNetworkFromAddress(address: string) {
 }
 
 /**
+ * converts satoshi to bitcoin
+ * @param satoshi number of satoshi
+ */
+export function satoshiToBitcoin(satoshi: BigNumber | number | string) {
+    // 1 bitcoin = 100,000,000 satoshi
+
+    const denominator = new BigNumber(10).pow(new BigNumber(8));
+
+    // if the parameter is a number, convert it to BN
+    if (typeof satoshi === 'number' || typeof satoshi == 'string') {
+        return new BigNumber(satoshi).div(denominator);
+    }
+    return satoshi.div(denominator);
+}
+
+/**
+ * converts bitcoin into satoshi
+ * @param bitcoin number of bitcoin
+ */
+export function bitcoinToSatoshi(bitcoin: BigNumber | number | string) {
+    // 1 bitcoin = 100,000,000 satoshis
+    const denominator = new BigNumber('100000000');
+
+    if (typeof bitcoin === 'number' || typeof bitcoin == 'string') {
+        return new BigNumber(bitcoin).multipliedBy(denominator);
+    }
+    return bitcoin.multipliedBy(denominator);
+}
+
+/**
+ * converts an compressed public key to a uncompressed public key
+ * @param publicKey compressed BTC public key
+ */
+export function decompressPubKey(publicKey: string, network: bitcoinjs.Network) {
+    const pubKeyPair = bitcoinjs.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'), {
+        compressed: false,
+        network: network,
+    });
+    return pubKeyPair.publicKey.toString('hex');
+}
+
+/**
+ * compresses the given BTC public key
+ * @param publicKey uncompressed BTC public key
+ * @param network bitcoin network the public key will encode for
+ */
+export function compressPubKey(publicKey: string, network: bitcoinjs.Network) {
+    const pubKeyPair = bitcoinjs.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'), {
+        compressed: true,
+        network: network,
+    });
+    return pubKeyPair.publicKey.toString('hex');
+}
+
+/**
+ * returns a public key from the given address and signature
+ * by default this will return an uncompressed public key.
+ * this function will only work with BIP44 encoded address. BIP49 or BIP84 will return
+ * an error.
+ * @param address bitcoin address
+ * @param signature base 64 signature for signing the plasm network message
+ * @param compression should the public key be compressed or not
+ */
+export function getPublicKey(address: string, signature: string, compression?: 'compressed' | 'uncompressed') {
+    const compressedPubKey = new Message(MESSAGE).recoverPublicKey(address, signature.replace(/(\r\n|\n|\r)/gm, ''));
+    const addressNetwork = getNetworkFromAddress(address);
+    return compression === 'compressed' ? compressedPubKey : decompressPubKey(compressedPubKey, addressNetwork);
+}
+
+/**
  * used for CHECKSEQUENCEVERIFY relative time lock.
  * this converts days to bip68 encoded block number.
  * @param days number of days to be converted to sequence number
@@ -194,8 +216,9 @@ export function daysToBlockSequence(days: number) {
  * if the given public key is not compressed, this function will compress it.
  * @param publicKeyHex compressed BTC public key in hex string
  * @param blockSequence bip68 encoded block sequence
+ * @param network bitcoin network the public key belongs to
  */
-export function btcLockScript(publicKeyHex: string, blockSequence: number): Buffer {
+export function btcLockScript(publicKeyHex: string, blockSequence: number, network: bitcoinjs.Network): Buffer {
     // verify block sequence value
     if (blockSequence < 0) {
         throw new Error('Block sequence cannot be a negative number');
@@ -207,14 +230,23 @@ export function btcLockScript(publicKeyHex: string, blockSequence: number): Buff
         // maximum lock time https://en.bitcoin.it/wiki/Timelock
         throw new Error('Block sequence cannot be more than 65535');
     }
+    let pubKeyBuffer = Buffer.from(publicKeyHex, 'hex');
 
-    // compresses the given public key
-    // this will return itself (in buffer) if the given key is already compressed
-    const pubKeyBuffer = Buffer.from(compressPubKey(publicKeyHex), 'hex');
+    // uncompressed public key has a prefix of 04
+    if (new RegExp(`^04`).test(publicKeyHex.replace('0x', ''))) {
+        // compresses the given public key
+        pubKeyBuffer = Buffer.from(compressPubKey(publicKeyHex, network), 'hex');
+    } else if (!new RegExp(`^03`).test(publicKeyHex.replace('0x', ''))) {
+        // throws an error if the public key does not start with 03
+        // this includes BIP32 public keys like xpub and tpub
+        throw new Error('Invalid public key');
+    }
 
     // verify public key by converting to an address
-    const { address } = bitcoinjs.payments.p2pkh({ pubkey: pubKeyBuffer });
-    if (typeof address === 'string' && !validateBtcAddress(address)) {
+    const { address } = bitcoinjs.payments.p2pkh({ pubkey: pubKeyBuffer, network: network });
+    if (typeof address === 'string' && !validateBtcAddress(address, network)) {
+        console.log('received public key: ' + publicKeyHex + '\n' + 'changed key: ' + pubKeyBuffer.toString('hex'));
+        console.log(address);
         throw new Error('Invalid public key');
     }
 
@@ -235,16 +267,14 @@ export function btcLockScript(publicKeyHex: string, blockSequence: number): Buff
  * creates a P2SH instance that locks the sent token for the given duration.
  * the locked tokens can only be claimed by the provided public key
  * @param lockDays the lock duration in days
- * @param publicKey uncompressed public key of the locker
+ * @param publicKey public key of the locker. This can be both compressed or uncompressed
  * @param network bitcoin network the script will generate for
  */
 export function getLockP2SH(lockDays: number, publicKey: string, network: bitcoinjs.Network) {
-    //const netType = network === BtcNetwork.MainNet ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet;
-
     return bitcoinjs.payments.p2sh({
         network: network,
         redeem: {
-            output: btcLockScript(publicKey, daysToBlockSequence(lockDays)),
+            output: btcLockScript(publicKey, daysToBlockSequence(lockDays), network),
         },
     });
 }
