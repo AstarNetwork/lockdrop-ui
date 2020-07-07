@@ -21,11 +21,10 @@ import * as btcLock from '../../helpers/lockdrop/BitcoinLockdrop';
 import { toast } from 'react-toastify';
 import BigNumber from 'bignumber.js';
 import { makeStyles, createStyles } from '@material-ui/core';
-import { BtcNetwork } from '../../types/LockdropModels';
 import QrEncodedAddress from './QrEncodedAddress';
-
+import * as bitcoinjs from 'bitcoinjs-lib';
 interface Props {
-    networkType: BtcNetwork;
+    networkType: bitcoinjs.Network;
 }
 
 toast.configure({
@@ -52,7 +51,9 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
     const [lockAmount, setAmount] = useState('');
     // changing the path to n/49'/x'/x' will return a signature error
     // this may be due to compatibility issues with BIP49
-    const [addressPath, setAddressPath] = useState(networkType === BtcNetwork.MainNet ? "m/44'/0'/0'" : "m/44'/1'/0'");
+    const [addressPath, setAddressPath] = useState(
+        networkType === bitcoinjs.networks.bitcoin ? "m/44'/0'/0'" : "m/44'/1'/0'",
+    );
     const [isLoading, setLoading] = useState(false);
 
     const inputValidation = () => {
@@ -81,7 +82,7 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
         TrezorConnect.signMessage({
             path: addressPath,
             message: btcLock.MESSAGE,
-            coin: networkType === BtcNetwork.MainNet ? 'BTC' : 'Testnet',
+            coin: networkType === bitcoinjs.networks.bitcoin ? 'BTC' : 'Testnet',
         }).then(res => {
             try {
                 if (res.success) {
@@ -92,17 +93,6 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                     const lockScript = btcLock.getLockP2SH(lockDuration, pubKey, networkType);
 
                     setP2sh(lockScript.address!);
-
-                    // TrezorConnect.getPublicKey({ coin: 'Testnet', path: addressPath }).then(r => {
-                    //     console.log(r);
-                    //     if (r.success) {
-                    //         const pubKey = r.payload.publicKey;
-
-                    //         const lockScript = btcLock.getLockP2SH(lockDuration, pubKey, networkType);
-
-                    //         setP2sh(lockScript.address!);
-                    //     }
-                    // });
 
                     //todo: add send transaction method
                 } else {

@@ -18,14 +18,14 @@ import { makeStyles, createStyles } from '@material-ui/core';
 import { MESSAGE, getPublicKey, getLockP2SH, getNetworkFromAddress } from '../../helpers/lockdrop/BitcoinLockdrop';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { BtcNetwork } from '../../types/LockdropModels';
 import { DropdownOption } from '../DropdownOption';
 import { btcDurations, rates } from '../../data/lockInfo';
 import { Message } from 'bitcore-lib';
 import QrEncodedAddress from './QrEncodedAddress';
 import CopyMessageBox from '../CopyMessageBox';
+import { Network } from 'bitcoinjs-lib';
 interface Props {
-    networkType: BtcNetwork;
+    networkType: Network;
 }
 
 const useStyles = makeStyles(() =>
@@ -64,7 +64,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
             // throws error for user input validations
             // this is easier to look, but might need to refactor this later
             console.log(getNetworkFromAddress(addressInput));
-            if ((getNetworkFromAddress(addressInput) as BtcNetwork) !== networkType)
+            if (getNetworkFromAddress(addressInput) !== networkType)
                 throw new Error('Please use a valid Bitcoin network address');
 
             if (!lockDuration || !sigInput || !addressInput) throw new Error('Please fill in all the inputs');

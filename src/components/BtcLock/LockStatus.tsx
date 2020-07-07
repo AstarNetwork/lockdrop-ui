@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 //import { makeStyles, createStyles } from '@material-ui/core';
 import * as btcLockdrop from '../../helpers/lockdrop/BitcoinLockdrop';
-import { BtcNetwork } from '../../types/LockdropModels';
 import { IonChip, IonIcon, IonLabel } from '@ionic/react';
 import { lock, time } from 'ionicons/icons';
+import * as bitcoinjs from 'bitcoinjs-lib';
 
 interface Props {
     scriptAddress: string;
@@ -17,9 +17,7 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
         const interval = setInterval(async () => {
             // check what network this address belongs to
             const networkToken =
-                (btcLockdrop.getNetworkFromAddress(scriptAddress) as BtcNetwork) === BtcNetwork.MainNet
-                    ? 'main'
-                    : 'test3';
+                btcLockdrop.getNetworkFromAddress(scriptAddress) === bitcoinjs.networks.bitcoin ? 'main' : 'test3';
             // check the transactions in the P2SH address
             const lockTxData = await btcLockdrop.getAddressEndpoint(scriptAddress, networkToken);
             if (lockTxData.final_balance > 0) {

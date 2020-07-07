@@ -23,14 +23,6 @@ export enum BtcWalletType {
     None,
 }
 
-/**
- * defines the Bitcoin network
- */
-export enum BtcNetwork {
-    TestNet,
-    MainNet,
-}
-
 export interface UnspentTx {
     value: number;
     txId: string;

@@ -1,7 +1,7 @@
 import { Message } from 'bitcore-lib';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import bip68 from 'bip68';
-import { UnspentTx, BtcNetwork } from '../../types/LockdropModels';
+import { UnspentTx } from '../../types/LockdropModels';
 import { Transaction, Signer, Network } from 'bitcoinjs-lib';
 import { BlockCypherApi } from '../../types/BlockCypherTypes';
 import BigNumber from 'bignumber.js';
@@ -88,27 +88,6 @@ export function satoshiToBitcoin(satoshi: BigNumber | number) {
 }
 
 /**
- * returns the network type that the given address belongs to.
- * @param address bitcoin address
- */
-export function getNetworkFromAddress(address: string) {
-    // sources: https://en.bitcoin.it/wiki/List_of_address_prefixes
-    // main net public key hash prefixes
-    const mainNetPref = ['1', '3', 'bc1'];
-    // test net public key hash prefixes
-    const testNetPref = ['m', 'n', 'tb1', '2'];
-
-    // check for regex match from the given address and array
-    if (new RegExp(`^(${mainNetPref.join('|')})`).test(address)) {
-        return BtcNetwork.MainNet;
-    } else if (new RegExp(`^(${testNetPref.join('|')})`).test(address)) {
-        return BtcNetwork.TestNet;
-    } else {
-        throw new Error('Invalid Bitcoin address');
-    }
-}
-
-/**
  * converts an compressed public key to a uncompressed public key
  * @param publicKey compressed BTC public key
  */
@@ -141,12 +120,16 @@ export function getPublicKey(address: string, signature: string, compression?: '
 }
 
 /**
- * Validates the given BTC address by checking if it's in the correct format
+ * Validates the given BTC address by checking if it's in the correct format.
+ * The default network is set to mainnet, byt anything else will require you to explicitly
+ * pass it as the parameter.
  * @param address Bitcoin public address
+ * @param network bitcoin network type (bitcoinjs-lib)
  */
-function validateBtcAddress(address: string) {
+export function validateBtcAddress(address: string, network?: bitcoinjs.networks.Network) {
+    // Bitcoin address prefixes
     try {
-        bitcoinjs.address.toOutputScript(address);
+        bitcoinjs.address.toOutputScript(address, network);
         return true;
     } catch (e) {
         return false;
@@ -154,11 +137,41 @@ function validateBtcAddress(address: string) {
 }
 
 /**
+ * returns the network type that the given address belongs to.
+ * this will also validate the address before returning a value.
+ * @param address bitcoin address
+ */
+export function getNetworkFromAddress(address: string) {
+    // sources: https://en.bitcoin.it/wiki/List_of_address_prefixes
+    // main net public key hash prefixes
+    const mainNetPref = ['1', '3', 'bc1'];
+    // test net public key hash prefixes
+    const testNetPref = ['m', 'n', 'tb1', '2'];
+    let addressNetwork: bitcoinjs.networks.Network;
+
+    if (new RegExp(`^(${mainNetPref.join('|')})`).test(address)) {
+        // check for regex match from the given address and array
+        addressNetwork = bitcoinjs.networks.bitcoin;
+        //return bitcoinjs.networks.bitcoin;
+    } else if (new RegExp(`^(${testNetPref.join('|')})`).test(address)) {
+        addressNetwork = bitcoinjs.networks.testnet;
+        //return bitcoinjs.networks.testnet;
+    } else {
+        throw new Error('Invalid Bitcoin address');
+    }
+
+    if (!validateBtcAddress(address, addressNetwork)) {
+        throw new Error('Invalid Bitcoin address');
+    }
+    return addressNetwork;
+}
+
+/**
  * used for CHECKSEQUENCEVERIFY relative time lock.
  * this converts days to bip68 encoded block number.
  * @param days number of days to be converted to sequence number
  */
-export function daysToBlocks(days: number) {
+export function daysToBlockSequence(days: number) {
     // verify lock days value
     if (days < 0) {
         throw new Error('Lock days cannot be a negative number');
@@ -225,13 +238,13 @@ export function btcLockScript(publicKeyHex: string, blockSequence: number): Buff
  * @param publicKey uncompressed public key of the locker
  * @param network bitcoin network the script will generate for
  */
-export function getLockP2SH(lockDays: number, publicKey: string, network: BtcNetwork) {
-    const netType = network === BtcNetwork.MainNet ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet;
+export function getLockP2SH(lockDays: number, publicKey: string, network: bitcoinjs.Network) {
+    //const netType = network === BtcNetwork.MainNet ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet;
 
     return bitcoinjs.payments.p2sh({
-        network: netType,
+        network: network,
         redeem: {
-            output: btcLockScript(publicKey, daysToBlocks(lockDays)),
+            output: btcLockScript(publicKey, daysToBlockSequence(lockDays)),
         },
     });
 }
@@ -241,7 +254,7 @@ export function btcUnlockTx(
     network: Network,
     lockTx: UnspentTx,
     lockScript: Buffer,
-    lockBlocks: number,
+    blockSequence: number,
     recipient: string,
     fee: number, // satoshis
 ): Transaction {
@@ -252,10 +265,10 @@ export function btcUnlockTx(
         return bitcoinjs.address.toOutputScript(address, network);
     }
 
-    const sequence = bip68.encode({ blocks: lockBlocks });
+    //const sequence = bip68.encode({ blocks: lockBlocks });
     const tx = new bitcoinjs.Transaction();
     tx.version = 2;
-    tx.addInput(idToHash(lockTx.txId), lockTx.vout, sequence);
+    tx.addInput(idToHash(lockTx.txId), lockTx.vout, blockSequence);
     tx.addOutput(toOutputScript(recipient), lockTx.value - fee);
 
     const hashType = bitcoinjs.Transaction.SIGHASH_ALL;

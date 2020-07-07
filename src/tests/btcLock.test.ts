@@ -36,7 +36,6 @@ const testSet3 = {
         '0431e12c2db27f3b07fcc560cdbff90923bf9b5b03769103a44b38426f9469172f3eef59e4f01df729428161c33ec5b32763e2e5a0072551b7808ae9d89286b37b',
 };
 
-// tests
 describe('BTC signature tests', () => {
     it('verifies the signature from address', () => {
         //verify the first set of signature
@@ -76,6 +75,15 @@ describe('BTC signature tests', () => {
         const signature = new Message(btcLockdrop.MESSAGE).sign(new PrivateKey(testSet1.privateKey));
 
         expect(new Message(btcLockdrop.MESSAGE).verify(testSet1.address, signature)).toEqual(true);
+    });
+
+    it('validates the given Bitcoin address and public key', () => {
+        expect(btcLockdrop.getNetworkFromAddress(testSet1.address)).toEqual(bitcoin.networks.bitcoin);
+        expect(btcLockdrop.getNetworkFromAddress(testSet3.address)).toEqual(bitcoin.networks.testnet);
+
+        expect(btcLockdrop.validateBtcAddress(testSet2.address)).toBeTruthy();
+        // invalid address
+        expect(btcLockdrop.validateBtcAddress('26R2kAxaUNb4xj6ykKbxEuGpJaYyJzTP13')).toBeFalsy();
     });
 
     it('recovers the public key from the signature', () => {
@@ -146,13 +154,13 @@ describe('BTC lock script tests', () => {
             builder.addOutput('n4pSwWQZm8Wter1wD6n8RDhEwgCqtQgpcY', 6000);
             builder.sign(0, privkeypair);
         },
-        100 * 1000,
+        200 * 1000,
     );
 
-    it('validates lock script inputs', () => {
-        expect(btcLockdrop.daysToBlocks(4)).toEqual(576);
+    it('validates block sequence inputs', () => {
+        expect(btcLockdrop.daysToBlockSequence(4)).toEqual(576);
 
-        expect(() => btcLockdrop.daysToBlocks(3.4)).toThrowError(
+        expect(() => btcLockdrop.daysToBlockSequence(3.4)).toThrowError(
             'Lock days must be a valid integer, but received: 3.4',
         );
 
@@ -160,35 +168,32 @@ describe('BTC lock script tests', () => {
             'Block sequence cannot be more than 65535',
         );
 
-        expect(() => btcLockdrop.btcLockScript(testSet2.privateKey, btcLockdrop.daysToBlocks(3))).toThrowError();
+        expect(() => btcLockdrop.btcLockScript(testSet2.privateKey, btcLockdrop.daysToBlockSequence(3))).toThrowError();
     });
 
     it(
         'lock BTC on script and redeem',
         async () => {
-            const DURATION = 10; // Lock duration in blocks
+            const DURATION = 10; // Lock duration in days
             const VALUE = 2000000; // Lock value in Satoshi
             const FEE = 200; // Relay fee
 
             const alice = bitcoin.ECPair.fromWIF('cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe', regtest);
             const pubkey = alice.publicKey.toString('hex');
 
-            const p2sh = bitcoin.payments.p2sh({
-                network: regtest,
-                redeem: {
-                    output: btcLockdrop.btcLockScript(pubkey, DURATION),
-                },
-            });
+            // create a P2SH from the given data
+            const p2sh = btcLockdrop.getLockP2SH(DURATION, pubkey, regtest);
 
-            // fund the P2SH(CSV) address (THIS IS LOCK ACTION)
+            // fund the P2SH(CSV) address (this will lock the token with VALUE + FEE)
             const unspent = (await regtestUtils.faucet(p2sh.address!, VALUE + FEE)) as UnspentTx;
 
+            // create the redeem UTXO
             const tx = btcLockdrop.btcUnlockTx(
                 alice,
                 regtest,
                 unspent,
                 p2sh.redeem!.output!,
-                DURATION,
+                btcLockdrop.daysToBlockSequence(DURATION),
                 regtestUtils.RANDOM_ADDRESS,
                 FEE,
             );
@@ -201,16 +206,18 @@ describe('BTC lock script tests', () => {
             });
 
             // Try to redeem for few blocks before unlocking
-            await regtestUtils.mine(DURATION - 2);
+            await regtestUtils.mine(10);
             await regtestUtils.broadcast(tx.toHex()).catch(err => {
                 assert.throws(() => {
                     if (err) throw err;
                 }, /Error: non-BIP68-final \(code 64\)/);
             });
 
-            await regtestUtils.mine(2);
+            // mine the number of blocks needed for unlocking
+            await regtestUtils.mine(btcLockdrop.daysToBlockSequence(DURATION));
             // Try to redeem at unlocking time
             await regtestUtils.broadcast(tx.toHex());
+            // this method should work without throwing an error
             await regtestUtils.verify({
                 txId: tx.getId(),
                 address: regtestUtils.RANDOM_ADDRESS,
@@ -218,6 +225,6 @@ describe('BTC lock script tests', () => {
                 value: VALUE,
             });
         },
-        100 * 1000,
+        200 * 1000,
     ); // extend jest async resolve timeout
 });
