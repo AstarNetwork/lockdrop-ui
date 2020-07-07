@@ -249,13 +249,23 @@ export function getLockP2SH(lockDays: number, publicKey: string, network: bitcoi
     });
 }
 
+/**
+ * creates a lock redeem UTXO
+ * @param signer the signer for signing the transaction hash
+ * @param network network type (bitcoinjs-lib)
+ * @param lockTx the transaction that locks the value to P2SH address
+ * @param lockScript the lock script (P2SH)
+ * @param blockSequence block sequence to lock the funds, should be the same value used in the lock script
+ * @param recipient recipient for the transaction output
+ * @param fee transaction fee for the lock transaction
+ */
 export function btcUnlockTx(
     signer: Signer,
     network: Network,
     lockTx: UnspentTx,
     lockScript: Buffer,
     blockSequence: number,
-    recipient: string,
+    recipientAddress: string,
     fee: number, // satoshis
 ): Transaction {
     function idToHash(txid: string): Buffer {
@@ -265,11 +275,15 @@ export function btcUnlockTx(
         return bitcoinjs.address.toOutputScript(address, network);
     }
 
+    if (blockSequence < 0) {
+        throw new Error('Block sequence cannot be less than zeo');
+    }
+
     //const sequence = bip68.encode({ blocks: lockBlocks });
     const tx = new bitcoinjs.Transaction();
     tx.version = 2;
     tx.addInput(idToHash(lockTx.txId), lockTx.vout, blockSequence);
-    tx.addOutput(toOutputScript(recipient), lockTx.value - fee);
+    tx.addOutput(toOutputScript(recipientAddress), lockTx.value - fee);
 
     const hashType = bitcoinjs.Transaction.SIGHASH_ALL;
     const signatureHash = tx.hashForSignature(0, lockScript, hashType);
