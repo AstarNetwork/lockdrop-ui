@@ -100,6 +100,7 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                     throw new Error(res.payload.error);
                 }
                 setLoading(false);
+                toast.success('Successfully created lock script');
             } catch (e) {
                 toast.error(e.toString());
                 console.log(e);

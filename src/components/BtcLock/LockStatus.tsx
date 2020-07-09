@@ -5,6 +5,7 @@ import * as btcLockdrop from '../../helpers/lockdrop/BitcoinLockdrop';
 import { IonChip, IonIcon, IonLabel } from '@ionic/react';
 import { lock, time } from 'ionicons/icons';
 import * as bitcoinjs from 'bitcoinjs-lib';
+import { Tooltip } from '@material-ui/core';
 
 interface Props {
     scriptAddress: string;
@@ -54,14 +55,16 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
 
     return (
         <>
-            <IonChip>
-                <IonIcon icon={lockedValue ? lock : time} color={lockedValue ? 'success' : 'warning'} />
-                {lockedValue ? (
-                    <IonLabel>{lockedValue} BTC locked</IonLabel>
-                ) : (
-                    <IonLabel>No deposits detected</IonLabel>
-                )}
-            </IonChip>
+            <Tooltip title="Click for details" aria-label="lock-detail">
+                <IonChip>
+                    <IonIcon icon={lockedValue ? lock : time} color={lockedValue ? 'success' : 'warning'} />
+                    {lockedValue ? (
+                        <IonLabel>{lockedValue} BTC locked</IonLabel>
+                    ) : (
+                        <IonLabel>No deposits detected</IonLabel>
+                    )}
+                </IonChip>
+            </Tooltip>
         </>
     );
 };
