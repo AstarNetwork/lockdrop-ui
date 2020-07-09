@@ -33,7 +33,7 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
         getLockedValue().then(e => {
             console.log(e);
         });
-    }, [scriptAddress]);
+    }, [scriptAddress, getLockedValue]);
 
     useEffect(() => {
         const interval = setInterval(async () => {
