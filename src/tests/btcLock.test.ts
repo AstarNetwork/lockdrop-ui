@@ -202,6 +202,13 @@ describe('BTC lock script tests', () => {
         expect(() => btcLockdrop.btcLockScript(testSet2.publicKey, 655356, bitcoin.networks.bitcoin)).toThrowError(
             'Block sequence cannot be more than 65535',
         );
+
+        expect(() => btcLockdrop.getLockP2SH(-1, testSet3.publicKey, bitcoin.networks.testnet)).toThrowError(
+            'Lock duration must be between 30 days to 300 days',
+        );
+        expect(() => btcLockdrop.getLockP2SH(301, testSet3.publicKey, bitcoin.networks.testnet)).toThrowError(
+            'Lock duration must be between 30 days to 300 days',
+        );
     });
 
     it('validates generating lock script', () => {
@@ -215,15 +222,11 @@ describe('BTC lock script tests', () => {
 
         expect(() => {
             btcLockdrop.getLockP2SH(
-                10,
+                30,
                 'cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe',
                 bitcoin.networks.testnet,
             );
         }).toThrowError('Invalid public key');
-
-        expect(() => {
-            btcLockdrop.getLockP2SH(-10, testSet3.publicKey, bitcoin.networks.testnet);
-        }).toThrowError('Lock days cannot be a negative number');
     });
 
     it(

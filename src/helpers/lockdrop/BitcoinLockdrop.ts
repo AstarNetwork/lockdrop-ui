@@ -215,9 +215,6 @@ export function getPublicKey(address: string, signature: string, compression?: '
  */
 export function daysToBlockSequence(days: number) {
     // verify lock days value
-    if (days < 0) {
-        throw new Error('Lock days cannot be a negative number');
-    }
     if (!Number.isInteger(days) || !Number.isFinite(days)) {
         throw new Error('Lock days must be a valid integer, but received: ' + days);
     }
@@ -278,6 +275,10 @@ export function btcLockScript(publicKeyHex: string, blockSequence: number, netwo
  * @param network bitcoin network the script will generate for
  */
 export function getLockP2SH(lockDays: number, publicKey: string, network: bitcoinjs.Network) {
+    if (lockDays > 300 || lockDays < 30) {
+        throw new Error('Lock duration must be between 30 days to 300 days');
+    }
+
     return bitcoinjs.payments.p2sh({
         network: network,
         redeem: {
