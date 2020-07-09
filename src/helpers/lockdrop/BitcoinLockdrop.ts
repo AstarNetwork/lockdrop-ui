@@ -89,6 +89,26 @@ export function validateBtcAddress(address: string, network?: bitcoinjs.networks
 }
 
 /**
+ * Validates the given public key hex by importing it through bitcoinjs ECPair.
+ * @param publicKey Bitcoin public key hex string
+ * @param network bitcoin network to check from. Defaults to mainnet
+ */
+export function validatePublicKey(publicKey: string, network?: bitcoinjs.networks.Network) {
+    try {
+        bitcoinjs.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'), { network: network });
+
+        const { address } = bitcoinjs.payments.p2pkh({ pubkey: Buffer.from(publicKey, 'hex'), network: network });
+        if (typeof address === 'string' && !validateBtcAddress(address, network)) {
+            throw new Error('Invalid public key');
+        }
+
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
  * returns the network type that the given address belongs to.
  * this will also validate the address before returning a value.
  * @param address bitcoin address
@@ -230,15 +250,12 @@ export function btcLockScript(publicKeyHex: string, blockSequence: number, netwo
         // maximum lock time https://en.bitcoin.it/wiki/Timelock
         throw new Error('Block sequence cannot be more than 65535');
     }
-    const pubKeyBuffer = Buffer.from(compressPubKey(publicKeyHex, network), 'hex');
-
     // verify public key by converting to an address
-    const { address } = bitcoinjs.payments.p2pkh({ pubkey: pubKeyBuffer, network: network });
-    if (typeof address === 'string' && !validateBtcAddress(address, network)) {
-        console.log('received public key: ' + publicKeyHex + '\n' + 'changed key: ' + pubKeyBuffer.toString('hex'));
-        console.log(address);
+    if (!validatePublicKey(publicKeyHex, network)) {
         throw new Error('Invalid public key');
     }
+
+    const pubKeyBuffer = Buffer.from(compressPubKey(publicKeyHex, network), 'hex');
 
     return bitcoinjs.script.fromASM(
         `

@@ -8,6 +8,7 @@ import { regtestUtils } from './_regtest';
 import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
 import { UnspentTx } from '../types/LockdropModels';
 import { getAddressEndpoint, getTransactionEndpoint } from '../helpers/lockdrop/BitcoinLockdrop';
+import bip68 from 'bip68';
 
 const regtest = regtestUtils.network;
 
@@ -228,7 +229,7 @@ describe('BTC lock script tests', () => {
     it(
         'lock BTC on script and redeem',
         async () => {
-            const DURATION = 2; // Lock duration in days
+            const DURATION = 10; // Lock duration in blocks
             const VALUE = 2000000; // Lock value in Satoshi
             const FEE = 200; // Relay fee
 
@@ -236,7 +237,12 @@ describe('BTC lock script tests', () => {
             const pubkey = alice.publicKey.toString('hex');
 
             // create a P2SH from the given data
-            const p2sh = btcLockdrop.getLockP2SH(DURATION, pubkey, regtest);
+            const p2sh = bitcoin.payments.p2sh({
+                network: regtest,
+                redeem: {
+                    output: btcLockdrop.btcLockScript(pubkey, bip68.encode({ blocks: DURATION }), regtest),
+                },
+            });
 
             // fund the P2SH(CSV) address (this will lock the token with VALUE + FEE)
             const unspent = (await regtestUtils.faucet(p2sh.address!, VALUE + FEE)) as UnspentTx;
@@ -247,7 +253,7 @@ describe('BTC lock script tests', () => {
                 regtest,
                 unspent,
                 p2sh.redeem!.output!,
-                btcLockdrop.daysToBlockSequence(DURATION),
+                bip68.encode({ blocks: DURATION }),
                 regtestUtils.RANDOM_ADDRESS,
                 FEE,
             );
@@ -260,7 +266,7 @@ describe('BTC lock script tests', () => {
             });
 
             // Try to redeem for few blocks before unlocking
-            await regtestUtils.mine(10);
+            await regtestUtils.mine(DURATION - 5);
             await regtestUtils.broadcast(tx.toHex()).catch(err => {
                 assert.throws(() => {
                     if (err) throw err;
@@ -268,7 +274,7 @@ describe('BTC lock script tests', () => {
             });
 
             // mine the number of blocks needed for unlocking
-            await regtestUtils.mine(btcLockdrop.daysToBlockSequence(DURATION));
+            await regtestUtils.mine(5);
             // Try to redeem at unlocking time
             await regtestUtils.broadcast(tx.toHex());
             // this method should work without throwing an error
@@ -285,7 +291,7 @@ describe('BTC lock script tests', () => {
     it(
         'tries to lock with Alice and redeem it with Bob',
         async () => {
-            const DURATION = 1; // Lock duration in days
+            const DURATION = 5; // Lock duration in days
             const VALUE = 2000000; // Lock value in Satoshi
             const FEE = 200; // Relay fee
 
@@ -295,7 +301,12 @@ describe('BTC lock script tests', () => {
             const pubkey = alice.publicKey.toString('hex');
 
             // create a P2SH from the given data
-            const p2sh = btcLockdrop.getLockP2SH(DURATION, pubkey, regtest);
+            const p2sh = bitcoin.payments.p2sh({
+                network: regtest,
+                redeem: {
+                    output: btcLockdrop.btcLockScript(pubkey, bip68.encode({ blocks: DURATION }), regtest),
+                },
+            });
 
             // fund the P2SH(CSV) address (this will lock the token with VALUE + FEE)
             const unspent = (await regtestUtils.faucet(p2sh.address!, VALUE + FEE)) as UnspentTx;
@@ -306,30 +317,19 @@ describe('BTC lock script tests', () => {
                 regtest,
                 unspent,
                 p2sh.redeem!.output!,
-                btcLockdrop.daysToBlockSequence(DURATION),
+                bip68.encode({ blocks: DURATION }),
                 regtestUtils.RANDOM_ADDRESS,
                 FEE,
             );
 
             // mine the number of blocks needed for unlocking
-            await regtestUtils.mine(btcLockdrop.daysToBlockSequence(DURATION));
-            // Try to redeem at unlocking time
-            await regtestUtils.broadcast(tx.toHex());
+            await regtestUtils.mine(DURATION * 2);
 
-            // this method should throw an error
-            // await regtestUtils
-            //     .verify({
-            //         txId: tx.getId(),
-            //         address: regtestUtils.RANDOM_ADDRESS,
-            //         vout: 0,
-            //         value: VALUE,
-            //     })
-            //     .catch(err => {
-            //         assert.throws(() => {
-            //             if (err) throw err;
-            //         }, /mandatory-script-verify-flag-failed \(Signature must be zero for failed CHECK\(MULTI\)SIG operation\) \(code 16\)/);
-            //     });
+            // Try to redeem at unlocking time
+            await expect(regtestUtils.broadcast(tx.toHex())).rejects.toThrowError(
+                'mandatory-script-verify-flag-failed (Signature must be zero for failed CHECK(MULTI)SIG operation) (code 16)',
+            );
         },
-        200 * 1000,
-    ); // extend jest async resolve timeout
+        200 * 1000, // extend jest async resolve timeout
+    );
 });
