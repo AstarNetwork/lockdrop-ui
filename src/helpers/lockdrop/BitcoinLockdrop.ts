@@ -315,6 +315,9 @@ export function btcUnlockTx(
     if (blockSequence < 0) {
         throw new Error('Block sequence cannot be less than zeo');
     }
+    if (fee < 0) {
+        throw new Error('Transaction fee cannot be less than zero');
+    }
 
     //const sequence = bip68.encode({ blocks: lockBlocks });
     const tx = new bitcoinjs.Transaction();
