@@ -47,31 +47,7 @@ const toByteArray = (hexString: string) => {
     return new Uint8Array(result);
 };
 
-// blake2 hashes any given object
-const hashObject = (object: object) => {
-    const objVal = Object.values(object);
-    let serial = '';
-
-    objVal.map(i => {
-        if (typeof i === 'string') {
-            let hexVal = new Uint8Array();
-
-            if (i.match('0x')) {
-                // convert hex string to u8 array
-                hexVal = toByteArray(i);
-            } else {
-                // convert string number to hex and then u8 array
-                hexVal = toByteArray('0x' + new BN(i).toString('hex'));
-            }
-
-            serial += polkadotUtil.u8aToHex(hexVal).replace('0x', '');
-        } else {
-            throw new Error('object value must be string');
-        }
-    });
-
-    return polkadotCryptoUtil.blake2AsHex(serial, 256);
-};
+const timeout = ms => new Promise(res => setTimeout(res, ms))
 
 describe('Plasm ECDSA address tests', () => {
     it('checks compressed ETH pub key length', () => {
@@ -88,7 +64,7 @@ describe('Plasm ECDSA address tests', () => {
 describe('Plasm lockdrop RPC tests', () => {
     // initialize a connection with the blockchain
     // change this to either local of dusty to switch networks and tests
-    const plasmEndpoint = PlasmNetwork.Dusty;
+    const plasmEndpoint = PlasmNetwork.Local;
 
     let api: ApiPromise;
     const keyring = new Keyring({
@@ -136,26 +112,25 @@ describe('Plasm lockdrop RPC tests', () => {
     });
     // dusty does not implement the lock claim module yet
     if ((plasmEndpoint as PlasmNetwork) === PlasmNetwork.Local) {
-        it('send lock claim transaction', async () => {
+        it('lock/claim transactions', async () => {
             const nonce = claimPowNonce(sampleLock.hash.toU8a());
-
-            const claimRequestTx = await (api.tx as any).plasmLockdrop.request(
-                sampleLock,
-                polkadotUtil.u8aToHex(nonce),
-            );
-
             console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
 
+            const claimRequestTx = await (api.tx as any).plasmLockdrop.request(sampleLock, nonce);
             await claimRequestTx.send();
-        });
 
-        it('queries plasm claim request event', async () => {
+            // waiting for 10 blocks to confirmation
+            const head = await (api.rpc as any).chain.getBlock();
+            let current = await (api.rpc as any).chain.getBlock();
+            while (current.header.number - head.header.number < 10) {
+                timeout(1000); // wait 1000ms
+                current = await (api.rpc as any).chain.getBlock(); 
+            }
+
             const claimData = await (api.query as any).plasmLockdrop.claims(sampleLock.hash);
-
             const claimAmount = new BN(claimData.amount.toString());
-
             console.log('Receiving amount: ' + claimAmount.toString());
-            //expect(claimData.params.value.toString()).toEqual(sampleLock.value.toString());
+            expect(claimData.params.value.toString()).toEqual(sampleLock.value.toString());
         });
     }
 });
