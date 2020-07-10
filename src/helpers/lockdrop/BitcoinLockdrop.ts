@@ -320,6 +320,13 @@ export function btcUnlockTx(
         throw new Error('Transaction fee cannot be less than zero');
     }
 
+    if (!Number.isInteger(blockSequence) || !Number.isFinite(blockSequence)) {
+        throw new Error('Block sequence must be a valid integer, but received: ' + blockSequence);
+    }
+    if (!Number.isInteger(fee) || !Number.isFinite(fee)) {
+        throw new Error('Fee must be a valid integer, but received: ' + fee);
+    }
+
     //const sequence = bip68.encode({ blocks: lockBlocks });
     const tx = new bitcoinjs.Transaction();
     tx.version = 2;
