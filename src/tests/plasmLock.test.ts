@@ -47,7 +47,7 @@ const toByteArray = (hexString: string) => {
     return new Uint8Array(result);
 };
 
-const timeout = ms => new Promise(res => setTimeout(res, ms))
+const timeout = ms => new Promise(res => setTimeout(res, ms));
 
 describe('Plasm ECDSA address tests', () => {
     it('checks compressed ETH pub key length', () => {
@@ -63,7 +63,7 @@ describe('Plasm ECDSA address tests', () => {
 
 describe('Plasm lockdrop RPC tests', () => {
     // initialize a connection with the blockchain
-    // change this to either local of dusty to switch networks and tests
+    // change this to either local or dusty to switch networks and tests
     const plasmEndpoint = PlasmNetwork.Local;
 
     let api: ApiPromise;
@@ -77,7 +77,7 @@ describe('Plasm lockdrop RPC tests', () => {
 
     it('checks plasm constants', async () => {
         const sessionDuration = api.consts.babe.epochDuration.toNumber();
-        const plasmRewards = (api.consts as any).plasmRewards.sessionsPerEra.toNumber();
+        const plasmRewards = api.consts.plasmRewards.sessionsPerEra.toNumber();
         const maxBlockLength = api.consts.system.maximumBlockLength.toNumber();
         expect(sessionDuration).toEqual(1440);
         expect(plasmRewards).toEqual(6);
@@ -115,22 +115,23 @@ describe('Plasm lockdrop RPC tests', () => {
         it('lock/claim transactions', async () => {
             const nonce = claimPowNonce(sampleLock.hash.toU8a());
             console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
+            console.log('claim ID: ' + sampleLock.hash.toString());
 
-            const claimRequestTx = await (api.tx as any).plasmLockdrop.request(sampleLock, nonce);
+            //!error: sampleLock payload data is lost due to unknown reasons
+            const claimRequestTx = await api.tx.plasmLockdrop.request(sampleLock, nonce);
+
             await claimRequestTx.send();
-
             // waiting for 10 blocks to confirmation
             const head = await (api.rpc as any).chain.getBlock();
             let current = await (api.rpc as any).chain.getBlock();
             while (current.header.number - head.header.number < 10) {
                 timeout(1000); // wait 1000ms
-                current = await (api.rpc as any).chain.getBlock(); 
+                current = await (api.rpc as any).chain.getBlock();
             }
-
-            const claimData = await (api.query as any).plasmLockdrop.claims(sampleLock.hash);
-            const claimAmount = new BN(claimData.amount.toString());
+            const claimData = await api.query.plasmLockdrop.claims(sampleLock.hash);
+            const claimAmount = new BN(claimData.get('amount')?.toString());
             console.log('Receiving amount: ' + claimAmount.toString());
-            expect(claimData.params.value.toString()).toEqual(sampleLock.value.toString());
+            expect(claimData.params.value.toString()).toEqual(sampleLock.get('value')?.toString());
         });
     }
 });
