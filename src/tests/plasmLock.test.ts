@@ -117,8 +117,10 @@ describe('Plasm lockdrop RPC tests', () => {
             console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
             console.log('claim ID: ' + sampleLock.hash.toString());
 
+            //!error: sampleLock payload data is lost due to unknown reasons
             const claimRequestTx = await (api.tx as any).plasmLockdrop.request(sampleLock, nonce);
             await claimRequestTx.send();
+
             // waiting for 10 blocks to confirmation
             const head = await (api.rpc as any).chain.getBlock();
             let current = await (api.rpc as any).chain.getBlock();
@@ -129,7 +131,7 @@ describe('Plasm lockdrop RPC tests', () => {
             const claimData = await (api.query as any).plasmLockdrop.claims(sampleLock.hash);
             const claimAmount = new BN(claimData.amount.toString());
             console.log('Receiving amount: ' + claimAmount.toString());
-            expect(claimData.params.value.toString()).toEqual(sampleLock.value.toString());
+            expect(claimData.params.value.toString()).toEqual(sampleLock.get('value')?.toString());
         });
     }
 });
