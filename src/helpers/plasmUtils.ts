@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
+import '../types/plasmInterface/augment-api';
+import '../types/plasmInterface/augment-types';
 import BigNumber from 'bignumber.js';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Lockdrop } from '../types/LockdropModels';
@@ -6,7 +8,7 @@ import { Hash } from '@polkadot/types/interfaces';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { u8aConcat } from '@polkadot/util';
 import { TypeRegistry } from '@polkadot/types';
-
+import * as definitions from '../types/plasmInterface/definitions';
 /**
  * bitmask used for real-time lockdrop claim request Pow security
  */
@@ -37,6 +39,7 @@ export const plasmTypeReg = new TypeRegistry();
  */
 export async function createDustyPlasmInstance(network?: PlasmNetwork) {
     let endpoint = '';
+    const types = Object.values(definitions).reduce((res, { types }): object => ({ ...res, ...types }), {});
 
     switch (network) {
         case PlasmNetwork.Local:
@@ -56,34 +59,7 @@ export async function createDustyPlasmInstance(network?: PlasmNetwork) {
     return await ApiPromise.create({
         provider: wsProvider,
         types: {
-            ClaimId: 'H256',
-            Lockdrop: {
-                type: 'u8',
-                transaction_hash: 'H256',
-                public_key: '[u8; 33]',
-                duration: 'u64',
-                value: 'u128',
-            },
-            TickerRate: {
-                authority: 'u16',
-                btc: 'DollarRate',
-                eth: 'DollarRate',
-            },
-            DollarRate: 'u128',
-            AuthorityId: 'AccountId',
-            AuthorityVote: 'u32',
-            ClaimVote: {
-                claim_id: 'ClaimId',
-                approve: 'bool',
-                authority: 'u16',
-            },
-            Claim: {
-                params: 'Lockdrop',
-                approve: 'AuthorityVote',
-                decline: 'AuthorityVote',
-                amount: 'u128',
-                complete: 'bool',
-            },
+            ...types,
         },
     });
 }
