@@ -77,7 +77,7 @@ describe('Plasm lockdrop RPC tests', () => {
 
     it('checks plasm constants', async () => {
         const sessionDuration = api.consts.babe.epochDuration.toNumber();
-        const plasmRewards = (api.consts as any).plasmRewards.sessionsPerEra.toNumber();
+        const plasmRewards = api.consts.plasmRewards.sessionsPerEra.toNumber();
         const maxBlockLength = api.consts.system.maximumBlockLength.toNumber();
         expect(sessionDuration).toEqual(1440);
         expect(plasmRewards).toEqual(6);
@@ -118,9 +118,9 @@ describe('Plasm lockdrop RPC tests', () => {
             console.log('claim ID: ' + sampleLock.hash.toString());
 
             //!error: sampleLock payload data is lost due to unknown reasons
-            const claimRequestTx = await (api.tx as any).plasmLockdrop.request(sampleLock, nonce);
-            await claimRequestTx.send();
+            const claimRequestTx = await api.tx.plasmLockdrop.request(sampleLock, nonce);
 
+            await claimRequestTx.send();
             // waiting for 10 blocks to confirmation
             const head = await (api.rpc as any).chain.getBlock();
             let current = await (api.rpc as any).chain.getBlock();
@@ -128,8 +128,8 @@ describe('Plasm lockdrop RPC tests', () => {
                 timeout(1000); // wait 1000ms
                 current = await (api.rpc as any).chain.getBlock();
             }
-            const claimData = await (api.query as any).plasmLockdrop.claims(sampleLock.hash);
-            const claimAmount = new BN(claimData.amount.toString());
+            const claimData = await api.query.plasmLockdrop.claims(sampleLock.hash);
+            const claimAmount = new BN(claimData.get('amount')?.toString());
             console.log('Receiving amount: ' + claimAmount.toString());
             expect(claimData.params.value.toString()).toEqual(sampleLock.get('value')?.toString());
         });

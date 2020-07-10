@@ -4,16 +4,17 @@
 import { AnyNumber, ITuple, Observable } from '@polkadot/types/types';
 import { Option, Vec } from '@polkadot/types/codec';
 import { Bytes, bool, u32, u64 } from '@polkadot/types/primitive';
-import { BabeAuthorityWeight, MaybeVrf, Randomness } from '@polkadot/types/interfaces/babe';
+import { BabeAuthorityWeight, MaybeRandomness, NextConfigDescriptor, Randomness } from '@polkadot/types/interfaces/babe';
 import { AccountData, BalanceLock } from '@polkadot/types/interfaces/balances';
-import { AuthorityId, RawVRFOutput } from '@polkadot/types/interfaces/consensus';
-import { CodeHash, ContractInfo, Gas, PrefabWasmModule, Schedule } from '@polkadot/types/interfaces/contracts';
+import { AuthorityId } from '@polkadot/types/interfaces/consensus';
+import { CodeHash, ContractInfo, PrefabWasmModule, Schedule } from '@polkadot/types/interfaces/contracts';
 import { SetId, StoredPendingChange, StoredState } from '@polkadot/types/interfaces/grandpa';
-import { AccountId, AccountIndex, Balance, BalanceOf, BlockNumber, Hash, KeyTypeId, Moment, Releases, ValidatorId, Weight } from '@polkadot/types/interfaces/runtime';
+import { AccountId, AccountIndex, Balance, BalanceOf, BlockNumber, ExtrinsicsWeight, Hash, KeyTypeId, Moment, Perbill, Releases, ValidatorId } from '@polkadot/types/interfaces/runtime';
 import { Keys, SessionIndex } from '@polkadot/types/interfaces/session';
-import { ActiveEraInfo, EraIndex, Forcing } from '@polkadot/types/interfaces/staking';
+import { ActiveEraInfo, EraIndex, Forcing, Nominations, RewardDestination, StakingLedger } from '@polkadot/types/interfaces/staking';
 import { AccountInfo, DigestOf, EventIndex, EventRecord, LastRuntimeUpgradeInfo, Phase } from '@polkadot/types/interfaces/system';
 import { Multiplier } from '@polkadot/types/interfaces/txpayment';
+import { AuthorityVote, Claim, ClaimId, DollarRate } from 'sample-polkadotjs-typegen/interfaces/plasmLockdrop';
 import { ApiTypes } from '@polkadot/api/types';
 
 declare module '@polkadot/api/types/storage' {
@@ -40,7 +41,7 @@ declare module '@polkadot/api/types/storage' {
        * Temporary value (cleared at block finalization) which is `Some`
        * if per-block initialization has already been called for current block.
        **/
-      initialized: AugmentedQuery<ApiType, () => Observable<Option<MaybeVrf>>>;
+      initialized: AugmentedQuery<ApiType, () => Observable<Option<MaybeRandomness>>>;
       /**
        * How late the current block is compared to its parent.
        * 
@@ -49,6 +50,10 @@ declare module '@polkadot/api/types/storage' {
        * execution context should always yield zero.
        **/
       lateness: AugmentedQuery<ApiType, () => Observable<BlockNumber>>;
+      /**
+       * Next epoch configuration, if changed.
+       **/
+      nextEpochConfig: AugmentedQuery<ApiType, () => Observable<Option<NextConfigDescriptor>>>;
       /**
        * Next epoch randomness.
        **/
@@ -78,14 +83,14 @@ declare module '@polkadot/api/types/storage' {
        * epoch.
        **/
       segmentIndex: AugmentedQuery<ApiType, () => Observable<u32>>;
-      underConstruction: AugmentedQuery<ApiType, (arg: u32 | AnyNumber | Uint8Array) => Observable<Vec<RawVRFOutput>>>;
+      /**
+       * TWOX-NOTE: `SegmentIndex` is an increasing integer, so this is okay.
+       **/
+      underConstruction: AugmentedQuery<ApiType, (arg: u32 | AnyNumber | Uint8Array) => Observable<Vec<Randomness>>>;
     };
     balances: {
       /**
        * The balance of an account.
-       * 
-       * NOTE: THIS MAY NEVER BE IN EXISTENCE AND YET HAVE A `total().is_zero()`. If the total
-       * is ever zero, then the entry *MUST* be removed.
        * 
        * NOTE: This is only used in the case that this module is used to store balances.
        **/
@@ -117,6 +122,8 @@ declare module '@polkadot/api/types/storage' {
       codeStorage: AugmentedQuery<ApiType, (arg: CodeHash | string | Uint8Array) => Observable<Option<PrefabWasmModule>>>;
       /**
        * The code associated with a given account.
+       * 
+       * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
        **/
       contractInfoOf: AugmentedQuery<ApiType, (arg: AccountId | string | Uint8Array) => Observable<Option<ContractInfo>>>;
       /**
@@ -124,17 +131,72 @@ declare module '@polkadot/api/types/storage' {
        **/
       currentSchedule: AugmentedQuery<ApiType, () => Observable<Schedule>>;
       /**
-       * The price of one unit of gas.
-       **/
-      gasPrice: AugmentedQuery<ApiType, () => Observable<BalanceOf>>;
-      /**
-       * Gas spent so far in this block.
-       **/
-      gasSpent: AugmentedQuery<ApiType, () => Observable<Gas>>;
-      /**
        * A mapping from an original code hash to the original code, untouched by instrumentation.
        **/
       pristineCode: AugmentedQuery<ApiType, (arg: CodeHash | string | Uint8Array) => Observable<Option<Bytes>>>;
+    };
+    dappsStaking: {
+      /**
+       * Map from all locked "stash" accounts to the controller account.
+       **/
+      bonded: AugmentedQuery<ApiType, (arg: AccountId | string | Uint8Array) => Observable<Option<AccountId>>>;
+      /**
+       * The map from nominator stash key to the set of stash keys of all contracts to nominate.
+       * 
+       * NOTE: is private so that we can ensure upgraded before all typical accesses.
+       * Direct storage APIs can still bypass this protection.
+       **/
+      dappsNominations: AugmentedQuery<ApiType, (arg: AccountId | string | Uint8Array) => Observable<Option<Nominations>>>;
+      /**
+       * Similarly to `ErasStakers` this holds the parameters of contracts.
+       * 
+       * This is keyed first by the era index to allow bulk deletion and then the contracts account.
+       * 
+       * Is it removed after `HISTORY_DEPTH` eras.
+       **/
+      erasContractsParameters: AugmentedQueryDoubleMap<ApiType, (key1: EraIndex | AnyNumber | Uint8Array, key2: AccountId | string | Uint8Array) => Observable<Option<StakingParameters>>>;
+      /**
+       * The total amounts of staking for each nominators
+       **/
+      erasNominateTotals: AugmentedQueryDoubleMap<ApiType, (key1: EraIndex | AnyNumber | Uint8Array, key2: AccountId | string | Uint8Array) => Observable<BalanceOf>>;
+      /**
+       * The total amounts of staking for each operators
+       **/
+      erasStakedOperators: AugmentedQueryDoubleMap<ApiType, (key1: EraIndex | AnyNumber | Uint8Array, key2: AccountId | string | Uint8Array) => Observable<BalanceOf>>;
+      /**
+       * Rewards of stakers for contracts(called by "Dapps Nominator") at era.
+       * 
+       * This is keyed first by the era index, 2nd keyed contract account to allow the stash account.
+       * Rewards for the last `HISTORY_DEPTH` eras.
+       * 
+       * If reward hasn't been set or has been removed then 0 reward is returned.
+       **/
+      erasStakingPoints: AugmentedQueryDoubleMap<ApiType, (key1: EraIndex | AnyNumber | Uint8Array, key2: AccountId | string | Uint8Array) => Observable<EraStakingPoints>>;
+      /**
+       * The total amount staked for the last `HISTORY_DEPTH` eras.
+       * If total hasn't been set or has been removed then 0 stake is returned.
+       **/
+      erasTotalStake: AugmentedQuery<ApiType, (arg: EraIndex | AnyNumber | Uint8Array) => Observable<BalanceOf>>;
+      /**
+       * Map from all (unlocked) "controller" accounts to the info regarding the staking.
+       **/
+      ledger: AugmentedQuery<ApiType, (arg: AccountId | string | Uint8Array) => Observable<Option<StakingLedger>>>;
+      nominatorsUntreatedEra: AugmentedQuery<ApiType, (arg: AccountId | string | Uint8Array) => Observable<EraIndex>>;
+      operatorsUntreatedEra: AugmentedQuery<ApiType, (arg: AccountId | string | Uint8Array) => Observable<EraIndex>>;
+      /**
+       * Where the reward payment should be made. Keyed by stash.
+       **/
+      payee: AugmentedQuery<ApiType, (arg: AccountId | string | Uint8Array) => Observable<RewardDestination>>;
+      /**
+       * Storage version of the pallet.
+       * 
+       * This is set to v1.0.0 for new networks.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Releases>>;
+      /**
+       * The already untreated era is EraIndex.
+       **/
+      untreatedEra: AugmentedQuery<ApiType, () => Observable<EraIndex>>;
     };
     grandpa: {
       /**
@@ -153,6 +215,8 @@ declare module '@polkadot/api/types/storage' {
       /**
        * A mapping from grandpa set ID to the index of the *most recent* session for which its
        * members were responsible.
+       * 
+       * TWOX-NOTE: `SetId` is not under user control.
        **/
       setIdSession: AugmentedQuery<ApiType, (arg: SetId | AnyNumber | Uint8Array) => Observable<Option<SessionIndex>>>;
       /**
@@ -168,7 +232,7 @@ declare module '@polkadot/api/types/storage' {
       /**
        * The lookup from index to account.
        **/
-      accounts: AugmentedQuery<ApiType, (arg: AccountIndex | AnyNumber | Uint8Array) => Observable<Option<ITuple<[AccountId, BalanceOf]>>>>;
+      accounts: AugmentedQuery<ApiType, (arg: AccountIndex | AnyNumber | Uint8Array) => Observable<Option<ITuple<[AccountId, BalanceOf, bool]>>>>;
     };
     operator: {
       /**
@@ -183,6 +247,49 @@ declare module '@polkadot/api/types/storage' {
        * A mapping from operators to operated contracts by them.
        **/
       operatorHasContracts: AugmentedQuery<ApiType, (arg: AccountId | string | Uint8Array) => Observable<Vec<AccountId>>>;
+    };
+    plasmLockdrop: {
+      /**
+       * Lockdrop alpha parameter, where α ∈ [0; 1]
+       **/
+      alpha: AugmentedQuery<ApiType, () => Observable<Perbill>>;
+      /**
+       * Token claim requests.
+       **/
+      claims: AugmentedQuery<ApiType, (arg: ClaimId | string | Uint8Array) => Observable<Claim>>;
+      /**
+       * Lockdrop dollar rate parameter: BTC, ETH.
+       **/
+      dollarRate: AugmentedQuery<ApiType, () => Observable<ITuple<[DollarRate, DollarRate]>>>;
+      /**
+       * Lockdrop dollar rate median filter table: Time, BTC, ETH.
+       **/
+      dollarRateF: AugmentedQuery<ApiType, (arg: AuthorityId | string | Uint8Array) => Observable<ITuple<[Moment, DollarRate, DollarRate]>>>;
+      /**
+       * Double vote prevention registry.
+       **/
+      hasVote: AugmentedQueryDoubleMap<ApiType, (key1: AuthorityId | string | Uint8Array, key2: ClaimId | string | Uint8Array) => Observable<bool>>;
+      /**
+       * List of lockdrop authority id's.
+       **/
+      keys: AugmentedQuery<ApiType, () => Observable<Vec<AuthorityId>>>;
+      /**
+       * Timestamp of finishing lockdrop.
+       **/
+      lockdropEnd: AugmentedQuery<ApiType, () => Observable<Moment>>;
+      /**
+       * How much positive votes requered to approve claim.
+       * Positive votes = approve votes - decline votes.
+       **/
+      positiveVotes: AugmentedQuery<ApiType, () => Observable<AuthorityVote>>;
+      /**
+       * Offchain lock check requests made within this block execution.
+       **/
+      requests: AugmentedQuery<ApiType, () => Observable<Vec<ClaimId>>>;
+      /**
+       * How much authority votes module should receive to decide claim result.
+       **/
+      voteThreshold: AugmentedQuery<ApiType, () => Observable<AuthorityVote>>;
     };
     plasmRewards: {
       /**
@@ -316,13 +423,13 @@ declare module '@polkadot/api/types/storage' {
        **/
       allExtrinsicsLen: AugmentedQuery<ApiType, () => Observable<Option<u32>>>;
       /**
-       * Total weight for all extrinsics put together, for the current block.
-       **/
-      allExtrinsicsWeight: AugmentedQuery<ApiType, () => Observable<Option<Weight>>>;
-      /**
        * Map of block numbers to block hashes.
        **/
       blockHash: AugmentedQuery<ApiType, (arg: BlockNumber | AnyNumber | Uint8Array) => Observable<Hash>>;
+      /**
+       * The current weight for the block.
+       **/
+      blockWeight: AugmentedQuery<ApiType, () => Observable<ExtrinsicsWeight>>;
       /**
        * Digest of the current block, also part of the block header.
        **/
@@ -395,6 +502,7 @@ declare module '@polkadot/api/types/storage' {
     };
     transactionPayment: {
       nextFeeMultiplier: AugmentedQuery<ApiType, () => Observable<Multiplier>>;
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Releases>>;
     };
   }
 
