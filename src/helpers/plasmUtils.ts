@@ -1,12 +1,9 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import '../types/plasmInterface/augment-api';
-import '../types/plasmInterface/augment-types';
 import BigNumber from 'bignumber.js';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Hash } from '@polkadot/types/interfaces';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { u8aConcat } from '@polkadot/util';
-import * as definitions from '../types/plasmInterface/definitions';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
 
 /**
@@ -39,7 +36,6 @@ export const plasmTypeReg = new TypeRegistry();
  */
 export async function createDustyPlasmInstance(network?: PlasmNetwork) {
     let endpoint = '';
-    const types = Object.values(definitions).reduce((res, { types }): object => ({ ...res, ...types }), {});
 
     switch (network) {
         case PlasmNetwork.Local:
@@ -58,9 +54,6 @@ export async function createDustyPlasmInstance(network?: PlasmNetwork) {
 
     return await ApiPromise.create({
         provider: wsProvider,
-        types: {
-            ...types,
-        },
     });
 }
 
