@@ -95,7 +95,6 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                     const lockScript = btcLock.getLockP2SH(lockDuration, _pubKey, networkType);
 
                     setP2sh(lockScript.address!);
-
                 } else {
                     throw new Error(res.payload.error);
                 }
