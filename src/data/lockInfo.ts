@@ -2,6 +2,7 @@ import { OptionItem, LockMenu } from '../types/LockdropModels';
 import moment from 'moment';
 import ethLogo from '../resources/ethereum_logo.svg';
 import btcLogo from '../resources/bitcoin_logo.svg';
+import Lockdrop from '../contracts/Lockdrop.json';
 
 /**
  * the time zone is set to UTC as default
@@ -19,6 +20,21 @@ export const firstLockdropEnd = moment.utc('2020-04-14 00:00:00');
 export const secondLockdropStart = moment.utc('2020-08-10 00:00:00');
 
 export const secondLockdropEnd = moment.utc('2020-09-10 00:00:00');
+
+//todo: add other contract addresses when ready
+export const lockdropContracts = {
+    firstLock: {
+        main: '0x458DaBf1Eff8fCdfbF0896A6Bd1F457c01E2FfD6',
+        ropsten: '0xEEd84A89675342fB04faFE06F7BB176fE35Cb168',
+        private: Lockdrop.networks[5777].address,
+    },
+    secondLock: {
+        main: '0x',
+        ropsten: '0x69e7eb3ab94a10e4f408d842b287c70aa0d11649',
+        private: Lockdrop.networks[5777].address,
+    },
+    thirdLock: { main: '0x', ropsten: '0x', private: Lockdrop.networks[5777].address },
+};
 
 /**
  * used to define the content of the dropdown menu
