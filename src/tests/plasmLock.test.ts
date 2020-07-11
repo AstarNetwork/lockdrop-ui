@@ -71,7 +71,7 @@ describe('Plasm lockdrop RPC tests', () => {
 
     it('checks plasm constants', async () => {
         const sessionDuration = api.consts.babe.epochDuration.toNumber();
-        const plasmRewards = api.consts.plasmRewards.sessionsPerEra.toNumber();
+        const plasmRewards = (api.consts.plasmRewards.sessionsPerEra as any).toNumber();
         const maxBlockLength = api.consts.system.maximumBlockLength.toNumber();
         expect(sessionDuration).toEqual(1440);
         expect(plasmRewards).toEqual(6);

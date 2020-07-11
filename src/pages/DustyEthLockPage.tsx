@@ -8,7 +8,7 @@ import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
-import { LockInput, LockEvent, LockSeason } from '../types/LockdropModels';
+import { LockInput, LockEvent } from '../types/LockdropModels';
 import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -75,7 +75,7 @@ class DustyEthLockPage extends React.Component<PageProps, PageStates> {
 
     // get and set the web3 state when the component is mounted
     componentDidMount = async () => {
-        const web3State = await connectWeb3(LockSeason.First);
+        const web3State = await connectWeb3('secondLock');
         this.setState(web3State);
 
         // checks if account has changed in MetaMask
@@ -89,7 +89,7 @@ class DustyEthLockPage extends React.Component<PageProps, PageStates> {
             this.getLockData().then(() => {
                 this.setState({ isLoading: false });
             });
-        }, 1000);
+        }, 5000);
     };
 
     isMainnet = () => {

@@ -1,9 +1,16 @@
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect } from 'react';
-import { IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent } from '@ionic/react';
+import {
+    IonCard,
+    IonCardHeader,
+    IonCardSubtitle,
+    IonCardTitle,
+    IonCardContent,
+    IonAvatar,
+    IonSkeletonText,
+} from '@ionic/react';
 import { qrEncodeUri } from '../../helpers/lockdrop/BitcoinLockdrop';
-import { makeStyles, createStyles } from '@material-ui/core';
-import Skeleton from '@material-ui/lab/Skeleton';
+import { makeStyles, createStyles, Grid } from '@material-ui/core';
 import LockStatus from './LockStatus';
 import CopyMessageBox from '../CopyMessageBox';
 
@@ -11,16 +18,36 @@ interface Props {
     address: string;
 }
 
-const useStyles = makeStyles(() =>
+const useStyles = makeStyles(theme =>
     createStyles({
         qrImage: {
-            display: 'block',
+            boxSizing: 'border-box',
             marginLeft: 'auto',
             marginRight: 'auto',
-            maxWidth: 250,
-            height: 'auto',
             verticalAlign: 'middle',
             alignSelf: 'center',
+            maxHeight: '100%',
+            maxWidth: 250,
+            objectFit: 'cover',
+        },
+        imageSkeleton: {
+            boxSizing: 'border-box',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            verticalAlign: 'middle',
+            alignSelf: 'center',
+            objectFit: 'cover',
+        },
+        chipGrid: {
+            position: 'relative',
+            padding: theme.spacing(2),
+        },
+        statusChip: {
+            [theme.breakpoints.up('sm')]: {
+                position: 'absolute',
+                right: 0,
+                top: 0,
+            },
         },
     }),
 );
@@ -28,6 +55,7 @@ const useStyles = makeStyles(() =>
 const QrEncodedAddress: React.FC<Props> = ({ address }) => {
     const classes = useStyles();
     const [imageUri, setUri] = useState('');
+    const [imageLoaded, setImageLoad] = useState(false);
 
     useEffect(() => {
         qrEncodeUri(address).then(img => {
@@ -39,19 +67,34 @@ const QrEncodedAddress: React.FC<Props> = ({ address }) => {
         <>
             <IonCard>
                 <IonCardHeader>
-                    {imageUri ? (
-                        <img src={imageUri} className={classes.qrImage} alt="" />
-                    ) : (
-                        <Skeleton variant="rect" className={classes.qrImage} />
+                    <img
+                        src={imageUri}
+                        className={classes.qrImage}
+                        alt=""
+                        style={imageLoaded ? {} : { display: 'none' }}
+                        onLoad={() => setImageLoad(true)}
+                    />
+                    {imageLoaded ? null : (
+                        <IonAvatar className={classes.imageSkeleton}>
+                            <IonSkeletonText animated />
+                        </IonAvatar>
                     )}
 
                     <IonCardSubtitle>Please send the amount you want to lock to this P2SH address</IonCardSubtitle>
-                    <IonCardTitle>Lock Script Address</IonCardTitle>
+                    <Grid container>
+                        <Grid item xs={12} sm={6}>
+                            <IonCardTitle>Lock Script Address</IonCardTitle>
+                        </Grid>
+                        <Grid item xs={12} sm={6} className={classes.chipGrid}>
+                            <div className={classes.statusChip}>
+                                <LockStatus scriptAddress={address} />
+                            </div>
+                        </Grid>
+                    </Grid>
                 </IonCardHeader>
 
                 <IonCardContent>
                     <CopyMessageBox header="P2SH Address" message={address} />
-                    <LockStatus scriptAddress={address} />
                 </IonCardContent>
             </IonCard>
         </>

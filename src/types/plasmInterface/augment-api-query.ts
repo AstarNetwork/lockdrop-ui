@@ -14,7 +14,7 @@ import { Keys, SessionIndex } from '@polkadot/types/interfaces/session';
 import { ActiveEraInfo, EraIndex, Forcing, Nominations, RewardDestination, StakingLedger } from '@polkadot/types/interfaces/staking';
 import { AccountInfo, DigestOf, EventIndex, EventRecord, LastRuntimeUpgradeInfo, Phase } from '@polkadot/types/interfaces/system';
 import { Multiplier } from '@polkadot/types/interfaces/txpayment';
-import { AuthorityVote, Claim, ClaimId, DollarRate } from 'sample-polkadotjs-typegen/interfaces/plasmLockdrop';
+import { AuthorityVote, Claim, ClaimId, DollarRate } from 'plasm-node-types/interfaces/plasmLockdrop';
 import { ApiTypes } from '@polkadot/api/types';
 
 declare module '@polkadot/api/types/storage' {

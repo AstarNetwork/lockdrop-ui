@@ -11,7 +11,7 @@ import { AccountId, AccountIndex, Address, Balance, BalanceOf, BlockNumber, Call
 import { Keys } from '@polkadot/types/interfaces/session';
 import { EraIndex, RewardDestination } from '@polkadot/types/interfaces/staking';
 import { Key } from '@polkadot/types/interfaces/system';
-import { ClaimId, ClaimVote, Lockdrop, TickerRate } from 'sample-polkadotjs-typegen/interfaces/plasmLockdrop';
+import { ClaimId, ClaimVote, Lockdrop, TickerRate } from 'plasm-node-types/interfaces/plasmLockdrop';
 import { ApiTypes, SubmittableExtrinsic } from '@polkadot/api/types';
 
 declare module '@polkadot/api/types/submittable' {

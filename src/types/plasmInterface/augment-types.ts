@@ -43,7 +43,7 @@ import { OpenTip, OpenTipFinderTo225, OpenTipTip, OpenTipTo225, TreasuryProposal
 import { Multiplier } from '@polkadot/types/interfaces/txpayment';
 import { CallHash, Multisig, Timepoint } from '@polkadot/types/interfaces/utility';
 import { VestingInfo } from '@polkadot/types/interfaces/vesting';
-import { AuthorityVote, Claim, ClaimId, ClaimVote, DollarRate, Lockdrop, TickerRate } from 'sample-polkadotjs-typegen/interfaces/plasmLockdrop';
+import { AuthorityVote, Claim, ClaimId, ClaimVote, DollarRate, Lockdrop, TickerRate } from 'plasm-node-types/interfaces/plasmLockdrop';
 
 declare module '@polkadot/types/types/registry' {
   export interface InterfaceTypes {
