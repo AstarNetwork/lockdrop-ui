@@ -3,12 +3,9 @@
 import EthCrypto from 'eth-crypto';
 import * as polkadotCryptoUtil from '@polkadot/util-crypto';
 import * as polkadotUtil from '@polkadot/util';
-import { createDustyPlasmInstance, PlasmNetwork, claimPowNonce } from '../helpers/plasmUtils';
+import { createDustyPlasmInstance, PlasmNetwork, claimPowNonce, createLockParam } from '../helpers/plasmUtils';
 import { ApiPromise, Keyring } from '@polkadot/api';
 import BN from 'bn.js';
-import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
-
-const registry = new TypeRegistry();
 
 const ethPubKey =
     'a27c1e09c563b1221636c7f69690a6e4d41e9c79d38518d00d5f6d3fb5d7a35407caff68e13fcd845646dc848e0649417b89acf1af435bd18f1ab2fcf20e2e61';
@@ -16,22 +13,11 @@ const plasmPubKey = '215a9a3e38ba3dcaf8120046e3f4b385b25016575ab8564973edfdb6452
 
 const sampleClaimId = '0xa94710e9db798a7d1e977b9f748ae802031eee2400a77600c526158892cd93d8';
 
-const sampleLock = new Struct(
-    registry,
-    {
-        type: u8,
-        transactionHash: 'H256',
-        publicKey: U8aFixed, // [u8; 33]
-        duration: u64,
-        value: u128,
-    },
-    {
-        type: '1',
-        transactionHash: '0x6c4364b2f5a847ffc69f787a0894191b75aa278a95020f02e4753c76119324e0',
-        publicKey: new U8aFixed(registry, '0x039360c9cbbede9ee771a55581d4a53cbcc4640953169549993a3b0e6ec7984061', 264),
-        duration: new u64(registry, '2592000'),
-        value: new u128(registry, '100000000000000000'),
-    },
+const sampleLock = createLockParam(
+    '0x6c4364b2f5a847ffc69f787a0894191b75aa278a95020f02e4753c76119324e0',
+    '0x039360c9cbbede9ee771a55581d4a53cbcc4640953169549993a3b0e6ec7984061',
+    '2592000',
+    '100000000000000000',
 );
 
 // converts a given hex string into Uint8Array
@@ -58,7 +44,7 @@ describe('Plasm ECDSA address tests', () => {
 describe('Plasm lockdrop RPC tests', () => {
     // initialize a connection with the blockchain
     // change this to either local or dusty to switch networks and tests
-    const plasmEndpoint = PlasmNetwork.Dusty;
+    const plasmEndpoint = PlasmNetwork.Local;
 
     let api: ApiPromise;
     const keyring = new Keyring({
