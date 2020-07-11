@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import BigNumber from 'bignumber.js';
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Lockdrop } from '../types/LockdropModels';
 import { Hash } from '@polkadot/types/interfaces';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { u8aConcat } from '@polkadot/util';
