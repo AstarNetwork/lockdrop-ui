@@ -28,11 +28,7 @@ const sampleLock = new Struct(
     {
         type: '1',
         transactionHash: '0x6c4364b2f5a847ffc69f787a0894191b75aa278a95020f02e4753c76119324e0',
-        publicKey: new U8aFixed(
-            registry,
-            '0x039360c9cbbede9ee771a55581d4a53cbcc4640953169549993a3b0e6ec7984061',
-            33 * 8,
-        ),
+        publicKey: new U8aFixed(registry, '0x039360c9cbbede9ee771a55581d4a53cbcc4640953169549993a3b0e6ec7984061', 264),
         duration: new u64(registry, '2592000'),
         value: new u128(registry, '100000000000000000'),
     },

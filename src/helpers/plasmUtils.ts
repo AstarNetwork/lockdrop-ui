@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import BigNumber from 'bignumber.js';
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Lockdrop } from '../types/LockdropModels';
 import { Hash } from '@polkadot/types/interfaces';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { u8aConcat } from '@polkadot/util';
-import { TypeRegistry } from '@polkadot/types';
+import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
 
 /**
  * bitmask used for real-time lockdrop claim request Pow security
@@ -107,13 +106,47 @@ export function lockDurationToRate(duration: number) {
 }
 
 /**
+ * Create a lock parameter object with the given lock information.
+ * This is used for the real-time lockdrop module in Plasm for both ETH and BTC locks
+ * @param transactionHash the lock transaction hash in hex string
+ * @param publicKey locker's public key in hex string
+ * @param duration lock duration in Unix epoch (seconds)
+ * @param value lock value in the minimum denominator (Wei or Satoshi)
+ */
+export function createLockParam(transactionHash: string, publicKey: string, duration: number | string, value: string) {
+    const lockParam = new Struct(
+        plasmTypeReg,
+        {
+            type: u8,
+            transactionHash: 'H256',
+            publicKey: U8aFixed, // [u8; 33]
+            duration: u64,
+            value: u128,
+        },
+        {
+            type: '1',
+            transactionHash: transactionHash,
+            publicKey: new U8aFixed(plasmTypeReg, publicKey, 264),
+            duration: new u64(plasmTypeReg, duration),
+            value: new u128(plasmTypeReg, value),
+        },
+    );
+
+    return lockParam;
+}
+
+export function getClaimId(lockdropParam: Struct) {
+    return lockdropParam.hash.toU8a();
+}
+
+/**
  * submits a real-time lockdrop claim request to plasm node and returns the transaction hash.
  * this is a unsigned transaction that is only authenticated by a simple PoW to prevent spamming
  * @param api plasm node api instance (polkadot-js api)
  * @param lockParam lockdrop parameter that contains the lock data
  * @param nonce nonce for PoW authentication with the node
  */
-export async function sendLockClaim(api: ApiPromise, lockParam: Lockdrop, nonce: string) {
+export async function sendLockClaim(api: ApiPromise, lockParam: Struct, nonce: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const claimRequestTx = await (api.tx as any).plasmLockdrop.request(lockParam, nonce);
 

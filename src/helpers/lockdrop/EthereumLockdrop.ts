@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // This module is used for communicating with the Ethereum smart contract
 import Lockdrop from '../../contracts/Lockdrop.json';
-import SecondLockdrop from '../../contracts/Lockdrop.json';
 import getWeb3 from '../getWeb3';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
-import { LockEvent, LockSeason, LockInput } from '../../types/LockdropModels';
+import { LockEvent, LockInput } from '../../types/LockdropModels';
 import BN from 'bn.js';
 import BigNumber from 'bignumber.js';
 import { isValidIntroducerAddress, defaultAddress, affiliationRate } from '../../data/affiliationProgram';
@@ -16,6 +15,7 @@ import EthCrypto from 'eth-crypto';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { ecrecover, fromRpcSig, toBuffer, bufferToHex } from 'ethereumjs-util';
 import { Toast } from 'react-toastify';
+import * as lockInfo from '../../data/lockInfo';
 
 // todo: reduce client-side operations and replace it with data from the plasm node
 
@@ -143,20 +143,6 @@ export function defaultAffiliation(aff: string) {
     }
 }
 
-// export async function getEthUsdRate(endDate: string) {
-//     // date format mm-DD-YYYY
-//     const ethMarketApi = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${endDate}&localization=false`;
-//     let usdRate = 0;
-//     try {
-//         const res = await fetch(ethMarketApi);
-//         const data = await res.json();
-//         usdRate = data.market_data.current_price.usd;
-//     } catch (error) {
-//         console.log(error);
-//     }
-//     return usdRate;
-// }
-
 function plmBaseIssueRatio(lockData: LockEvent, ethExchangeRate: BigNumber): BigNumber {
     // get lockTimeBonus * ethExRate
     const bonusRate = new BigNumber(lockDurationToRate(lockData.duration)).times(ethExchangeRate);
@@ -283,9 +269,9 @@ export function getTotalLockVal(locks: LockEvent[]): string {
 /**
  * authenticate if the client has web3 enabled wallet installed and can communicate with the blockchain
  * returns the web3.js instance, list of active accounts and the contract instance
- * @param lockSeason enum to indicate which lockdrop contract it should look for
+ * @param lockSeason lockdrop season to indicate which lockdrop contract it should look for
  */
-export async function connectWeb3(lockSeason: LockSeason) {
+export async function connectWeb3(lockSeason: 'firstLock' | 'secondLock' | 'thirdLock') {
     try {
         // Get network provider and web3 instance.
         const web3 = await getWeb3();
@@ -294,33 +280,36 @@ export async function connectWeb3(lockSeason: LockSeason) {
         if (web3 instanceof Web3) {
             // Use web3 to get the user's accounts.
             const accounts = await web3.eth.getAccounts();
+            const lockdropAbi = Lockdrop.abi as Web3Utils.AbiItem[];
 
             // Get the contract instance.
             const networkId = await web3.eth.net.getId();
-            const deployedNetwork = (Lockdrop as any).networks[networkId];
+
+            const deployedNetwork = (Lockdrop.networks as any)[networkId];
+
+            const networkType = await web3.eth.net.getNetworkType();
+            const contractAddress = lockInfo.lockdropContracts[lockSeason];
 
             // create an empty contract instance first
-            let instance = new web3.eth.Contract(
-                Lockdrop.abi as any,
-                deployedNetwork && deployedNetwork.address,
-            ) as Contract;
+            const instance = new web3.eth.Contract(
+                lockdropAbi,
+                deployedNetwork && (contractAddress as any)[networkType],
+            );
 
-            //todo: switch contract instance depending on lockdrop type
-            //todo: assign different contract address depending on the lockdrop type
-            switch (lockSeason) {
-                case LockSeason.First:
-                    instance = new web3.eth.Contract(
-                        Lockdrop.abi as any,
-                        deployedNetwork && deployedNetwork.address,
-                    ) as Contract;
-                    break;
-                case LockSeason.Second:
-                    instance = new web3.eth.Contract(
-                        SecondLockdrop.abi as any,
-                        deployedNetwork && deployedNetwork.address,
-                    ) as Contract;
-                    break;
-            }
+            // switch (lockSeason) {
+            //     case 'firstLock':
+            //         instance = new web3.eth.Contract(
+            //             lockdropAbi,
+            //             deployedNetwork && deployedNetwork.address,
+            //         ) as Contract;
+            //         break;
+            //     case 'secondLock':
+            //         instance = new web3.eth.Contract(
+            //             lockdropAbi,
+            //             deployedNetwork && deployedNetwork.address,
+            //         ) as Contract;
+            //         break;
+            // }
 
             return {
                 web3: web3,
