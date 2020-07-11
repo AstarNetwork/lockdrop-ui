@@ -126,7 +126,7 @@ export function createLockParam(transactionHash: string, publicKey: string, dura
         {
             type: '1',
             transactionHash: transactionHash,
-            publicKey: new U8aFixed(plasmTypeReg, publicKey, 33 * 8),
+            publicKey: new U8aFixed(plasmTypeReg, publicKey, 264),
             duration: new u64(plasmTypeReg, duration),
             value: new u128(plasmTypeReg, value),
         },
