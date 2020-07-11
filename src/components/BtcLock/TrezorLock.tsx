@@ -19,7 +19,7 @@ import { DropdownOption } from '../DropdownOption';
 import { btcDurations, rates } from '../../data/lockInfo';
 import * as btcLock from '../../helpers/lockdrop/BitcoinLockdrop';
 import { toast } from 'react-toastify';
-import BigNumber from 'bignumber.js';
+//import BigNumber from 'bignumber.js';
 import { makeStyles, createStyles } from '@material-ui/core';
 import { BtcNetwork } from '../../types/LockdropModels';
 import QrEncodedAddress from './QrEncodedAddress';
@@ -49,7 +49,7 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
     const classes = useStyles();
     const [lockDuration, setDuration] = useState(0);
     const [p2shAddress, setP2sh] = useState('');
-    const [lockAmount, setAmount] = useState('');
+    //const [lockAmount, setAmount] = useState('');
     // changing the path to n/49'/x'/x' will return a signature error
     // this may be due to compatibility issues with BIP49
     const [addressPath, setAddressPath] = useState(networkType === BtcNetwork.MainNet ? "m/44'/0'/0'" : "m/44'/1'/0'");
@@ -59,13 +59,14 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
         if (lockDuration <= 0) {
             return { valid: false, message: 'Please provide a lock duration' };
         }
-        if (isNaN(parseInt(lockAmount))) {
-            return { valid: false, message: 'Please input a valid number' };
-        }
-        const lockVal = new BigNumber(lockAmount);
-        if (lockVal.isLessThanOrEqualTo(0)) {
-            return { valid: false, message: 'Lock value must be greater than 0' };
-        }
+        // if (isNaN(parseInt(lockAmount))) {
+        //     return { valid: false, message: 'Please input a valid number' };
+        // }
+        // const lockVal = new BigNumber(lockAmount);
+        // if (lockVal.isLessThanOrEqualTo(0)) {
+        //     return { valid: false, message: 'Lock value must be greater than 0' };
+        // }
+
         return { valid: true, message: 'valid input' };
     };
 
@@ -92,19 +93,6 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                     const lockScript = btcLock.getLockP2SH(lockDuration, pubKey, networkType);
 
                     setP2sh(lockScript.address!);
-
-                    // TrezorConnect.getPublicKey({ coin: 'Testnet', path: addressPath }).then(r => {
-                    //     console.log(r);
-                    //     if (r.success) {
-                    //         const pubKey = r.payload.publicKey;
-
-                    //         const lockScript = btcLock.getLockP2SH(lockDuration, pubKey, networkType);
-
-                    //         setP2sh(lockScript.address!);
-                    //     }
-                    // });
-
-                    //todo: add send transaction method
                 } else {
                     throw new Error(res.payload.error);
                 }
@@ -159,13 +147,13 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                             onIonChange={e => setAddressPath(e.detail.value!)}
                         ></IonInput>
                     </IonItem>
-                    <IonItem>
+                    {/* <IonItem>
                         <IonLabel position="floating">Number of BTC</IonLabel>
                         <IonInput
                             placeholder={'ex: 0.64646 BTC'}
                             onIonChange={e => setAmount(e.detail.value!)}
                         ></IonInput>
-                    </IonItem>
+                    </IonItem> */}
 
                     <IonLabel position="stacked">Lock Duration</IonLabel>
                     <IonItem>

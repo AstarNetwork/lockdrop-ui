@@ -97,7 +97,7 @@ export const secondLock: LockMenu[] = [
 export const dustyLock: LockMenu[] = [
     {
         title: 'ETH Lock',
-        //uri: '/lock-form/dusty-eth',
+        uri: '/lock-form/dusty-eth',
         icon: ethLogo,
         startDate: firstLockdropStart,
         endDate: firstLockdropEnd,
@@ -105,7 +105,7 @@ export const dustyLock: LockMenu[] = [
     },
     {
         title: 'BTC Lock',
-        //uri: '/lock-form/dusty-btc',
+        uri: '/lock-form/dusty-btc',
         icon: btcLogo,
         startDate: firstLockdropStart,
         endDate: firstLockdropEnd,

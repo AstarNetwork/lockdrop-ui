@@ -113,7 +113,7 @@ export function lockDurationToRate(duration: number) {
  * @param duration lock duration in Unix epoch (seconds)
  * @param value lock value in the minimum denominator (Wei or Satoshi)
  */
-export function createLockParam(transactionHash: string, publicKey: string, duration: number | string, value: string) {
+export function createLockParam(transactionHash: string, publicKey: string, duration: string, value: string) {
     const lockParam = new Struct(
         plasmTypeReg,
         {

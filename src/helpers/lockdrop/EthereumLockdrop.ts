@@ -283,33 +283,15 @@ export async function connectWeb3(lockSeason: 'firstLock' | 'secondLock' | 'thir
             const lockdropAbi = Lockdrop.abi as Web3Utils.AbiItem[];
 
             // Get the contract instance.
-            const networkId = await web3.eth.net.getId();
+            //const networkId = await web3.eth.net.getId();
 
-            const deployedNetwork = (Lockdrop.networks as any)[networkId];
+            //const deployedNetwork = (Lockdrop.networks as any)[networkId];
 
             const networkType = await web3.eth.net.getNetworkType();
-            const contractAddress = lockInfo.lockdropContracts[lockSeason];
+            const contractAddress = (lockInfo.lockdropContracts[lockSeason] as any)[networkType];
 
             // create an empty contract instance first
-            const instance = new web3.eth.Contract(
-                lockdropAbi,
-                deployedNetwork && (contractAddress as any)[networkType],
-            );
-
-            // switch (lockSeason) {
-            //     case 'firstLock':
-            //         instance = new web3.eth.Contract(
-            //             lockdropAbi,
-            //             deployedNetwork && deployedNetwork.address,
-            //         ) as Contract;
-            //         break;
-            //     case 'secondLock':
-            //         instance = new web3.eth.Contract(
-            //             lockdropAbi,
-            //             deployedNetwork && deployedNetwork.address,
-            //         ) as Contract;
-            //         break;
-            // }
+            const instance = new web3.eth.Contract(lockdropAbi, contractAddress !== '0x' && contractAddress);
 
             return {
                 web3: web3,
@@ -331,7 +313,8 @@ export async function connectWeb3(lockSeason: 'firstLock' | 'secondLock' | 'thir
 }
 
 /**
- * validate and create a transaction to the lock contract with the given parameter
+ * validate and create a transaction to the lock contract with the given parameter.
+ * This will return the transaction hash or undefined if it fails.
  * @param txInput the lock parameter for the contract
  * @param address the address of the locker
  * @param contract smart contract instance used to invoke the contract method
@@ -354,15 +337,20 @@ export async function submitLockTx(txInput: LockInput, address: string, contract
             } else {
                 // convert user input to Wei
                 const amountToSend = Web3.utils.toWei(txInput.amount, 'ether');
-
+                let hash = '';
                 // communicate with the smart contract
-                await contract.methods.lock(txInput.duration, introducer).send({
-                    from: address,
-                    value: amountToSend,
-                });
+                await contract.methods
+                    .lock(txInput.duration, introducer)
+                    .send({
+                        from: address,
+                        value: amountToSend,
+                    })
+                    .on('transactionHash', (res: any) => {
+                        hash = res;
+                    });
 
                 messageToast.success(`Successfully locked ${txInput.amount} ETH for ${txInput.duration} days!`);
-                return true;
+                return hash;
             }
         } catch (error) {
             messageToast.error('error!\n' + error.message);
@@ -370,5 +358,4 @@ export async function submitLockTx(txInput: LockInput, address: string, contract
     } else {
         messageToast.error('You are missing an input!');
     }
-    return false;
 }
