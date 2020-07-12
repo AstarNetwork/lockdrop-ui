@@ -1,14 +1,11 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import '../types/plasmInterface/augment-api';
-import '../types/plasmInterface/augment-types';
 import BigNumber from 'bignumber.js';
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Lockdrop } from '../types/LockdropModels';
 import { Hash } from '@polkadot/types/interfaces';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { u8aConcat } from '@polkadot/util';
-import { TypeRegistry } from '@polkadot/types';
-import * as definitions from '../types/plasmInterface/definitions';
+import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
+
 /**
  * bitmask used for real-time lockdrop claim request Pow security
  */
@@ -39,7 +36,6 @@ export const plasmTypeReg = new TypeRegistry();
  */
 export async function createDustyPlasmInstance(network?: PlasmNetwork) {
     let endpoint = '';
-    const types = Object.values(definitions).reduce((res, { types }): object => ({ ...res, ...types }), {});
 
     switch (network) {
         case PlasmNetwork.Local:
@@ -59,7 +55,34 @@ export async function createDustyPlasmInstance(network?: PlasmNetwork) {
     return await ApiPromise.create({
         provider: wsProvider,
         types: {
-            ...types,
+            ClaimId: 'H256',
+            Lockdrop: {
+                type: 'u8',
+                transaction_hash: 'H256',
+                public_key: '[u8; 33]',
+                duration: 'u64',
+                value: 'u128',
+            },
+            TickerRate: {
+                authority: 'u16',
+                btc: 'DollarRate',
+                eth: 'DollarRate',
+            },
+            DollarRate: 'u128',
+            AuthorityId: 'AccountId',
+            AuthorityVote: 'u32',
+            ClaimVote: {
+                claim_id: 'ClaimId',
+                approve: 'bool',
+                authority: 'u16',
+            },
+            Claim: {
+                params: 'Lockdrop',
+                approve: 'AuthorityVote',
+                decline: 'AuthorityVote',
+                amount: 'u128',
+                complete: 'bool',
+            },
         },
     });
 }
@@ -83,13 +106,47 @@ export function lockDurationToRate(duration: number) {
 }
 
 /**
+ * Create a lock parameter object with the given lock information.
+ * This is used for the real-time lockdrop module in Plasm for both ETH and BTC locks
+ * @param transactionHash the lock transaction hash in hex string
+ * @param publicKey locker's public key in hex string
+ * @param duration lock duration in Unix epoch (seconds)
+ * @param value lock value in the minimum denominator (Wei or Satoshi)
+ */
+export function createLockParam(transactionHash: string, publicKey: string, duration: string, value: string) {
+    const lockParam = new Struct(
+        plasmTypeReg,
+        {
+            type: u8,
+            transactionHash: 'H256',
+            publicKey: U8aFixed, // [u8; 33]
+            duration: u64,
+            value: u128,
+        },
+        {
+            type: '1',
+            transactionHash: transactionHash,
+            publicKey: new U8aFixed(plasmTypeReg, publicKey, 264),
+            duration: new u64(plasmTypeReg, duration),
+            value: new u128(plasmTypeReg, value),
+        },
+    );
+
+    return lockParam;
+}
+
+export function getClaimId(lockdropParam: Struct) {
+    return lockdropParam.hash.toU8a();
+}
+
+/**
  * submits a real-time lockdrop claim request to plasm node and returns the transaction hash.
  * this is a unsigned transaction that is only authenticated by a simple PoW to prevent spamming
  * @param api plasm node api instance (polkadot-js api)
  * @param lockParam lockdrop parameter that contains the lock data
  * @param nonce nonce for PoW authentication with the node
  */
-export async function sendLockClaim(api: ApiPromise, lockParam: Lockdrop, nonce: string) {
+export async function sendLockClaim(api: ApiPromise, lockParam: Struct, nonce: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const claimRequestTx = await (api.tx as any).plasmLockdrop.request(lockParam, nonce);
 

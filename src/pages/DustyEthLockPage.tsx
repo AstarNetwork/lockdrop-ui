@@ -3,18 +3,19 @@
 import { IonContent, IonPage, IonLoading } from '@ionic/react';
 import React from 'react';
 import LockdropForm from '../components/EthLock/LockdropForm';
-import { connectWeb3, getAllLockEvents, submitLockTx } from '../helpers/lockdrop/EthereumLockdrop';
+import { connectWeb3, getAllLockEvents, submitLockTx, getPubKey } from '../helpers/lockdrop/EthereumLockdrop';
 import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
-import { LockInput, LockEvent, LockSeason } from '../types/LockdropModels';
+import { LockInput, LockEvent } from '../types/LockdropModels';
 import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { removeWeb3Event } from '../helpers/getWeb3';
 import SectionCard from '../components/SectionCard';
 import { Typography } from '@material-ui/core';
+import * as plasmUtils from '../helpers/plasmUtils';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -40,10 +41,6 @@ interface PageStates {
     fetchingLockData: boolean;
 }
 
-// need an empty interface to use states (React's generic positioning)
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface PageProps {}
-
 toast.configure({
     position: 'top-right',
     autoClose: 5000,
@@ -53,8 +50,8 @@ toast.configure({
     draggable: true,
 });
 
-class DustyEthLockPage extends React.Component<PageProps, PageStates> {
-    constructor(props: PageProps) {
+class DustyEthLockPage extends React.Component<{}, PageStates> {
+    constructor(props: {}) {
         super(props);
         // initialize with null values
         this.state = {
@@ -75,7 +72,7 @@ class DustyEthLockPage extends React.Component<PageProps, PageStates> {
 
     // get and set the web3 state when the component is mounted
     componentDidMount = async () => {
-        const web3State = await connectWeb3(LockSeason.First);
+        const web3State = await connectWeb3('secondLock');
         this.setState(web3State);
 
         // checks if account has changed in MetaMask
@@ -89,7 +86,7 @@ class DustyEthLockPage extends React.Component<PageProps, PageStates> {
             this.getLockData().then(() => {
                 this.setState({ isLoading: false });
             });
-        }, 1000);
+        }, 5000);
     };
 
     isMainnet = () => {
@@ -121,7 +118,23 @@ class DustyEthLockPage extends React.Component<PageProps, PageStates> {
     handleSubmit = async (formInputVal: LockInput) => {
         this.setState({ isProcessing: true });
 
-        await submitLockTx(formInputVal, this.state.accounts[0], this.state.contract, toast);
+        const publicKey = await getPubKey(
+            this.state.web3,
+            `Sign this message to submit a lock request.
+            This action is required for the real-time lockdrop module`,
+        );
+
+        const hash = await submitLockTx(formInputVal, this.state.accounts[0], this.state.contract, toast);
+        // create a real-time lockdrop claim request when there is a transaction hash
+        if (hash) {
+            const lockParam = plasmUtils.createLockParam(
+                hash,
+                publicKey,
+                formInputVal.duration.toString(),
+                Web3.utils.toWei(formInputVal.amount, 'ether').toString(),
+            );
+            console.log('Your claim ID is ' + lockParam.hash.toString());
+        }
 
         this.setState({ isProcessing: false });
     };

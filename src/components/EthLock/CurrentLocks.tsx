@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect, useCallback } from 'react';
-import { getTotalLockVal, getPubKey } from '../../helpers/lockdrop/EthereumLockdrop';
+import { getTotalLockVal } from '../../helpers/lockdrop/EthereumLockdrop';
 //import * as ethAddress from 'ethereum-address';
 import Web3 from 'web3';
 import { LockEvent, TimeFormat } from '../../types/LockdropModels';
@@ -20,25 +20,9 @@ import {
 } from '@material-ui/core';
 import LockIcon from '@material-ui/icons/Lock';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
-import CodeIcon from '@material-ui/icons/Code';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { defaultAddress } from '../../data/affiliationProgram';
 import Web3Utils from 'web3-utils';
-import {
-    IonModal,
-    IonButton,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonButtons,
-    IonCard,
-    IonCardHeader,
-    IonCardSubtitle,
-    IonCardTitle,
-    IonCardContent,
-    IonLoading,
-} from '@ionic/react';
-import moment from 'moment';
 
 const useStyles = makeStyles(theme =>
     createStyles({
@@ -171,9 +155,6 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
     const [tillUnlock, setUnlockDate] = useState<TimeFormat>(calculateTimeLeft());
     const [unlocked, setUnlockState] = useState(false);
     const [isLoading, setLoading] = useState(false);
-    const [showModal, setShowModal] = useState(false);
-    const [publicKey, setPublicKey] = useState('');
-    const [isSigning, setIsSigning] = useState(false);
 
     const checkUnlock = useCallback(async () => {
         // get today in UTC epoch seconds (js default is ms)
@@ -234,80 +215,8 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
             );
     };
 
-    const obtainPublicKey = async () => {
-        setIsSigning(true);
-        const pubKey = await getPubKey(web3, 'sign to view plasm lock parameters');
-        if (typeof pubKey === 'string') {
-            setPublicKey(pubKey);
-        }
-        setIsSigning(false);
-    };
-
-    const realTimeParam = {
-        type: '1',
-        transactionHash: lockInfo.transactionHash,
-        publicKey: publicKey,
-        duration: (lockInfo.duration * epochDayMil) / 1000,
-        value: lockInfo.eth.toString(),
-    };
-
-    const PrettyPrintJson = () => (
-        <div>
-            <pre>{JSON.stringify(realTimeParam, null, 2)}</pre>
-        </div>
-    );
-
-    const showLockData = () => {
-        setShowModal(true);
-    };
-
     return (
         <>
-            <IonLoading isOpen={isSigning} message={'Verifying user...'} />
-            <IonModal isOpen={showModal} cssClass="my-custom-class">
-                <IonHeader>
-                    <IonToolbar>
-                        <IonTitle>Lock Information</IonTitle>
-                        <IonButtons slot="end">
-                            <IonButton onClick={() => setShowModal(false)}>Close</IonButton>
-                        </IonButtons>
-                    </IonToolbar>
-                </IonHeader>
-                <div>
-                    <IonCard>
-                        <IonCardHeader>
-                            <IonCardSubtitle>General information about your lock</IonCardSubtitle>
-                            <IonCardTitle>Lock Overview</IonCardTitle>
-                        </IonCardHeader>
-
-                        <IonCardContent>
-                            <h5>Lock address: {lockInfo.lock}</h5>
-                            <h5>Locked Amount: {Web3Utils.fromWei(lockInfo.eth, 'ether')}</h5>
-                            <p>
-                                Locked in block no. {lockInfo.blockNo} for {lockInfo.duration} days
-                            </p>
-                            <p>Locked in: {moment.unix(parseInt(lockInfo.timestamp)).toISOString()} UTC</p>
-                            <p>Block hash: {lockInfo.blockHash}</p>
-                        </IonCardContent>
-                    </IonCard>
-                    <IonCard>
-                        <IonCardHeader>
-                            <IonCardSubtitle>Real-time lockdrop claim parameter</IonCardSubtitle>
-                            <IonCardTitle>Raw Data</IonCardTitle>
-                        </IonCardHeader>
-
-                        <IonCardContent>
-                            {publicKey ? (
-                                <>
-                                    <PrettyPrintJson />
-                                </>
-                            ) : (
-                                <IonButton onClick={() => obtainPublicKey()}>View Lock Claim Parameter</IonButton>
-                            )}
-                        </IonCardContent>
-                    </IonCard>
-                </div>
-            </IonModal>
             <ListItem key={lockInfo.lock}>
                 <Grid container spacing={4} alignItems="center">
                     <Grid item xs={9}>
@@ -370,9 +279,6 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
                             ) : (
                                 <LockIcon color="inherit" />
                             )}
-                            <IconButton edge="end" aria-label="raw-data" onClick={() => showLockData()} color="primary">
-                                <CodeIcon />
-                            </IconButton>
                         </ListItemSecondaryAction>
                     </Grid>
                 </Grid>
