@@ -16,6 +16,7 @@ import { removeWeb3Event } from '../helpers/getWeb3';
 import SectionCard from '../components/SectionCard';
 import { Typography } from '@material-ui/core';
 import * as plasmUtils from '../helpers/plasmUtils';
+import { ApiPromise } from '@polkadot/api';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -31,6 +32,7 @@ Regarding the audit by Quantstamp, click <a
 
 interface PageStates {
     web3: Web3;
+    plasmApi: ApiPromise;
     accounts: string[];
     contract: Contract;
     isLoading: boolean;
@@ -56,6 +58,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
         // initialize with null values
         this.state = {
             web3: {} as Web3,
+            plasmApi: {} as ApiPromise,
             accounts: [''],
             contract: {} as Contract,
             isLoading: true,
@@ -74,6 +77,8 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
     componentDidMount = async () => {
         const web3State = await connectWeb3('secondLock');
         this.setState(web3State);
+        const plasmNode = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Dusty);
+        this.setState({ plasmApi: plasmNode });
 
         // checks if account has changed in MetaMask
         if ((window as any).ethereum.on) {
@@ -127,14 +132,20 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
         const hash = await submitLockTx(formInputVal, this.state.accounts[0], this.state.contract, toast);
         // create a real-time lockdrop claim request when there is a transaction hash
         if (hash) {
-            const lockParam = plasmUtils.createLockParam(
-                '1',
-                hash,
-                publicKey,
-                formInputVal.duration.toString(),
-                Web3.utils.toWei(formInputVal.amount, 'ether').toString(),
-            );
-            console.log('Your claim ID is ' + lockParam.hash.toString());
+            try {
+                const lockParam = plasmUtils.createLockParam(
+                    '1',
+                    hash,
+                    publicKey,
+                    formInputVal.duration.toString(),
+                    Web3.utils.toWei(formInputVal.amount, 'ether').toString(),
+                );
+                const nonce = plasmUtils.claimPowNonce(lockParam.hash);
+                console.log('Your claim ID is ' + lockParam.hash.toString());
+                await plasmUtils.sendLockClaim(this.state.plasmApi, lockParam as any, nonce);
+            } catch (e) {
+                toast.error(e.toString());
+            }
         }
 
         this.setState({ isProcessing: false });

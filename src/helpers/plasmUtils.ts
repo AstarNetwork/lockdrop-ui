@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import BigNumber from 'bignumber.js';
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Hash } from '@polkadot/types/interfaces';
+import { Hash, H256 } from '@polkadot/types/interfaces';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { u8aConcat } from '@polkadot/util';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
+import * as plasmDefinitions from '@plasm/types/interfaces/definitions';
 
 /**
  * bitmask used for real-time lockdrop claim request Pow security
@@ -34,8 +35,9 @@ export const plasmTypeReg = new TypeRegistry();
  * this will default to the main net node
  * @param network end point for the client to connect to
  */
-export async function createDustyPlasmInstance(network?: PlasmNetwork) {
+export async function createPlasmInstance(network?: PlasmNetwork) {
     let endpoint = '';
+    const types = Object.values(plasmDefinitions).reduce((res, { types }): object => ({ ...res, ...types }), {});
 
     switch (network) {
         case PlasmNetwork.Local:
@@ -55,35 +57,19 @@ export async function createDustyPlasmInstance(network?: PlasmNetwork) {
     return await ApiPromise.create({
         provider: wsProvider,
         types: {
-            ClaimId: 'H256',
-            Lockdrop: {
-                type: 'u8',
-                transaction_hash: 'H256',
-                public_key: '[u8; 33]',
-                duration: 'u64',
-                value: 'u128',
-            },
-            TickerRate: {
-                authority: 'u16',
-                btc: 'DollarRate',
-                eth: 'DollarRate',
-            },
-            DollarRate: 'u128',
-            AuthorityId: 'AccountId',
-            AuthorityVote: 'u32',
-            ClaimVote: {
-                claim_id: 'ClaimId',
-                approve: 'bool',
-                authority: 'u16',
-            },
-            Claim: {
-                params: 'Lockdrop',
-                approve: 'AuthorityVote',
-                decline: 'AuthorityVote',
-                amount: 'u128',
-                complete: 'bool',
-            },
+            ...types,
+            // aliases that don't do well as part of interfaces
+            'voting::VoteType': 'VoteType',
+            'voting::TallyType': 'TallyType',
+            // chain-specific overrides
+            Address: 'GenericAddress',
+            Keys: 'SessionKeys4',
+            StakingLedger: 'StakingLedgerTo223',
+            Votes: 'VotesTo230',
+            ReferendumInfo: 'ReferendumInfoTo239',
         },
+        // override duplicate type name
+        typesAlias: { voting: { Tally: 'VotingTally' } },
     });
 }
 
@@ -142,8 +128,12 @@ export function createLockParam(
     return lockParam;
 }
 
+/**
+ * Returns the claim ID that is used to look up lockdrop claim requests
+ * @param lockdropParam Lockdrop claim request parameter
+ */
 export function getClaimId(lockdropParam: Struct) {
-    return lockdropParam.hash.toU8a();
+    return lockdropParam.hash;
 }
 
 /**
@@ -153,13 +143,13 @@ export function getClaimId(lockdropParam: Struct) {
  * @param lockParam lockdrop parameter that contains the lock data
  * @param nonce nonce for PoW authentication with the node
  */
-export async function sendLockClaim(api: ApiPromise, lockParam: Struct, nonce: string) {
+export async function sendLockClaim(api: ApiPromise, lockParam: Struct, nonce: Uint8Array): Promise<Hash> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const claimRequestTx = await (api.tx as any).plasmLockdrop.request(lockParam, nonce);
+    const claimRequestTx = api.tx.plasmLockdrop.request(lockParam.toU8a(), nonce);
 
-    const txHash = await claimRequestTx.sign();
+    const txHash = await claimRequestTx.send();
 
-    return txHash as Hash;
+    return txHash;
 }
 
 /**
@@ -168,8 +158,7 @@ export async function sendLockClaim(api: ApiPromise, lockParam: Struct, nonce: s
  * this will return the correct nonce in hex string
  * @param claimId the real-time lockdrop claim ID (blake2 hashed lock parameter)
  */
-export function claimPowNonce(claimId: Uint8Array): Uint8Array {
-    //console.log('ClaimId: ' + u8aToHex(claimId));
+export function claimPowNonce(claimId: Uint8Array | H256): Uint8Array {
     let nonce = polkadotUtil.randomAsU8a();
     while (true) {
         const hash = polkadotUtil.blake2AsU8a(u8aConcat(claimId, nonce));

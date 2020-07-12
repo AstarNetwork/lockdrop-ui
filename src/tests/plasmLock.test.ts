@@ -3,7 +3,7 @@
 import EthCrypto from 'eth-crypto';
 import * as polkadotCryptoUtil from '@polkadot/util-crypto';
 import * as polkadotUtil from '@polkadot/util';
-import { createDustyPlasmInstance, PlasmNetwork, claimPowNonce, createLockParam } from '../helpers/plasmUtils';
+import { createPlasmInstance, PlasmNetwork, claimPowNonce, createLockParam } from '../helpers/plasmUtils';
 import { ApiPromise, Keyring } from '@polkadot/api';
 import BN from 'bn.js';
 
@@ -69,7 +69,7 @@ describe('Plasm lockdrop RPC tests', () => {
     });
 
     beforeEach(async () => {
-        api = await createDustyPlasmInstance(plasmEndpoint);
+        api = await createPlasmInstance(plasmEndpoint);
     });
 
     it('checks plasm constants', async () => {
