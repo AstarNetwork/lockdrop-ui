@@ -37,10 +37,6 @@ const btcTestnet3Lock = createLockParam(
     '100000',
 );
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 // converts a given hex string into Uint8Array
 const toByteArray = (hexString: string) => {
     const result = [];
@@ -113,33 +109,41 @@ describe('Plasm lockdrop RPC tests', () => {
     });
     // dusty does not implement the lock claim module yet
     if ((plasmEndpoint as PlasmNetwork) === PlasmNetwork.Local) {
-        it('lock/claim Ropsten transactions', async () => {
-            const nonce = claimPowNonce(ropstenLock.hash);
-            console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
-            console.log('claim ID: ' + ropstenLock.hash.toString());
+        it(
+            'lock/claim Ropsten transactions',
+            async () => {
+                const nonce = claimPowNonce(ropstenLock.hash);
+                console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
+                console.log('claim ID: ' + ropstenLock.hash.toString());
 
-            const claimRequestTx = api.tx.plasmLockdrop.request(ropstenLock.toU8a(), nonce);
-            await claimRequestTx.send();
+                const claimRequestTx = api.tx.plasmLockdrop.request(ropstenLock.toU8a(), nonce);
+                await claimRequestTx.send();
 
-            const claimData = await api.query.plasmLockdrop.claims(ropstenLock.hash);
-            const claimAmount = new BN(claimData.get('amount')?.toString());
-            console.log('Receiving amount: ' + claimAmount.toString());
-            expect(claimData.params.value.toString()).toEqual(ropstenLock.get('value')?.toString());
-        }, 200 * 1000);
+                const claimData = await api.query.plasmLockdrop.claims(ropstenLock.hash);
+                const claimAmount = new BN(claimData.get('amount')?.toString());
+                console.log('Receiving amount: ' + claimAmount.toString());
+                expect(claimData.params.value.toString()).toEqual(ropstenLock.get('value')?.toString());
+            },
+            200 * 1000,
+        );
 
-        it('lock/claim BTC testnet3 transactions', async () => {
-            const nonce = claimPowNonce(btcTestnet3Lock.hash);
-            console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
-            console.log('claim ID: ' + ropstenLock.hash.toString());
+        it(
+            'lock/claim BTC testnet3 transactions',
+            async () => {
+                const nonce = claimPowNonce(btcTestnet3Lock.hash);
+                console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
+                console.log('claim ID: ' + ropstenLock.hash.toString());
 
-            const claimRequestTx = api.tx.plasmLockdrop.request(btcTestnet3Lock.toU8a(), nonce);
-            await claimRequestTx.send();
+                const claimRequestTx = api.tx.plasmLockdrop.request(btcTestnet3Lock.toU8a(), nonce);
+                await claimRequestTx.send();
 
-            const claimData = await api.query.plasmLockdrop.claims(btcTestnet3Lock.hash);
-            const claimAmount = new BN(claimData.get('amount')?.toString());
-            console.log('Receiving amount: ' + claimAmount.toString());
-            expect(claimData.params.value.toString()).toEqual(btcTestnet3Lock.get('value')?.toString());
-        }, 200 * 1000);
+                const claimData = await api.query.plasmLockdrop.claims(btcTestnet3Lock.hash);
+                const claimAmount = new BN(claimData.get('amount')?.toString());
+                console.log('Receiving amount: ' + claimAmount.toString());
+                expect(claimData.params.value.toString()).toEqual(btcTestnet3Lock.get('value')?.toString());
+            },
+            200 * 1000,
+        );
     }
 });
 
