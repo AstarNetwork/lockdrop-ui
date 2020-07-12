@@ -128,6 +128,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
         // create a real-time lockdrop claim request when there is a transaction hash
         if (hash) {
             const lockParam = plasmUtils.createLockParam(
+                '1',
                 hash,
                 publicKey,
                 formInputVal.duration.toString(),
