@@ -108,12 +108,19 @@ export function lockDurationToRate(duration: number) {
 /**
  * Create a lock parameter object with the given lock information.
  * This is used for the real-time lockdrop module in Plasm for both ETH and BTC locks
+ * @param network the lockdrop network (0: bitcoin, 1: ethereum)
  * @param transactionHash the lock transaction hash in hex string
  * @param publicKey locker's public key in hex string
  * @param duration lock duration in Unix epoch (seconds)
  * @param value lock value in the minimum denominator (Wei or Satoshi)
  */
-export function createLockParam(transactionHash: string, publicKey: string, duration: string, value: string) {
+export function createLockParam(
+    network: string,
+    transactionHash: string,
+    publicKey: string,
+    duration: string,
+    value: string,
+) {
     const lockParam = new Struct(
         plasmTypeReg,
         {
@@ -124,7 +131,7 @@ export function createLockParam(transactionHash: string, publicKey: string, dura
             value: u128,
         },
         {
-            type: '1',
+            type: network,
             transactionHash: transactionHash,
             publicKey: new U8aFixed(plasmTypeReg, publicKey, 264),
             duration: new u64(plasmTypeReg, duration),

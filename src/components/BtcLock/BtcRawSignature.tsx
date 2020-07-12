@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     IonCard,
     IonCardHeader,
@@ -18,14 +18,14 @@ import { makeStyles, createStyles } from '@material-ui/core';
 import { MESSAGE, getPublicKey, getLockP2SH, getNetworkFromAddress } from '../../helpers/lockdrop/BitcoinLockdrop';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { BtcNetwork } from '../../types/LockdropModels';
 import { DropdownOption } from '../DropdownOption';
 import { btcDurations, rates } from '../../data/lockInfo';
 import { Message } from 'bitcore-lib';
 import QrEncodedAddress from './QrEncodedAddress';
 import CopyMessageBox from '../CopyMessageBox';
+import { Network } from 'bitcoinjs-lib';
 interface Props {
-    networkType: BtcNetwork;
+    networkType: Network;
 }
 
 const useStyles = makeStyles(() =>
@@ -51,6 +51,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
     const [sigInput, setSig] = useState('');
     const [lockDuration, setDuration] = useState(0);
     const [p2shAddress, setP2sh] = useState('');
+    const [publicKey, setPublicKey] = useState('');
 
     const getTokenRate = () => {
         if (lockDuration) {
@@ -64,7 +65,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
             // throws error for user input validations
             // this is easier to look, but might need to refactor this later
             console.log(getNetworkFromAddress(addressInput));
-            if ((getNetworkFromAddress(addressInput) as BtcNetwork) !== networkType)
+            if (getNetworkFromAddress(addressInput) !== networkType)
                 throw new Error('Please use a valid Bitcoin network address');
 
             if (!lockDuration || !sigInput || !addressInput) throw new Error('Please fill in all the inputs');
@@ -72,6 +73,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
             console.log('verifying user:' + addressInput + '\nwith: ' + sigInput);
             if (new Message(MESSAGE).verify(addressInput, sigInput)) {
                 const pub = getPublicKey(addressInput, sigInput, 'compressed');
+                setPublicKey(pub);
                 console.log('success!');
                 console.log('public key is: ' + pub + '\nbonus rate: ' + getTokenRate());
 
@@ -90,6 +92,14 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
             toast.error(e.message);
         }
     };
+
+    useEffect(() => {
+        if (publicKey && p2shAddress) {
+            const lockScript = getLockP2SH(lockDuration, publicKey, networkType);
+
+            setP2sh(lockScript.address!);
+        }
+    }, [lockDuration, publicKey, networkType, p2shAddress]);
 
     return (
         <div>

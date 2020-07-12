@@ -1,7 +1,7 @@
 import { Message } from 'bitcore-lib';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import bip68 from 'bip68';
-import { UnspentTx, BtcNetwork } from '../../types/LockdropModels';
+import { UnspentTx } from '../../types/LockdropModels';
 import { Transaction, Signer, Network } from 'bitcoinjs-lib';
 import { BlockCypherApi } from '../../types/BlockCypherTypes';
 import BigNumber from 'bignumber.js';
@@ -72,23 +72,45 @@ export async function getTransactionEndpoint(txHash: string, network: 'main' | '
 }
 
 /**
- * converts satoshis to bitcoin
- * @param satoshi number of satoshis
+ * Validates the given BTC address by checking if it's in the correct format.
+ * The default network is set to mainnet, byt anything else will require you to explicitly
+ * pass it as the parameter.
+ * @param address Bitcoin public address
+ * @param network bitcoin network type (bitcoinjs-lib)
  */
-export function satoshiToBitcoin(satoshi: BigNumber | number) {
-    // 1 bitcoin = 100,000,000 satoshis
-
-    const denominator = new BigNumber(10).pow(new BigNumber(8));
-
-    // if the parameter is a number, convert it to BN
-    if (typeof satoshi === 'number') {
-        return new BigNumber(satoshi).div(denominator);
+export function validateBtcAddress(address: string, network?: bitcoinjs.networks.Network) {
+    // Bitcoin address prefixes
+    try {
+        bitcoinjs.address.toOutputScript(address, network);
+        return true;
+    } catch (e) {
+        return false;
     }
-    return satoshi.div(denominator);
+}
+
+/**
+ * Validates the given public key hex by importing it through bitcoinjs ECPair.
+ * @param publicKey Bitcoin public key hex string
+ * @param network bitcoin network to check from. Defaults to mainnet
+ */
+export function validatePublicKey(publicKey: string, network?: bitcoinjs.networks.Network) {
+    try {
+        bitcoinjs.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'), { network: network });
+
+        const { address } = bitcoinjs.payments.p2pkh({ pubkey: Buffer.from(publicKey, 'hex'), network: network });
+        if (typeof address === 'string' && !validateBtcAddress(address, network)) {
+            throw new Error('Invalid public key');
+        }
+
+        return true;
+    } catch (e) {
+        return false;
+    }
 }
 
 /**
  * returns the network type that the given address belongs to.
+ * this will also validate the address before returning a value.
  * @param address bitcoin address
  */
 export function getNetworkFromAddress(address: string) {
@@ -97,32 +119,77 @@ export function getNetworkFromAddress(address: string) {
     const mainNetPref = ['1', '3', 'bc1'];
     // test net public key hash prefixes
     const testNetPref = ['m', 'n', 'tb1', '2'];
+    let addressNetwork: bitcoinjs.networks.Network;
 
-    // check for regex match from the given address and array
     if (new RegExp(`^(${mainNetPref.join('|')})`).test(address)) {
-        return BtcNetwork.MainNet;
+        // check for regex match from the given address and array
+        addressNetwork = bitcoinjs.networks.bitcoin;
+        //return bitcoinjs.networks.bitcoin;
     } else if (new RegExp(`^(${testNetPref.join('|')})`).test(address)) {
-        return BtcNetwork.TestNet;
+        addressNetwork = bitcoinjs.networks.testnet;
+        //return bitcoinjs.networks.testnet;
     } else {
         throw new Error('Invalid Bitcoin address');
     }
+
+    if (!validateBtcAddress(address, addressNetwork)) {
+        throw new Error('Invalid Bitcoin address');
+    }
+    return addressNetwork;
+}
+
+/**
+ * converts satoshi to bitcoin
+ * @param satoshi number of satoshi
+ */
+export function satoshiToBitcoin(satoshi: BigNumber | number | string) {
+    // 1 bitcoin = 100,000,000 satoshi
+
+    const denominator = new BigNumber(10).pow(new BigNumber(8));
+
+    // if the parameter is a number, convert it to BN
+    if (typeof satoshi === 'number' || typeof satoshi == 'string') {
+        return new BigNumber(satoshi).div(denominator);
+    }
+    return satoshi.div(denominator);
+}
+
+/**
+ * converts bitcoin into satoshi
+ * @param bitcoin number of bitcoin
+ */
+export function bitcoinToSatoshi(bitcoin: BigNumber | number | string) {
+    // 1 bitcoin = 100,000,000 satoshis
+    const denominator = new BigNumber('100000000');
+
+    if (typeof bitcoin === 'number' || typeof bitcoin == 'string') {
+        return new BigNumber(bitcoin).multipliedBy(denominator);
+    }
+    return bitcoin.multipliedBy(denominator);
 }
 
 /**
  * converts an compressed public key to a uncompressed public key
  * @param publicKey compressed BTC public key
  */
-export function decompressPubKey(publicKey: string) {
-    const pubKeyPair = bitcoinjs.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'), { compressed: false });
+export function decompressPubKey(publicKey: string, network: bitcoinjs.Network) {
+    const pubKeyPair = bitcoinjs.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'), {
+        compressed: false,
+        network: network,
+    });
     return pubKeyPair.publicKey.toString('hex');
 }
 
 /**
  * compresses the given BTC public key
  * @param publicKey uncompressed BTC public key
+ * @param network bitcoin network the public key will encode for
  */
-export function compressPubKey(publicKey: string) {
-    const pubKeyPair = bitcoinjs.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'), { compressed: true });
+export function compressPubKey(publicKey: string, network: bitcoinjs.Network) {
+    const pubKeyPair = bitcoinjs.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'), {
+        compressed: true,
+        network: network,
+    });
     return pubKeyPair.publicKey.toString('hex');
 }
 
@@ -132,25 +199,13 @@ export function compressPubKey(publicKey: string) {
  * this function will only work with BIP44 encoded address. BIP49 or BIP84 will return
  * an error.
  * @param address bitcoin address
- * @param signature signature for signing the plasm network message
+ * @param signature base 64 signature for signing the plasm network message
  * @param compression should the public key be compressed or not
  */
 export function getPublicKey(address: string, signature: string, compression?: 'compressed' | 'uncompressed') {
     const compressedPubKey = new Message(MESSAGE).recoverPublicKey(address, signature.replace(/(\r\n|\n|\r)/gm, ''));
-    return compression === 'compressed' ? compressedPubKey : decompressPubKey(compressedPubKey);
-}
-
-/**
- * Validates the given BTC address by checking if it's in the correct format
- * @param address Bitcoin public address
- */
-function validateBtcAddress(address: string) {
-    try {
-        bitcoinjs.address.toOutputScript(address);
-        return true;
-    } catch (e) {
-        return false;
-    }
+    const addressNetwork = getNetworkFromAddress(address);
+    return compression === 'compressed' ? compressedPubKey : decompressPubKey(compressedPubKey, addressNetwork);
 }
 
 /**
@@ -158,7 +213,7 @@ function validateBtcAddress(address: string) {
  * this converts days to bip68 encoded block number.
  * @param days number of days to be converted to sequence number
  */
-export function daysToBlocks(days: number) {
+export function daysToBlockSequence(days: number) {
     // verify lock days value
     if (days < 0) {
         throw new Error('Lock days cannot be a negative number');
@@ -181,8 +236,9 @@ export function daysToBlocks(days: number) {
  * if the given public key is not compressed, this function will compress it.
  * @param publicKeyHex compressed BTC public key in hex string
  * @param blockSequence bip68 encoded block sequence
+ * @param network bitcoin network the public key belongs to
  */
-export function btcLockScript(publicKeyHex: string, blockSequence: number): Buffer {
+export function btcLockScript(publicKeyHex: string, blockSequence: number, network: bitcoinjs.Network): Buffer {
     // verify block sequence value
     if (blockSequence < 0) {
         throw new Error('Block sequence cannot be a negative number');
@@ -194,16 +250,12 @@ export function btcLockScript(publicKeyHex: string, blockSequence: number): Buff
         // maximum lock time https://en.bitcoin.it/wiki/Timelock
         throw new Error('Block sequence cannot be more than 65535');
     }
-
-    // compresses the given public key
-    // this will return itself (in buffer) if the given key is already compressed
-    const pubKeyBuffer = Buffer.from(compressPubKey(publicKeyHex), 'hex');
-
     // verify public key by converting to an address
-    const { address } = bitcoinjs.payments.p2pkh({ pubkey: pubKeyBuffer });
-    if (typeof address === 'string' && !validateBtcAddress(address)) {
+    if (!validatePublicKey(publicKeyHex, network)) {
         throw new Error('Invalid public key');
     }
+
+    const pubKeyBuffer = Buffer.from(compressPubKey(publicKeyHex, network), 'hex');
 
     return bitcoinjs.script.fromASM(
         `
@@ -222,27 +274,35 @@ export function btcLockScript(publicKeyHex: string, blockSequence: number): Buff
  * creates a P2SH instance that locks the sent token for the given duration.
  * the locked tokens can only be claimed by the provided public key
  * @param lockDays the lock duration in days
- * @param publicKey uncompressed public key of the locker
+ * @param publicKey public key of the locker. This can be both compressed or uncompressed
  * @param network bitcoin network the script will generate for
  */
-export function getLockP2SH(lockDays: number, publicKey: string, network: BtcNetwork) {
-    const netType = network === BtcNetwork.MainNet ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet;
-
+export function getLockP2SH(lockDays: number, publicKey: string, network: bitcoinjs.Network) {
     return bitcoinjs.payments.p2sh({
-        network: netType,
+        network: network,
         redeem: {
-            output: btcLockScript(publicKey, daysToBlocks(lockDays)),
+            output: btcLockScript(publicKey, daysToBlockSequence(lockDays), network),
         },
     });
 }
 
+/**
+ * creates a lock redeem UTXO
+ * @param signer the signer for signing the transaction hash
+ * @param network network type (bitcoinjs-lib)
+ * @param lockTx the transaction that locks the value to P2SH address
+ * @param lockScript the lock script (P2SH)
+ * @param blockSequence block sequence to lock the funds, should be the same value used in the lock script
+ * @param recipient recipient for the transaction output
+ * @param fee transaction fee for the lock transaction
+ */
 export function btcUnlockTx(
     signer: Signer,
     network: Network,
     lockTx: UnspentTx,
     lockScript: Buffer,
-    lockBlocks: number,
-    recipient: string,
+    blockSequence: number,
+    recipientAddress: string,
     fee: number, // satoshis
 ): Transaction {
     function idToHash(txid: string): Buffer {
@@ -252,11 +312,15 @@ export function btcUnlockTx(
         return bitcoinjs.address.toOutputScript(address, network);
     }
 
-    const sequence = bip68.encode({ blocks: lockBlocks });
+    if (blockSequence < 0) {
+        throw new Error('Block sequence cannot be less than zeo');
+    }
+
+    //const sequence = bip68.encode({ blocks: lockBlocks });
     const tx = new bitcoinjs.Transaction();
     tx.version = 2;
-    tx.addInput(idToHash(lockTx.txId), lockTx.vout, sequence);
-    tx.addOutput(toOutputScript(recipient), lockTx.value - fee);
+    tx.addInput(idToHash(lockTx.txId), lockTx.vout, blockSequence);
+    tx.addOutput(toOutputScript(recipientAddress), lockTx.value - fee);
 
     const hashType = bitcoinjs.Transaction.SIGHASH_ALL;
     const signatureHash = tx.hashForSignature(0, lockScript, hashType);
