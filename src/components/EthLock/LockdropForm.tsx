@@ -94,9 +94,7 @@ const LockdropForm = ({ token, onSubmit, description, dusty }: InputProps) => {
                         <IonCard className={classes.textBox}>
                             <IonCardContent>{parse(description)}</IonCardContent>
                         </IonCard>
-                    ) : (
-                        <></>
-                    )}
+                    ) : null}
 
                     <IonItem>
                         <IonLabel position="floating">Number of {token}</IonLabel>

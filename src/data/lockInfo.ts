@@ -56,6 +56,15 @@ export const btcDurations: OptionItem[] = [
 ];
 
 /**
+ * BTC lockdrop for Dusty network. The lock days are much shorter
+ */
+export const btcDustyDurations: OptionItem[] = [
+    { label: '3 Days', value: 3 },
+    { label: '10 Days', value: 10 },
+    { label: '30 Days', value: 30 },
+];
+
+/**
  * the token increase rate for lock durations
  */
 export const rates = [

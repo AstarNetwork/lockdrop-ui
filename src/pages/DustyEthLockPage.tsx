@@ -8,7 +8,7 @@ import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
-import { LockInput, LockEvent } from '../types/LockdropModels';
+import { LockInput, LockEvent, LockdropType } from '../types/LockdropModels';
 import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -122,30 +122,29 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
 
     handleSubmit = async (formInputVal: LockInput) => {
         this.setState({ isProcessing: true });
+        try {
+            const publicKey = await getPubKey(
+                this.state.web3,
+                `Sign this message to submit a lock request.
+                This action is required for the real-time lockdrop module`,
+            );
 
-        const publicKey = await getPubKey(
-            this.state.web3,
-            `Sign this message to submit a lock request.
-            This action is required for the real-time lockdrop module`,
-        );
+            const hash = await submitLockTx(formInputVal, this.state.accounts[0], this.state.contract);
 
-        const hash = await submitLockTx(formInputVal, this.state.accounts[0], this.state.contract, toast);
-        // create a real-time lockdrop claim request when there is a transaction hash
-        if (hash) {
-            try {
-                const lockParam = plasmUtils.createLockParam(
-                    '1',
-                    hash,
-                    publicKey,
-                    formInputVal.duration.toString(),
-                    Web3.utils.toWei(formInputVal.amount, 'ether').toString(),
-                );
-                const nonce = plasmUtils.claimPowNonce(lockParam.hash);
-                console.log('Your claim ID is ' + lockParam.hash.toString());
-                await plasmUtils.sendLockClaim(this.state.plasmApi, lockParam as any, nonce);
-            } catch (e) {
-                toast.error(e.toString());
-            }
+            const lockParam = plasmUtils.createLockParam(
+                LockdropType.Ethereum,
+                hash,
+                publicKey,
+                formInputVal.duration.toString(),
+                Web3.utils.toWei(formInputVal.amount, 'ether').toString(),
+            );
+            const nonce = plasmUtils.claimPowNonce(lockParam.hash);
+            console.log('Your claim ID is ' + lockParam.hash.toString());
+            // we need to wrap the struct into a any type due to type overloading issues
+            await plasmUtils.sendLockClaim(this.state.plasmApi, lockParam as any, nonce);
+            toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
+        } catch (e) {
+            toast.error(e.toString());
         }
 
         this.setState({ isProcessing: false });
@@ -166,34 +165,30 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                                         isOpen={this.state.isProcessing}
                                         message={'Processing Transaction...'}
                                     />
+                                ) : null}
+
+                                {this.isMainnet() ? (
+                                    <SectionCard maxWidth="lg">
+                                        <Typography variant="h2" component="h4" align="center">
+                                            Please access this page with a Ethereum testnet wallet
+                                        </Typography>
+                                    </SectionCard>
                                 ) : (
-                                    <></>
+                                    <>
+                                        <LockdropForm
+                                            token="ETH"
+                                            onSubmit={this.handleSubmit}
+                                            description={formInfo}
+                                            dusty
+                                        />
+
+                                        <LockedEthList
+                                            web3={this.state.web3}
+                                            accounts={this.state.accounts}
+                                            lockData={this.state.allLockEvents}
+                                        />
+                                    </>
                                 )}
-
-                                <>
-                                    {this.isMainnet() ? (
-                                        <SectionCard maxWidth="lg">
-                                            <Typography variant="h2" component="h4" align="center">
-                                                Please access this page with a Ethereum testnet wallet
-                                            </Typography>
-                                        </SectionCard>
-                                    ) : (
-                                        <>
-                                            <LockdropForm
-                                                token="ETH"
-                                                onSubmit={this.handleSubmit}
-                                                description={formInfo}
-                                                dusty
-                                            />
-
-                                            <LockedEthList
-                                                web3={this.state.web3}
-                                                accounts={this.state.accounts}
-                                                lockData={this.state.allLockEvents}
-                                            />
-                                        </>
-                                    )}
-                                </>
                             </>
                         )}
                     </>

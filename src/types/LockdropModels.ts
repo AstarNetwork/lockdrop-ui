@@ -54,6 +54,14 @@ export enum LockSeason {
     Third,
 }
 
+/**
+ * The lockdrop lock token type. This is used for the real-time lockdrop module
+ */
+export enum LockdropType {
+    Bitcoin,
+    Ethereum,
+}
+
 export interface LockEvent {
     eth: BN; // this uses BN.js instead of BigNumber.js because that is what eth helper uses
     duration: number;

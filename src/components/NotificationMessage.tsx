@@ -44,9 +44,7 @@ const NotificationMessage: React.FC<Props> = ({ message, gotoUrl, btnName }) => 
                         {btnName}
                     </Button>
                 </a>
-            ) : (
-                <></>
-            )}
+            ) : null}
         </div>
     );
 };

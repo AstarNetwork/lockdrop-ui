@@ -5,10 +5,11 @@ import { Hash, H256 } from '@polkadot/types/interfaces';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { u8aConcat } from '@polkadot/util';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
-import * as plasmDefinitions from '@plasm/types/interfaces/definitions';
+import * as plasmDefinitions from 'plasm-types/interfaces/definitions';
+import { LockdropType } from 'src/types/LockdropModels';
 
 /**
- * bitmask used for real-time lockdrop claim request Pow security
+ * Plasm network enum
  */
 export enum PlasmNetwork {
     Local,
@@ -94,14 +95,14 @@ export function lockDurationToRate(duration: number) {
 /**
  * Create a lock parameter object with the given lock information.
  * This is used for the real-time lockdrop module in Plasm for both ETH and BTC locks
- * @param network the lockdrop network (0: bitcoin, 1: ethereum)
+ * @param network the lockdrop network type
  * @param transactionHash the lock transaction hash in hex string
  * @param publicKey locker's public key in hex string
  * @param duration lock duration in Unix epoch (seconds)
  * @param value lock value in the minimum denominator (Wei or Satoshi)
  */
 export function createLockParam(
-    network: string,
+    network: LockdropType,
     transactionHash: string,
     publicKey: string,
     duration: string,
@@ -117,7 +118,7 @@ export function createLockParam(
             value: u128,
         },
         {
-            type: network,
+            type: network, // enum is converted to number
             transactionHash: transactionHash,
             publicKey: new U8aFixed(plasmTypeReg, publicKey, 264),
             duration: new u64(plasmTypeReg, duration),
@@ -144,7 +145,9 @@ export function getClaimId(lockdropParam: Struct) {
  * @param nonce nonce for PoW authentication with the node
  */
 export async function sendLockClaim(api: ApiPromise, lockParam: Struct, nonce: Uint8Array): Promise<Hash> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof api.tx.plasmLockdrop === 'undefined') {
+        throw new Error('Plasm node cannot find lockdrop module');
+    }
     const claimRequestTx = api.tx.plasmLockdrop.request(lockParam.toU8a(), nonce);
 
     const txHash = await claimRequestTx.send();

@@ -6,6 +6,7 @@ import * as polkadotUtil from '@polkadot/util';
 import { createPlasmInstance, PlasmNetwork, claimPowNonce, createLockParam } from '../helpers/plasmUtils';
 import { ApiPromise, Keyring } from '@polkadot/api';
 import BN from 'bn.js';
+import { LockdropType } from 'src/types/LockdropModels';
 
 const ethPubKey =
     'a27c1e09c563b1221636c7f69690a6e4d41e9c79d38518d00d5f6d3fb5d7a35407caff68e13fcd845646dc848e0649417b89acf1af435bd18f1ab2fcf20e2e61';
@@ -14,7 +15,7 @@ const plasmPubKey = '215a9a3e38ba3dcaf8120046e3f4b385b25016575ab8564973edfdb6452
 const sampleClaimId = '0xa94710e9db798a7d1e977b9f748ae802031eee2400a77600c526158892cd93d8';
 
 const sampleLock = createLockParam(
-    '1',
+    LockdropType.Ethereum,
     '0x6c4364b2f5a847ffc69f787a0894191b75aa278a95020f02e4753c76119324e0',
     '0x039360c9cbbede9ee771a55581d4a53cbcc4640953169549993a3b0e6ec7984061',
     '2592000',
@@ -22,7 +23,7 @@ const sampleLock = createLockParam(
 );
 
 const ropstenLock = createLockParam(
-    '1',
+    LockdropType.Ethereum,
     '0x896d1cbe07c0207b714d87bcde04a535fec049a62c4e279dc2a6b71108afa523',
     '0x039360c9cbbede9ee771a55581d4a53cbcc4640953169549993a3b0e6ec7984061',
     '2592000',
@@ -30,7 +31,7 @@ const ropstenLock = createLockParam(
 );
 
 const btcTestnet3Lock = createLockParam(
-    '0',
+    LockdropType.Bitcoin,
     '0xfd97647c573e2cde683992780c4bad2046ebbe9f90c1a44dfe4a152f3203016c',
     '0x02d9956c1c39d8c1e67e57de7310757b59102225839343f71d808ef5365b9803db',
     '2592000',

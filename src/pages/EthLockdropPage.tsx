@@ -143,8 +143,12 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
 
     handleSubmit = async (formInputVal: LockInput) => {
         this.setState({ isProcessing: true });
-
-        await submitLockTx(formInputVal, this.state.accounts[0], this.state.contract, toast);
+        try {
+            await submitLockTx(formInputVal, this.state.accounts[0], this.state.contract);
+            toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
+        } catch (e) {
+            toast.error(e.toString());
+        }
 
         this.setState({ isProcessing: false });
     };
@@ -164,9 +168,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                         isOpen={this.state.isProcessing}
                                         message={'Processing Transaction...'}
                                     />
-                                ) : (
-                                    <></>
-                                )}
+                                ) : null}
 
                                 <SectionCard maxWidth="lg">
                                     <LockdropCountdownPanel
@@ -182,14 +184,10 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                                 web3={this.state.web3}
                                             />
                                         </>
-                                    ) : (
-                                        <></>
-                                    )}
+                                    ) : null}
                                 </SectionCard>
                                 <AffiliationList lockData={this.state.allLockEvents} />
-                                {hasFirstLockdropEnded() ? (
-                                    <></>
-                                ) : (
+                                {hasFirstLockdropEnded() ? null : (
                                     <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
                                 )}
 

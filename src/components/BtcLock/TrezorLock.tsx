@@ -124,7 +124,7 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
 
     return (
         <div>
-            {p2shAddress ? <QrEncodedAddress address={p2shAddress} /> : <></>}
+            {p2shAddress ? <QrEncodedAddress address={p2shAddress} /> : null}
             <IonLoading isOpen={isLoading} message={'Waiting for Trezor to respond'} />
             <IonCard>
                 <IonCardHeader>

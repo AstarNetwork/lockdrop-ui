@@ -45,6 +45,10 @@ toast.configure({
     draggable: true,
 });
 
+/**
+ * Obtains lockdrop participant's public key by receiving raw signatures and BTC address
+ * @param networkType Bitcoin network to use
+ */
 const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
     const classes = useStyles();
     const [addressInput, setAddress] = useState('');
@@ -62,9 +66,6 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
 
     const onSubmit = () => {
         try {
-            // throws error for user input validations
-            // this is easier to look, but might need to refactor this later
-            console.log(getNetworkFromAddress(addressInput));
             if (getNetworkFromAddress(addressInput) !== networkType)
                 throw new Error('Please use a valid Bitcoin network address');
 
@@ -74,7 +75,6 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
             if (new Message(MESSAGE).verify(addressInput, sigInput)) {
                 const pub = getPublicKey(addressInput, sigInput, 'compressed');
                 setPublicKey(pub);
-                console.log('success!');
                 console.log('public key is: ' + pub + '\nbonus rate: ' + getTokenRate());
 
                 const p2sh = getLockP2SH(lockDuration, pub, networkType);
@@ -103,7 +103,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
 
     return (
         <div>
-            {p2shAddress ? <QrEncodedAddress address={p2shAddress} /> : <></>}
+            {p2shAddress ? <QrEncodedAddress address={p2shAddress} /> : null}
             <IonCard>
                 <IonCardHeader>
                     <IonCardSubtitle>

@@ -52,6 +52,7 @@ export default function DustyBtcLockPage() {
         if (startedTrezor) {
             setWalletType(BtcWalletType.Trezor);
         } else {
+            // create event listener to log device events
             TrezorConnect.on('DEVICE_EVENT', event => {
                 if (event.type === DEVICE.CONNECT) {
                     console.log('connected to Trezor device');
@@ -59,7 +60,7 @@ export default function DustyBtcLockPage() {
                     console.log('disconnected to Trezor device');
                 }
             });
-
+            // initialize trezor instance
             TrezorConnect.init({
                 manifest: {
                     email: 'developers@stake.co.jp',
@@ -81,12 +82,12 @@ export default function DustyBtcLockPage() {
     };
 
     const handleLedger = () => {
+        //todo: implement this
         console.log('logging in to Ledger');
         setWalletType(BtcWalletType.Ledger);
     };
 
     const handleRawTx = () => {
-        console.log('logging in to raw transaction');
         setWalletType(BtcWalletType.Raw);
     };
 
@@ -94,7 +95,7 @@ export default function DustyBtcLockPage() {
         switch (walletType) {
             default:
             case BtcWalletType.None:
-                return <></>;
+                return null;
             case BtcWalletType.Raw:
                 return <BtcRawSignature networkType={bitcoinjs.networks.testnet} />;
             case BtcWalletType.Trezor:
@@ -121,7 +122,6 @@ export default function DustyBtcLockPage() {
                                     target="_blank"
                                 >
                                     <img src={quantstampLogo} alt="" className={classes.quantLogo} />
-                                    {/*todo: This is a placeholder auditor, please change this to the actual one after the audit*/}
                                 </Link>
                             </Typography>
                         </div>

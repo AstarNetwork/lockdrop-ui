@@ -79,7 +79,6 @@ export async function getTransactionEndpoint(txHash: string, network: 'main' | '
  * @param network bitcoin network type (bitcoinjs-lib)
  */
 export function validateBtcAddress(address: string, network?: bitcoinjs.networks.Network) {
-    // Bitcoin address prefixes
     try {
         bitcoinjs.address.toOutputScript(address, network);
         return true;
