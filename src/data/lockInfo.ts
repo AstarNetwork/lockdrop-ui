@@ -39,40 +39,50 @@ export const lockdropContracts = {
 /**
  * used to define the content of the dropdown menu
  */
-export const durations: OptionItem[] = [
-    { label: '30 Days', value: 30 },
-    { label: '100 Days', value: 100 },
-    { label: '300 Days', value: 300 },
-    { label: '1000 Days', value: 1000 },
+export const ethDurations: OptionItem[] = [
+    { label: '30 Days', value: 30, rate: 24 },
+    { label: '100 Days', value: 100, rate: 100 },
+    { label: '300 Days', value: 300, rate: 360 },
+    { label: '1000 Days', value: 1000, rate: 1600 },
 ];
 
 /**
  * BTC lockdrop does not support 1000 days lock due to CSV lock scheme
  */
 export const btcDurations: OptionItem[] = [
-    { label: '30 Days', value: 30 },
-    { label: '100 Days', value: 100 },
-    { label: '300 Days', value: 300 },
+    { label: '30 Days', value: 30, rate: 24 },
+    { label: '100 Days', value: 100, rate: 100 },
+    { label: '300 Days', value: 300, rate: 360 },
 ];
 
 /**
  * BTC lockdrop for Dusty network. The lock days are much shorter
  */
 export const btcDustyDurations: OptionItem[] = [
-    { label: '3 Days', value: 3 },
-    { label: '10 Days', value: 10 },
-    { label: '30 Days', value: 30 },
+    { label: '3 Days', value: 3, rate: 24 },
+    { label: '10 Days', value: 10, rate: 100 },
+    { label: '30 Days', value: 30, rate: 360 },
 ];
 
-/**
- * the token increase rate for lock durations
- */
-export const rates = [
-    { key: 30, value: 24 },
-    { key: 100, value: 100 },
-    { key: 300, value: 360 },
-    { key: 1000, value: 1600 },
-];
+// /**
+//  * the token increase rate for lock durations
+//  */
+// export const rates = [
+//     { key: 30, value: 24 },
+//     { key: 100, value: 100 },
+//     { key: 300, value: 360 },
+//     { key: 1000, value: 1600 },
+// ];
+
+// /**
+//  * the token increase rate for Dusty lock durations
+//  */
+// export const dustyRates = [
+//     { key: 3, value: 24 },
+//     { key: 10, value: 100 },
+//     { key: 30, value: 360 },
+//     { key: 100, value: 1600 },
+// ];
 
 export const firstLock: LockMenu[] = [
     {
@@ -110,7 +120,6 @@ export const dustyLock: LockMenu[] = [
         icon: ethLogo,
         startDate: firstLockdropStart,
         endDate: firstLockdropEnd,
-        disabled: true,
     },
     {
         title: 'BTC Lock',
@@ -118,6 +127,5 @@ export const dustyLock: LockMenu[] = [
         icon: btcLogo,
         startDate: firstLockdropStart,
         endDate: firstLockdropEnd,
-        disabled: true,
     },
 ];

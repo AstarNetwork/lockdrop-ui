@@ -13,7 +13,7 @@ import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SectionCard from '../components/SectionCard';
-import LockdropCountdownPanel from '../components/LockdropCountdownPanel';
+import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
 import { firstLockdropEnd, firstLockdropStart } from '../data/lockInfo';
 import moment from 'moment';
 import LockdropResult from '../components/EthLock/LockdropResult';

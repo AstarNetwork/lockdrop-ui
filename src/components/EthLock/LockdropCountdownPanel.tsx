@@ -4,9 +4,9 @@ import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
-import { TimeFormat, LockEvent } from '../types/LockdropModels';
+import { TimeFormat, LockEvent } from '../../types/LockdropModels';
 import moment, { Moment, duration } from 'moment';
-import { getTotalLockVal } from '../helpers/lockdrop/EthereumLockdrop';
+import { getTotalLockVal } from '../../helpers/lockdrop/EthereumLockdrop';
 
 interface Props {
     startTime: Moment;
@@ -71,8 +71,8 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData 
 
     const getLockValue = async (): Promise<void> => {
         try {
-            const totalLockVal = getTotalLockVal(lockData);
-            setTotalLockVal(totalLockVal);
+            const _totalLockVal = getTotalLockVal(lockData);
+            setTotalLockVal(_totalLockVal);
         } catch (err) {
             console.error(err);
         }
@@ -99,7 +99,7 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData 
                             <Grid item>
                                 {lockState === LockState.notStart ? (
                                     <Typography variant="h4" component="h2">
-                                        Main Network Lockdrop Starting in:
+                                        Lockdrop Starting in:
                                     </Typography>
                                 ) : (
                                     <Typography variant="h4" component="h2">
@@ -133,7 +133,7 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData 
             <>
                 <PanelWrapper>
                     <Typography variant="h2" component="h1" align="center">
-                        Main Network Lockdrop has ended
+                        Lockdrop has ended
                     </Typography>
                     <Typography variant="h3" component="h3" align="center">
                         Total Locked Value: {totalLockVal} ETH

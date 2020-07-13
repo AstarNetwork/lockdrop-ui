@@ -287,6 +287,23 @@ export function getLockP2SH(lockDays: number, publicKey: string, network: bitcoi
 }
 
 /**
+ * creates a P2SH instance that locks the sent token for the given duration for Dusty network.
+ * the locked tokens can only be claimed by the provided public key.
+ * Unlike the mainnet lockdrop, Dusty will have a shorter lock period
+ * @param lockDays the lock duration in days
+ * @param publicKey public key of the locker. This can be both compressed or uncompressed
+ * @param network bitcoin network the script will generate for
+ */
+export function getDustyLockP2SH(lockDays: number, publicKey: string, network: bitcoinjs.Network) {
+    return bitcoinjs.payments.p2sh({
+        network: network,
+        redeem: {
+            output: btcLockScript(publicKey, daysToBlockSequence(lockDays), network),
+        },
+    });
+}
+
+/**
  * creates a lock redeem UTXO
  * @param signer the signer for signing the transaction hash
  * @param network network type (bitcoinjs-lib)

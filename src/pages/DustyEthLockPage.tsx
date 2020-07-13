@@ -75,17 +75,21 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
 
     // get and set the web3 state when the component is mounted
     componentDidMount = async () => {
-        const web3State = await connectWeb3('secondLock');
-        this.setState(web3State);
-        const plasmNode = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Dusty);
-        this.setState({ plasmApi: plasmNode });
+        try {
+            const web3State = await connectWeb3('secondLock');
+            this.setState(web3State);
+            const plasmNode = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Dusty);
+            this.setState({ plasmApi: plasmNode });
 
-        // checks if account has changed in MetaMask
-        if ((window as any).ethereum.on) {
-            (window as any).ethereum.on('accountsChanged', this.handleAccountChange);
+            // checks if account has changed in MetaMask
+            if ((window as any).ethereum.on) {
+                (window as any).ethereum.on('accountsChanged', this.handleAccountChange);
+            }
+
+            this.setState({ networkType: await this.state.web3.eth.net.getNetworkType() });
+        } catch (e) {
+            this.setState({ error: e });
         }
-
-        this.setState({ networkType: await this.state.web3.eth.net.getNetworkType() });
 
         this.timerInterval = setInterval(() => {
             this.getLockData().then(() => {
@@ -156,6 +160,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                 <Navbar />
                 <IonContent>
                     <>
+                        {this.state.error ? <p>{this.state.error}</p> : null}
                         {this.state.isLoading ? (
                             <IonLoading isOpen={true} message={'Connecting to Wallet and fetching chain data...'} />
                         ) : (

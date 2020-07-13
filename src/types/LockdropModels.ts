@@ -83,7 +83,8 @@ export interface OptionData {
 // option item type is used to provide the data for dropdown items
 export interface OptionItem {
     label: string; // the dropdown display label
-    value: number | string; // dropdown select return value
+    value: number; // dropdown select return value
+    rate: number;
 }
 
 /**
