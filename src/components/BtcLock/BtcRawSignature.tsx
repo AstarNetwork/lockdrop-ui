@@ -71,10 +71,11 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
 
             if (!lockDuration || !sigInput || !addressInput) throw new Error('Please fill in all the inputs');
 
-            console.log('verifying user:' + addressInput + '\nwith: ' + sigInput);
+            //console.log('verifying user:' + addressInput + '\nwith: ' + sigInput);
             if (new Message(MESSAGE).verify(addressInput, sigInput)) {
                 const pub = getPublicKey(addressInput, sigInput, 'compressed');
                 setPublicKey(pub);
+
                 console.log('public key is: ' + pub + '\nbonus rate: ' + getTokenRate());
 
                 const p2sh = getLockP2SH(lockDuration, pub, networkType);
@@ -84,6 +85,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                 } else {
                     toast.error('cannot create P2SH address!');
                 }
+                toast.success('Successfully created lock script');
             } else {
                 toast.error('cannot verify signature!');
             }
