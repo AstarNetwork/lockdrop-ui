@@ -6,7 +6,7 @@ import * as polkadotUtil from '@polkadot/util-crypto';
 import { u8aConcat } from '@polkadot/util';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
 import * as plasmDefinitions from 'plasm-types/interfaces/definitions';
-import { LockdropType } from 'src/types/LockdropModels';
+import { LockdropType, Claim, Lockdrop } from 'src/types/LockdropModels';
 
 /**
  * Plasm network enum
@@ -148,11 +148,72 @@ export async function sendLockClaim(api: ApiPromise, lockParam: Struct, nonce: U
     if (typeof api.tx.plasmLockdrop === 'undefined') {
         throw new Error('Plasm node cannot find lockdrop module');
     }
+
     const claimRequestTx = api.tx.plasmLockdrop.request(lockParam.toU8a(), nonce);
 
     const txHash = await claimRequestTx.send();
 
     return txHash;
+}
+
+/**
+ * Plasm network real-time lockdrop claim data query wrapper.
+ * This will query the node with the given claim ID and wrap the data to a readable interface.
+ * This function will return undefined if the claim data does not exists on the chain.
+ * @param api Polkadot-js API instance
+ * @param claimId real-time lockdrop claim ID
+ */
+export async function getClaimStatus(api: ApiPromise, claimId: Uint8Array | H256) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const claim = (await api.query.plasmLockdrop.claims(claimId)) as any;
+
+    // wrap block query data to TypeScript interface
+    const data: Claim = {
+        params: {
+            // we use snake case here because this data is directly parsed from the node
+            type: claim.get('params').get('type'),
+            transactionHash: claim.get('params').get('transaction_hash'),
+            publicKey: claim.get('params').get('public_key'),
+            duration: claim.get('params').get('duration'),
+            value: claim.get('params').get('value'),
+        },
+        approve: claim.get('approve'),
+        decline: claim.get('decline'),
+        amount: claim.get('amount'),
+        complete: claim.get('complete'),
+    };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for (const [_key, value] of Object.entries(data.params)) {
+        // check if data exists on chain
+        if (
+            typeof value === 'undefined' ||
+            typeof value === null ||
+            value.toHex() === '0x000000000000000000000000000000000000000000000000000000000000000000' || // pub key
+            value.toHex() === '0x0000000000000000000000000000000000000000000000000000000000000000' // tx hash
+        ) {
+            return undefined;
+        }
+    }
+
+    return data;
+}
+
+/**
+ * converts lockdrop parameter into a Lockdrop type
+ * @param lockdropParam lockdrop parameter type in polakdot-js structure
+ */
+export function structToLockdrop(lockdropParam: Struct) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const claim = lockdropParam as any;
+    const param: Lockdrop = {
+        type: claim.get('type'),
+        transactionHash: claim.get('transactionHash'),
+        publicKey: claim.get('publicKey'),
+        duration: claim.get('duration'),
+        value: claim.get('value'),
+    };
+
+    return param;
 }
 
 /**

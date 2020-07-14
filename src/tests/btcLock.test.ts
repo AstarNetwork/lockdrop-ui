@@ -305,6 +305,7 @@ describe('BTC lock script tests', () => {
                 vout: 0,
                 value: VALUE,
             });
+            console.log('Transaction hash:\n' + tx.toHex());
         },
         200 * 1000,
     ); // extend jest async resolve timeout

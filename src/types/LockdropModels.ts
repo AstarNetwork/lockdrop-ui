@@ -1,6 +1,6 @@
 import BN from 'bn.js';
 import { Moment } from 'moment';
-import { u8, u64, u128, U8aFixed } from '@polkadot/types';
+import { u64, u128, U8aFixed } from '@polkadot/types';
 import { H256 } from '@polkadot/types/interfaces';
 
 /**
@@ -92,7 +92,7 @@ export interface OptionItem {
  * this data is used to communicate with Substrate
  */
 export interface Lockdrop {
-    type: u8; //u8
+    type: LockdropType;
     transactionHash: H256; //H256
     publicKey: U8aFixed; // [u8; 33]
     duration: u64; // u64

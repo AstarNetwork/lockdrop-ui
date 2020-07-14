@@ -138,6 +138,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             this.setState({ allLockEvents: allLocks });
         } catch (error) {
             this.setState({ error });
+            console.log(error);
         }
     };
 
@@ -148,6 +149,7 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
             toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
         } catch (e) {
             toast.error(e.toString());
+            console.log(e);
         }
 
         this.setState({ isProcessing: false });

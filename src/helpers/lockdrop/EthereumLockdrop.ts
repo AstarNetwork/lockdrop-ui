@@ -57,23 +57,19 @@ export function generatePlmAddress(ethPubKey: string) {
  * @param message an optional message that the user should sign
  */
 export async function getPubKey(web3: Web3, message?: string) {
+    // default message
     let msg = 'Please Sign this message to generate Plasm Network address';
     // change message if the function provides one
     if (message) {
         msg = message;
     }
     const hash = web3.eth.accounts.hashMessage(msg);
-    try {
-        const addresses = await web3.eth.getAccounts();
-        // the password parameter is only used for specific wallets (most wallets will prompt the user to provide it)
-        const sig = '0x' + (await web3.eth.personal.sign(msg, addresses[0], 'SecureP4ssW0rd')).slice(2);
-        const res = fromRpcSig(sig);
+    const addresses = await web3.eth.getAccounts();
+    // the password parameter is only used for specific wallets (most wallets will prompt the user to provide it)
+    const sig = '0x' + (await web3.eth.personal.sign(msg, addresses[0], 'SecureP4ssW0rd')).slice(2);
+    const res = fromRpcSig(sig);
 
-        return bufferToHex(ecrecover(toBuffer(hash), res.v, res.r, res.s));
-    } catch (error) {
-        console.log(error);
-        return '0x0';
-    }
+    return bufferToHex(ecrecover(toBuffer(hash), res.v, res.r, res.s));
 }
 
 /**
