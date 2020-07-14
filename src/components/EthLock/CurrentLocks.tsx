@@ -17,6 +17,7 @@ import {
     LinearProgress,
     createStyles,
     makeStyles,
+    Tooltip,
 } from '@material-ui/core';
 import LockIcon from '@material-ui/icons/Lock';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
@@ -268,14 +269,16 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
                             {unlocked ? (
                                 <LockOpenIcon color="disabled" />
                             ) : canUnlock ? (
-                                <IconButton
-                                    edge="end"
-                                    aria-label="unlock"
-                                    onClick={() => handleClick()}
-                                    color="primary"
-                                >
-                                    <LockOpenIcon />
-                                </IconButton>
+                                <Tooltip title="Click to unlock" aria-label="unlock">
+                                    <IconButton
+                                        edge="end"
+                                        aria-label="unlock"
+                                        onClick={() => handleClick()}
+                                        color="primary"
+                                    >
+                                        <LockOpenIcon />
+                                    </IconButton>
+                                </Tooltip>
                             ) : (
                                 <LockIcon color="inherit" />
                             )}
