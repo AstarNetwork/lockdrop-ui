@@ -92,7 +92,7 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi }) => {
         plasmUtils.getClaimStatus(plasmApi, claimId).then(i => {
             setClaimData(i);
         });
-    }, [claimId]);
+    }, [claimId, plasmApi]);
 
     return (
         <div>

@@ -187,7 +187,6 @@ export async function getClaimStatus(api: ApiPromise, claimId: Uint8Array | H256
         // check if data exists on chain
         if (
             typeof value === 'undefined' ||
-            typeof value === null ||
             value.toHex() === '0x000000000000000000000000000000000000000000000000000000000000000000' || // pub key
             value.toHex() === '0x0000000000000000000000000000000000000000000000000000000000000000' // tx hash
         ) {
