@@ -245,6 +245,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                                                     claimParams={this.state.lockParams}
                                                     plasmApi={this.state.plasmApi}
                                                     networkType="ETH"
+                                                    plasmNetwork="Dusty"
                                                 />
                                             ) : (
                                                 <>

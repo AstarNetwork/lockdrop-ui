@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { ApiPromise } from '@polkadot/api';
 import * as plasmUtils from '../helpers/plasmUtils';
+import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
 import { Claim, Lockdrop } from 'src/types/LockdropModels';
 import {
     List,
@@ -20,6 +21,7 @@ import {
     CircularProgress,
 } from '@material-ui/core';
 import plasmIcon from '../resources/plasm-icon.svg';
+import dustyIcon from '../resources/dusty-icon.svg';
 import Web3Utils from 'web3-utils';
 import SendIcon from '@material-ui/icons/Send';
 import CheckIcon from '@material-ui/icons/Check';
@@ -31,6 +33,7 @@ interface Props {
     claimParams?: Lockdrop[];
     plasmApi: ApiPromise;
     networkType: 'ETH' | 'BTC';
+    plasmNetwork: 'Plasm' | 'Dusty';
 }
 
 const useStyles = makeStyles(theme =>
@@ -77,12 +80,12 @@ const useStyles = makeStyles(theme =>
     }),
 );
 
-const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi }) => {
+const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'Plasm', networkType }) => {
     const classes = useStyles();
     return (
         <div>
             <Typography variant="h5" component="h2" align="center">
-                PLM locked
+                {plasmNetwork === 'Plasm' ? 'PLM' : 'PLD'} Claimable
             </Typography>
             <List className={classes.listRoot} subheader={<li />}>
                 <li className={classes.listSection}>
@@ -94,7 +97,13 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi }) => {
 
                                 {claimParams.map(e => (
                                     <>
-                                        <ClaimItem key={e.transactionHash.toHex()} lockParam={e} plasmApi={plasmApi} />
+                                        <ClaimItem
+                                            key={e.transactionHash.toHex()}
+                                            lockParam={e}
+                                            plasmApi={plasmApi}
+                                            plasmNetwork={plasmNetwork}
+                                            networkType={networkType}
+                                        />
                                     </>
                                 ))}
                             </>
@@ -120,8 +129,10 @@ export default ClaimStatus;
 interface ItemProps {
     lockParam: Lockdrop;
     plasmApi: ApiPromise;
+    plasmNetwork: 'Plasm' | 'Dusty';
+    networkType: 'BTC' | 'ETH';
 }
-const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi }) => {
+const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, networkType }) => {
     const classes = useStyles();
     const [claimData, setClaimData] = useState<Claim>();
     const [isSending, setSending] = useState(false);
@@ -174,7 +185,7 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi }) => {
             <ListItem>
                 <ListItemIcon>
                     <Icon>
-                        <img src={plasmIcon} alt="" />
+                        {plasmNetwork === 'Plasm' ? <img src={plasmIcon} alt="" /> : <img src={dustyIcon} alt="" />}
                     </Icon>
                 </ListItemIcon>
                 <ListItemText>
@@ -182,15 +193,18 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi }) => {
                         Transaction Hash: {truncateString(lockParam.transactionHash.toHex(), 6)}
                     </Typography>
                     <Typography component="h5" variant="h6" className={classes.inline} color="textPrimary">
-                        Locked {Web3Utils.fromWei(new BN(lockParam.value.toString(10)), 'ether')} ETH
+                        Locked {Web3Utils.fromWei(new BN(lockParam.value.toString()), 'ether')} ETH
+                        {networkType === 'ETH'
+                            ? `${Web3Utils.fromWei(new BN(lockParam.value.toString()), 'ether')} ETH`
+                            : `${btcLockdrop.satoshiToBitcoin(lockParam.value.toString())}`}
                     </Typography>
 
                     {claimData && claimData.complete && (
                         <>
                             <br />
                             <Typography component="h5" variant="h6" className={classes.inline} color="textPrimary">
-                                Receiving {plasmUtils.femtoToPlm(new BigNumber(claimData.amount.toString())).toFixed()}{' '}
-                                PLD
+                                Receiving {plasmUtils.femtoToPlm(new BigNumber(claimData.amount.toString())).toFixed()}
+                                {plasmNetwork === 'Plasm' ? 'PLM' : 'PLD'}
                             </Typography>
                         </>
                     )}
