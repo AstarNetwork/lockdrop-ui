@@ -14,7 +14,6 @@ import Web3Utils from 'web3-utils';
 import EthCrypto from 'eth-crypto';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { ecrecover, fromRpcSig, toBuffer, bufferToHex } from 'ethereumjs-util';
-import { Toast } from 'react-toastify';
 import * as lockInfo from '../../data/lockInfo';
 
 // todo: reduce client-side operations and replace it with data from the plasm node
@@ -58,23 +57,19 @@ export function generatePlmAddress(ethPubKey: string) {
  * @param message an optional message that the user should sign
  */
 export async function getPubKey(web3: Web3, message?: string) {
+    // default message
     let msg = 'Please Sign this message to generate Plasm Network address';
     // change message if the function provides one
     if (message) {
         msg = message;
     }
     const hash = web3.eth.accounts.hashMessage(msg);
-    try {
-        const addresses = await web3.eth.getAccounts();
-        // the password parameter is only used for specific wallets (most wallets will prompt the user to provide it)
-        const sig = '0x' + (await web3.eth.personal.sign(msg, addresses[0], 'SecureP4ssW0rd')).slice(2);
-        const res = fromRpcSig(sig);
+    const addresses = await web3.eth.getAccounts();
+    // the password parameter is only used for specific wallets (most wallets will prompt the user to provide it)
+    const sig = '0x' + (await web3.eth.personal.sign(msg, addresses[0], 'SecureP4ssW0rd')).slice(2);
+    const res = fromRpcSig(sig);
 
-        return bufferToHex(ecrecover(toBuffer(hash), res.v, res.r, res.s));
-    } catch (error) {
-        console.log(error);
-        return '0x0';
-    }
+    return bufferToHex(ecrecover(toBuffer(hash), res.v, res.r, res.s));
 }
 
 /**
@@ -283,33 +278,15 @@ export async function connectWeb3(lockSeason: 'firstLock' | 'secondLock' | 'thir
             const lockdropAbi = Lockdrop.abi as Web3Utils.AbiItem[];
 
             // Get the contract instance.
-            const networkId = await web3.eth.net.getId();
+            //const networkId = await web3.eth.net.getId();
 
-            const deployedNetwork = (Lockdrop.networks as any)[networkId];
+            //const deployedNetwork = (Lockdrop.networks as any)[networkId];
 
             const networkType = await web3.eth.net.getNetworkType();
-            const contractAddress = lockInfo.lockdropContracts[lockSeason];
+            const contractAddress = (lockInfo.lockdropContracts[lockSeason] as any)[networkType];
 
             // create an empty contract instance first
-            const instance = new web3.eth.Contract(
-                lockdropAbi,
-                deployedNetwork && (contractAddress as any)[networkType],
-            );
-
-            // switch (lockSeason) {
-            //     case 'firstLock':
-            //         instance = new web3.eth.Contract(
-            //             lockdropAbi,
-            //             deployedNetwork && deployedNetwork.address,
-            //         ) as Contract;
-            //         break;
-            //     case 'secondLock':
-            //         instance = new web3.eth.Contract(
-            //             lockdropAbi,
-            //             deployedNetwork && deployedNetwork.address,
-            //         ) as Contract;
-            //         break;
-            // }
+            const instance = new web3.eth.Contract(lockdropAbi, contractAddress !== '0x' && contractAddress);
 
             return {
                 web3: web3,
@@ -331,44 +308,43 @@ export async function connectWeb3(lockSeason: 'firstLock' | 'secondLock' | 'thir
 }
 
 /**
- * validate and create a transaction to the lock contract with the given parameter
+ * validate and create a transaction to the lock contract with the given parameter.
+ * This will return the transaction hash
  * @param txInput the lock parameter for the contract
  * @param address the address of the locker
  * @param contract smart contract instance used to invoke the contract method
- * @param messageToast message toast used to send feedback to the front end
  */
-export async function submitLockTx(txInput: LockInput, address: string, contract: Contract, messageToast: Toast) {
+export async function submitLockTx(txInput: LockInput, address: string, contract: Contract) {
     // checks user input
-    if (txInput.amount > new BN(0) && txInput.duration) {
-        //console.log(formInputVal);
-        // return a default address if user input is empty
-        const introducer = defaultAffiliation(txInput.affiliation).toLowerCase();
-        try {
-            // check user input
-            if (introducer === address) {
-                messageToast.error('You cannot affiliate yourself');
-            } else if (introducer && !Web3.utils.isAddress(introducer)) {
-                messageToast.error('Please input a valid Ethereum address');
-            } else if (!isValidIntroducerAddress(introducer)) {
-                messageToast.error('The given introducer is not registered in the affiliation program!');
-            } else {
-                // convert user input to Wei
-                const amountToSend = Web3.utils.toWei(txInput.amount, 'ether');
-
-                // communicate with the smart contract
-                await contract.methods.lock(txInput.duration, introducer).send({
-                    from: address,
-                    value: amountToSend,
-                });
-
-                messageToast.success(`Successfully locked ${txInput.amount} ETH for ${txInput.duration} days!`);
-                return true;
-            }
-        } catch (error) {
-            messageToast.error('error!\n' + error.message);
-        }
-    } else {
-        messageToast.error('You are missing an input!');
+    if (txInput.amount <= new BN(0) || txInput.duration <= 0) {
+        throw new Error('You are missing an input!');
     }
-    return false;
+    //console.log(formInputVal);
+    // return a default address if user input is empty
+    const introducer = defaultAffiliation(txInput.affiliation).toLowerCase();
+    // check user input
+    if (introducer === address) {
+        throw new Error('You cannot affiliate yourself');
+    }
+    if (introducer && !Web3.utils.isAddress(introducer)) {
+        throw new Error('Please input a valid Ethereum address');
+    }
+    if (!isValidIntroducerAddress(introducer)) {
+        throw new Error('The given introducer is not registered in the affiliation program!');
+    }
+
+    // convert user input to Wei
+    const amountToSend = Web3.utils.toWei(txInput.amount, 'ether');
+    let hash = '';
+    // communicate with the smart contract
+    await contract.methods
+        .lock(txInput.duration, introducer)
+        .send({
+            from: address,
+            value: amountToSend,
+        })
+        .on('transactionHash', (res: any) => {
+            hash = res;
+        });
+    return hash;
 }

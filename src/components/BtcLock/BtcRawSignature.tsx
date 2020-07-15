@@ -15,15 +15,16 @@ import {
     IonChip,
 } from '@ionic/react';
 import { makeStyles, createStyles } from '@material-ui/core';
-import { MESSAGE, getPublicKey, getLockP2SH, getNetworkFromAddress } from '../../helpers/lockdrop/BitcoinLockdrop';
+import { MESSAGE, getPublicKey, getNetworkFromAddress, getDustyLockP2SH } from '../../helpers/lockdrop/BitcoinLockdrop';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { DropdownOption } from '../DropdownOption';
-import { btcDurations, rates } from '../../data/lockInfo';
+import { btcDustyDurations } from '../../data/lockInfo';
 import { Message } from 'bitcore-lib';
 import QrEncodedAddress from './QrEncodedAddress';
 import CopyMessageBox from '../CopyMessageBox';
 import { Network } from 'bitcoinjs-lib';
+import { OptionItem } from 'src/types/LockdropModels';
 interface Props {
     networkType: Network;
 }
@@ -45,26 +46,20 @@ toast.configure({
     draggable: true,
 });
 
+/**
+ * Obtains lockdrop participant's public key by receiving raw signatures and BTC address
+ * @param networkType Bitcoin network to use
+ */
 const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
     const classes = useStyles();
     const [addressInput, setAddress] = useState('');
     const [sigInput, setSig] = useState('');
-    const [lockDuration, setDuration] = useState(0);
+    const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
     const [p2shAddress, setP2sh] = useState('');
     const [publicKey, setPublicKey] = useState('');
 
-    const getTokenRate = () => {
-        if (lockDuration) {
-            return rates.filter(x => x.key === lockDuration)[0].value;
-        }
-        return 0;
-    };
-
     const onSubmit = () => {
         try {
-            // throws error for user input validations
-            // this is easier to look, but might need to refactor this later
-            //console.log(getNetworkFromAddress(addressInput));
             if (getNetworkFromAddress(addressInput) !== networkType)
                 throw new Error('Please use a valid Bitcoin network address');
 
@@ -74,10 +69,8 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
             if (new Message(MESSAGE).verify(addressInput, sigInput)) {
                 const pub = getPublicKey(addressInput, sigInput, 'compressed');
                 setPublicKey(pub);
-                console.log('success!');
-                console.log('public key is: ' + pub + '\nbonus rate: ' + getTokenRate());
 
-                const p2sh = getLockP2SH(lockDuration, pub, networkType);
+                const p2sh = getDustyLockP2SH(lockDuration.value, pub, networkType);
 
                 if (typeof p2sh.address === 'string') {
                     setP2sh(p2sh.address);
@@ -96,7 +89,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
 
     useEffect(() => {
         if (publicKey && p2shAddress) {
-            const lockScript = getLockP2SH(lockDuration, publicKey, networkType);
+            const lockScript = getDustyLockP2SH(lockDuration.value, publicKey, networkType);
 
             setP2sh(lockScript.address!);
         }
@@ -104,7 +97,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
 
     return (
         <div>
-            {p2shAddress ? <QrEncodedAddress address={p2shAddress} /> : <></>}
+            {p2shAddress ? <QrEncodedAddress address={p2shAddress} /> : null}
             <IonCard>
                 <IonCardHeader>
                     <IonCardSubtitle>
@@ -136,14 +129,20 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                     <IonLabel position="stacked">Lock Duration</IonLabel>
                     <IonItem>
                         <DropdownOption
-                            dataSets={btcDurations}
+                            dataSets={btcDustyDurations}
                             onChoose={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                setDuration((e.target.value as unknown) as number)
+                                setDuration(
+                                    btcDustyDurations.filter(
+                                        i => i.value === ((e.target.value as unknown) as number),
+                                    )[0],
+                                )
                             }
                         ></DropdownOption>
                         <IonChip>
                             <IonLabel>
-                                {lockDuration ? 'The rate is ' + getTokenRate() + 'x' : 'Please choose the duration'}
+                                {lockDuration.value
+                                    ? 'The rate is ' + lockDuration.rate + 'x'
+                                    : 'Please choose the duration'}
                             </IonLabel>
                         </IonChip>
                     </IonItem>

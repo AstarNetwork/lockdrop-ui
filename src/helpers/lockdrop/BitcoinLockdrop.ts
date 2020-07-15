@@ -79,7 +79,6 @@ export async function getTransactionEndpoint(txHash: string, network: 'main' | '
  * @param network bitcoin network type (bitcoinjs-lib)
  */
 export function validateBtcAddress(address: string, network?: bitcoinjs.networks.Network) {
-    // Bitcoin address prefixes
     try {
         bitcoinjs.address.toOutputScript(address, network);
         return true;
@@ -279,6 +278,23 @@ export function getLockP2SH(lockDays: number, publicKey: string, network: bitcoi
         throw new Error('Lock duration must be between 30 days to 300 days');
     }
 
+    return bitcoinjs.payments.p2sh({
+        network: network,
+        redeem: {
+            output: btcLockScript(publicKey, daysToBlockSequence(lockDays), network),
+        },
+    });
+}
+
+/**
+ * creates a P2SH instance that locks the sent token for the given duration for Dusty network.
+ * the locked tokens can only be claimed by the provided public key.
+ * Unlike the mainnet lockdrop, Dusty will have a shorter lock period
+ * @param lockDays the lock duration in days
+ * @param publicKey public key of the locker. This can be both compressed or uncompressed
+ * @param network bitcoin network the script will generate for
+ */
+export function getDustyLockP2SH(lockDays: number, publicKey: string, network: bitcoinjs.Network) {
     return bitcoinjs.payments.p2sh({
         network: network,
         redeem: {

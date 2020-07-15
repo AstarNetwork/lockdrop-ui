@@ -1,6 +1,6 @@
 import BN from 'bn.js';
 import { Moment } from 'moment';
-import { u8, u64, u128, U8aFixed } from '@polkadot/types';
+import { u64, u128, U8aFixed } from '@polkadot/types';
 import { H256 } from '@polkadot/types/interfaces';
 
 /**
@@ -54,6 +54,14 @@ export enum LockSeason {
     Third,
 }
 
+/**
+ * The lockdrop lock token type. This is used for the real-time lockdrop module
+ */
+export enum LockdropType {
+    Bitcoin,
+    Ethereum,
+}
+
 export interface LockEvent {
     eth: BN; // this uses BN.js instead of BigNumber.js because that is what eth helper uses
     duration: number;
@@ -75,7 +83,8 @@ export interface OptionData {
 // option item type is used to provide the data for dropdown items
 export interface OptionItem {
     label: string; // the dropdown display label
-    value: number | string; // dropdown select return value
+    value: number; // dropdown select return value
+    rate: number;
 }
 
 /**
@@ -83,7 +92,7 @@ export interface OptionItem {
  * this data is used to communicate with Substrate
  */
 export interface Lockdrop {
-    type: u8; //u8
+    type: LockdropType;
     transactionHash: H256; //H256
     publicKey: U8aFixed; // [u8; 33]
     duration: u64; // u64

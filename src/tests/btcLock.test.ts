@@ -202,6 +202,16 @@ describe('BTC lock script tests', () => {
         expect(() => btcLockdrop.btcLockScript(testSet2.publicKey, 655356, bitcoin.networks.bitcoin)).toThrowError(
             'Block sequence cannot be more than 65535',
         );
+    });
+
+    it('validates generating lock script', () => {
+        expect(() =>
+            btcLockdrop.btcLockScript(
+                testSet2.privateKey,
+                btcLockdrop.daysToBlockSequence(3),
+                bitcoin.networks.bitcoin,
+            ),
+        ).toThrowError('Invalid public key');
 
         expect(() => btcLockdrop.getLockP2SH(-1, testSet3.publicKey, bitcoin.networks.testnet)).toThrowError(
             'Lock duration must be between 30 days to 300 days',
@@ -227,6 +237,14 @@ describe('BTC lock script tests', () => {
                 bitcoin.networks.testnet,
             );
         }).toThrowError('Invalid public key');
+
+        expect(() => {
+            btcLockdrop.btcLockScript(
+                testSet3.publicKey,
+                btcLockdrop.daysToBlockSequence(-10),
+                bitcoin.networks.testnet,
+            );
+        }).toThrowError('Block sequence cannot be a negative number');
     });
 
     it(
@@ -287,6 +305,7 @@ describe('BTC lock script tests', () => {
                 vout: 0,
                 value: VALUE,
             });
+            console.log('Transaction hash:\n' + tx.toHex());
         },
         200 * 1000,
     ); // extend jest async resolve timeout

@@ -33,7 +33,7 @@ const useStyles = makeStyles((theme: Theme) =>
         },
         ul: {
             backgroundColor: 'inherit',
-            padding: 0,
+            padding: theme.spacing(1, 2),
         },
         lockListPage: {
             textAlign: 'center',
