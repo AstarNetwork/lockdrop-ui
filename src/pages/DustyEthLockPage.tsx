@@ -96,6 +96,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
             this.setState({ networkType: await this.state.web3.eth.net.getNetworkType() });
         } catch (e) {
             this.setState({ error: e });
+            console.log(e);
         }
 
         this.timerInterval = setInterval(() => {
@@ -209,7 +210,6 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                 <Navbar />
                 <IonContent>
                     <>
-                        {this.state.error ? <p>{this.state.error}</p> : null}
                         {this.state.isLoading ? (
                             <IonLoading isOpen={true} message={'Connecting to Wallet and fetching chain data...'} />
                         ) : (

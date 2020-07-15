@@ -68,6 +68,12 @@ const useStyles = makeStyles(theme =>
             left: 10,
             zIndex: 1,
         },
+        emptyPanel: {
+            textAlign: 'center',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: 'auto',
+        },
     }),
 );
 
@@ -81,7 +87,7 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi }) => {
             <List className={classes.listRoot} subheader={<li />}>
                 <li className={classes.listSection}>
                     <ul className={classes.ul}>
-                        {claimParams ? (
+                        {claimParams && claimParams.length > 0 ? (
                             <>
                                 <ListSubheader>You can claim {claimParams.length} locks</ListSubheader>
                                 <Divider />
@@ -96,7 +102,10 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi }) => {
                             <>
                                 <ListSubheader>You don&apos;t have any locks!</ListSubheader>
                                 <Divider />
-                                <p>So much emptiness...</p>
+                                <div className={classes.emptyPanel}>
+                                    <Typography>Why does the feeling of emptiness occupy so much space?</Typography>
+                                    <Typography>-James de la Vega-</Typography>
+                                </div>
                             </>
                         )}
                     </ul>
@@ -221,6 +230,7 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi }) => {
                                 aria-label="request"
                                 onClick={() => submitClaimReq(lockParam)}
                                 color="primary"
+                                disabled={isSending}
                             >
                                 {claimData ? <CheckIcon /> : <SendIcon />}
                             </IconButton>
