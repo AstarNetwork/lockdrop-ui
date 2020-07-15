@@ -193,7 +193,7 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
                         Transaction Hash: {truncateString(lockParam.transactionHash.toHex(), 6)}
                     </Typography>
                     <Typography component="h5" variant="h6" className={classes.inline} color="textPrimary">
-                        Locked {Web3Utils.fromWei(new BN(lockParam.value.toString()), 'ether')} ETH
+                        Locked{' '}
                         {networkType === 'ETH'
                             ? `${Web3Utils.fromWei(new BN(lockParam.value.toString()), 'ether')} ETH`
                             : `${btcLockdrop.satoshiToBitcoin(lockParam.value.toString())}`}
