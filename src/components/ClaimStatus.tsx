@@ -167,7 +167,7 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi }) => {
             // turn off loading if it's on
             if (isSending && i) setSending(false);
         });
-    }, [claimId, plasmApi]);
+    }, [claimId, plasmApi, isSending]);
 
     return (
         <>
