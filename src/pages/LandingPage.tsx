@@ -128,7 +128,7 @@ export const LandingPage: React.FC = () => {
                         <IonIcon src={btcLogo} slot="start" />
                         <IonLabel>Dusty BTC Lock</IonLabel>
 
-                        <IonButton fill="outline" slot="end">
+                        <IonButton fill="outline" slot="end" disabled>
                             <IonRouterLink routerLink="/lock-form/dusty-btc">View</IonRouterLink>
                         </IonButton>
                     </IonItem>
