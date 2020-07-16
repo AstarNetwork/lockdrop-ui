@@ -153,6 +153,11 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
         return str.slice(0, num) + '...';
     };
 
+    const epochToDays = (epoch: number) => {
+        const epochDays = 60 * 60 * 24;
+        return epoch / epochDays;
+    };
+
     const submitClaimReq = (param: Lockdrop) => {
         setSending(true);
         const _lock = plasmUtils.createLockParam(
@@ -171,6 +176,14 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
                 console.log('Request transaction hash:\n' + res.toHex());
             });
     };
+
+    useEffect(() => {
+        plasmUtils.getClaimStatus(plasmApi, claimId).then(i => {
+            setClaimData(i);
+            // turn off loading if it's on
+            if (isSending && i) setSending(false);
+        });
+    }, []);
 
     useEffect(() => {
         const interval = setInterval(async () => {
@@ -202,15 +215,16 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
                     <Typography component="h5" variant="h6" className={classes.inline} color="textPrimary">
                         Locked{' '}
                         {networkType === 'ETH'
-                            ? `${Web3Utils.fromWei(lockParam.value.toString(), 'ether')} ETH`
-                            : `${btcLockdrop.satoshiToBitcoin(lockParam.value.toString())}`}
+                            ? `${Web3Utils.fromWei(lockParam.value.toString(), 'ether')} ETH `
+                            : `${btcLockdrop.satoshiToBitcoin(lockParam.value.toString())} BTC `}
+                        for {epochToDays(lockParam.duration.toNumber()).toString()} days
                     </Typography>
 
                     {claimData && claimData.complete && (
                         <>
                             <br />
                             <Typography component="h5" variant="h6" className={classes.inline} color="textPrimary">
-                                Receiving {plasmUtils.femtoToPlm(new BigNumber(claimData.amount.toString())).toFixed()}
+                                Receiving {plasmUtils.femtoToPlm(new BigNumber(claimData.amount.toString())).toFixed()}{' '}
                                 {plasmNetwork === 'Plasm' ? 'PLM' : 'PLD'}
                             </Typography>
                         </>

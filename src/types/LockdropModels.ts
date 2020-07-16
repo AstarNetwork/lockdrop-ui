@@ -7,9 +7,9 @@ import { H256 } from '@polkadot/types/interfaces';
  * lock contract parameter
  */
 export interface LockInput {
-    duration: number;
-    amount: BN;
-    affiliation: string;
+    duration: number; // in days
+    amount: BN; // in ETH
+    affiliation: string; // Ethereum address
     rate: number;
 }
 
@@ -64,11 +64,11 @@ export enum LockdropType {
 
 export interface LockEvent {
     eth: BN; // this uses BN.js instead of BigNumber.js because that is what eth helper uses
-    duration: number;
+    duration: number; // in Unix epoch seconds
     lock: string; // lock address
     introducer: string;
     blockNo: number;
-    timestamp: string; // in Unix epoch
+    timestamp: string; // in Unix epoch seconds
     lockOwner: string; // locker's address
     blockHash: string;
     transactionHash: string;

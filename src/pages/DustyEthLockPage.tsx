@@ -141,9 +141,13 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                 `Sign this message to submit a lock request.
                 This action is required for the real-time lockdrop module
                 ${polkadotUtil.randomAsHex(3)}`,
-            ).then(pub => {
-                this.setState({ publicKey: pub });
-            });
+            )
+                .then(pub => {
+                    this.setState({ publicKey: pub });
+                })
+                .catch(e => {
+                    toast.error(e.message.toString());
+                });
         }
     };
 
@@ -158,7 +162,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                     LockdropType.Ethereum,
                     lock.transactionHash,
                     this.state.publicKey,
-                    lock.duration.toString(),
+                    this.durationToEpoch(lock.duration).toString(),
                     lock.eth.toString(),
                 );
                 return plasmUtils.structToLockdrop(_param as any);
@@ -166,6 +170,11 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
 
             return claimIDs;
         }
+    };
+
+    durationToEpoch = (duration: number) => {
+        const epochDays = 60 * 60 * 24;
+        return duration * epochDays;
     };
 
     handleSubmit = async (formInputVal: LockInput) => {
@@ -181,6 +190,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
 
                 this.setState({ publicKey: _publicKey });
             }
+            console.log(formInputVal);
 
             const hash = await submitLockTx(formInputVal, this.state.accounts[0], this.state.contract);
 
@@ -188,8 +198,8 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                 LockdropType.Ethereum,
                 hash,
                 this.state.publicKey,
-                formInputVal.duration.toString(),
-                Web3.utils.toWei(formInputVal.amount, 'ether').toString(),
+                this.durationToEpoch(formInputVal.duration).toString(),
+                formInputVal.amount.toString(),
             );
             const nonce = plasmUtils.claimPowNonce(lockParam.hash);
             console.log('Your claim ID is ' + lockParam.hash.toString());
