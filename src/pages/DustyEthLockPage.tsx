@@ -159,7 +159,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                     lock.transactionHash,
                     this.state.publicKey,
                     lock.duration.toString(),
-                    Web3.utils.toWei(lock.eth, 'ether').toString(),
+                    lock.eth.toString(),
                 );
                 return plasmUtils.structToLockdrop(_param as any);
             });

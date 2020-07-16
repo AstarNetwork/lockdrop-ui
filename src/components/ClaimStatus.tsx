@@ -25,9 +25,9 @@ import dustyIcon from '../resources/dusty-icon.svg';
 import Web3Utils from 'web3-utils';
 import SendIcon from '@material-ui/icons/Send';
 import CheckIcon from '@material-ui/icons/Check';
-import { BN } from 'ethereumjs-util';
 import { green } from '@material-ui/core/colors';
 import BigNumber from 'bignumber.js';
+import { H256 } from '@polkadot/types/interfaces';
 
 interface Props {
     claimParams?: Lockdrop[];
@@ -136,15 +136,15 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
     const classes = useStyles();
     const [claimData, setClaimData] = useState<Claim>();
     const [isSending, setSending] = useState(false);
-
-    const claimId = plasmUtils.createLockParam(
-        lockParam.type,
-        lockParam.transactionHash.toHex(),
-        lockParam.publicKey.toHex(),
-        lockParam.duration.toString(),
-        lockParam.value.toString(),
-    ).hash;
-
+    const [claimId, {}] = useState<H256>(
+        plasmUtils.createLockParam(
+            lockParam.type,
+            lockParam.transactionHash.toHex(),
+            lockParam.publicKey.toHex(),
+            lockParam.duration.toString(),
+            lockParam.value.toString(),
+        ).hash,
+    );
     const truncateString = (str: string, num: number) => {
         if (str.length <= num) {
             return str;
@@ -173,12 +173,19 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
     };
 
     useEffect(() => {
-        plasmUtils.getClaimStatus(plasmApi, claimId).then(i => {
-            setClaimData(i);
+        const interval = setInterval(async () => {
+            const _claim = await plasmUtils.getClaimStatus(plasmApi, claimId);
+
+            setClaimData(_claim);
             // turn off loading if it's on
-            if (isSending && i) setSending(false);
-        });
-    }, [claimId, plasmApi, isSending]);
+            if (isSending && _claim) setSending(false);
+        }, 2000); // fetch every 5 seconds
+
+        // cleanup hook
+        return () => {
+            clearInterval(interval);
+        };
+    });
 
     return (
         <>
@@ -195,7 +202,7 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
                     <Typography component="h5" variant="h6" className={classes.inline} color="textPrimary">
                         Locked{' '}
                         {networkType === 'ETH'
-                            ? `${Web3Utils.fromWei(new BN(lockParam.value.toString()), 'ether')} ETH`
+                            ? `${Web3Utils.fromWei(lockParam.value.toString(), 'ether')} ETH`
                             : `${btcLockdrop.satoshiToBitcoin(lockParam.value.toString())}`}
                     </Typography>
 
