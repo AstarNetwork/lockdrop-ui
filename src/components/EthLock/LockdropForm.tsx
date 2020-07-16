@@ -10,7 +10,7 @@ import quantstampLogo from '../../resources/quantstamp-logo.png';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import Link from '@material-ui/core/Link';
 import parse from 'html-react-parser';
-import { ethDurations } from '../../data/lockInfo';
+import { ethDurations, ethDustyDurations } from '../../data/lockInfo';
 
 type InputProps = {
     token: string;
@@ -98,12 +98,13 @@ const LockdropForm = ({ token, onSubmit, description, dusty }: InputProps) => {
                     <IonLabel className={classes.formLabel}>Lock Duration</IonLabel>
                     <IonItem>
                         <DropdownOption
-                            dataSets={ethDurations}
-                            onChoose={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            dataSets={dusty ? ethDustyDurations : ethDurations}
+                            onChoose={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                const durationSet = dusty ? ethDustyDurations : ethDurations;
                                 setDuration(
-                                    ethDurations.filter(i => i.value === ((e.target.value as unknown) as number))[0],
-                                )
-                            }
+                                    durationSet.filter(i => i.value === ((e.target.value as unknown) as number))[0],
+                                );
+                            }}
                         ></DropdownOption>
                         <IonChip>
                             <IonLabel>

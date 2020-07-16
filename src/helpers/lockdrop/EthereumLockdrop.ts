@@ -98,9 +98,7 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
                 const blockHash = e[1];
                 const lockEvent = e[0];
 
-                const transactionString = await Promise.resolve(
-                    web3.eth.getBlock((blockHash.blockNumber as number).toString()),
-                );
+                const transactionString = await Promise.resolve(web3.eth.getBlock(blockHash.blockNumber as number));
                 const time = transactionString.timestamp.toString();
                 return {
                     eth: lockEvent.eth as BN,

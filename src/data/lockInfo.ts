@@ -47,6 +47,16 @@ export const ethDurations: OptionItem[] = [
 ];
 
 /**
+ * used to define the content of the dropdown menu
+ */
+export const ethDustyDurations: OptionItem[] = [
+    { label: '3 Days', value: 3, rate: 24 },
+    { label: '10 Days', value: 10, rate: 100 },
+    { label: '30 Days', value: 30, rate: 360 },
+    { label: '100 Days', value: 100, rate: 1600 },
+];
+
+/**
  * BTC lockdrop does not support 1000 days lock due to CSV lock scheme
  */
 export const btcDurations: OptionItem[] = [

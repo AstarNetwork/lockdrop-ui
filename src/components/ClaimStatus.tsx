@@ -136,7 +136,7 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
     const classes = useStyles();
     const [claimData, setClaimData] = useState<Claim>();
     const [isSending, setSending] = useState(false);
-    const [claimId, {}] = useState<H256>(
+    const [claimId, setClaimId] = useState<H256>(
         plasmUtils.createLockParam(
             lockParam.type,
             lockParam.transactionHash.toHex(),
@@ -183,6 +183,16 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
             // turn off loading if it's on
             if (isSending && i) setSending(false);
         });
+        setClaimId(
+            plasmUtils.createLockParam(
+                lockParam.type,
+                lockParam.transactionHash.toHex(),
+                lockParam.publicKey.toHex(),
+                lockParam.duration.toString(),
+                lockParam.value.toString(),
+            ).hash,
+        );
+        // eslint-disable-next-line
     }, []);
 
     useEffect(() => {
