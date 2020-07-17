@@ -86,7 +86,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
         try {
             const web3State = await connectWeb3('secondLock');
             this.setState(web3State);
-            const plasmNode = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Local);
+            const plasmNode = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Dusty);
             this.setState({ plasmApi: plasmNode });
 
             // checks if account has changed in MetaMask
