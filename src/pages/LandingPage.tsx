@@ -120,7 +120,7 @@ export const LandingPage: React.FC = () => {
                         <IonIcon src={ethLogo} slot="start" />
                         <IonLabel>Dusty ETH Lock</IonLabel>
 
-                        <IonButton fill="outline" slot="end" disabled>
+                        <IonButton fill="outline" slot="end">
                             <IonRouterLink routerLink="/lock-form/dusty-eth">View</IonRouterLink>
                         </IonButton>
                     </IonItem>

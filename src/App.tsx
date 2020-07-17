@@ -4,8 +4,8 @@ import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/react';
 import { IonReactHashRouter } from '@ionic/react-router';
 import LandingPage from './pages/LandingPage';
 import EthLockdropPage from './pages/EthLockdropPage';
-// import DustyEthLockPage from './pages/DustyEthLockPage';
-// import DustyBtcLockPage from './pages/DustyBtcLockPage';
+import DustyEthLockPage from './pages/DustyEthLockPage';
+//import DustyBtcLockPage from './pages/DustyBtcLockPage';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -37,8 +37,8 @@ const App: React.FC = () => {
                     <IonRouterOutlet id="main" animated>
                         <Route exact path="/lock-form" component={LandingPage} />
                         <Route path="/lock-form/first" component={EthLockdropPage} />
-                        {/* <Route path="/lock-form/dusty-eth" component={DustyEthLockPage} />
-                        <Route path="/lock-form/dusty-btc" component={DustyBtcLockPage} /> */}
+                        <Route path="/lock-form/dusty-eth" component={DustyEthLockPage} />
+                        {/* <Route path="/lock-form/dusty-btc" component={DustyBtcLockPage} /> */}
                         <Route exact path="/" render={() => <Redirect to="/lock-form" />} />
                     </IonRouterOutlet>
                 </IonSplitPane>

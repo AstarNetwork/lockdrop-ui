@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // This module is used for communicating with the Ethereum smart contract
 import Lockdrop from '../../contracts/Lockdrop.json';
-import SecondLockdrop from '../../contracts/Lockdrop.json';
 import getWeb3 from '../getWeb3';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
-import { LockEvent, LockSeason, LockInput } from '../../types/LockdropModels';
+import { LockEvent, LockInput } from '../../types/LockdropModels';
 import BN from 'bn.js';
 import BigNumber from 'bignumber.js';
 import { isValidIntroducerAddress, defaultAddress, affiliationRate } from '../../data/affiliationProgram';
@@ -15,7 +14,7 @@ import Web3Utils from 'web3-utils';
 import EthCrypto from 'eth-crypto';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { ecrecover, fromRpcSig, toBuffer, bufferToHex } from 'ethereumjs-util';
-import { Toast } from 'react-toastify';
+import * as lockInfo from '../../data/lockInfo';
 
 // todo: reduce client-side operations and replace it with data from the plasm node
 
@@ -58,23 +57,19 @@ export function generatePlmAddress(ethPubKey: string) {
  * @param message an optional message that the user should sign
  */
 export async function getPubKey(web3: Web3, message?: string) {
+    // default message
     let msg = 'Please Sign this message to generate Plasm Network address';
     // change message if the function provides one
     if (message) {
         msg = message;
     }
     const hash = web3.eth.accounts.hashMessage(msg);
-    try {
-        const addresses = await web3.eth.getAccounts();
-        // the password parameter is only used for specific wallets (most wallets will prompt the user to provide it)
-        const sig = '0x' + (await web3.eth.personal.sign(msg, addresses[0], 'SecureP4ssW0rd')).slice(2);
-        const res = fromRpcSig(sig);
+    const addresses = await web3.eth.getAccounts();
+    // the password parameter is only used for specific wallets (most wallets will prompt the user to provide it)
+    const sig = '0x' + (await web3.eth.personal.sign(msg, addresses[0], 'SecureP4ssW0rd')).slice(2);
+    const res = fromRpcSig(sig);
 
-        return bufferToHex(ecrecover(toBuffer(hash), res.v, res.r, res.s));
-    } catch (error) {
-        console.log(error);
-        return '0x0';
-    }
+    return bufferToHex(ecrecover(toBuffer(hash), res.v, res.r, res.s));
 }
 
 /**
@@ -103,9 +98,7 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
                 const blockHash = e[1];
                 const lockEvent = e[0];
 
-                const transactionString = await Promise.resolve(
-                    web3.eth.getBlock((blockHash.blockNumber as number).toString()),
-                );
+                const transactionString = await Promise.resolve(web3.eth.getBlock(blockHash.blockNumber as number));
                 const time = transactionString.timestamp.toString();
                 return {
                     eth: lockEvent.eth as BN,
@@ -142,20 +135,6 @@ export function defaultAffiliation(aff: string) {
         return defaultAddress;
     }
 }
-
-// export async function getEthUsdRate(endDate: string) {
-//     // date format mm-DD-YYYY
-//     const ethMarketApi = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${endDate}&localization=false`;
-//     let usdRate = 0;
-//     try {
-//         const res = await fetch(ethMarketApi);
-//         const data = await res.json();
-//         usdRate = data.market_data.current_price.usd;
-//     } catch (error) {
-//         console.log(error);
-//     }
-//     return usdRate;
-// }
 
 function plmBaseIssueRatio(lockData: LockEvent, ethExchangeRate: BigNumber): BigNumber {
     // get lockTimeBonus * ethExRate
@@ -283,9 +262,9 @@ export function getTotalLockVal(locks: LockEvent[]): string {
 /**
  * authenticate if the client has web3 enabled wallet installed and can communicate with the blockchain
  * returns the web3.js instance, list of active accounts and the contract instance
- * @param lockSeason enum to indicate which lockdrop contract it should look for
+ * @param lockSeason lockdrop season to indicate which lockdrop contract it should look for
  */
-export async function connectWeb3(lockSeason: LockSeason) {
+export async function connectWeb3(lockSeason: 'firstLock' | 'secondLock' | 'thirdLock') {
     try {
         // Get network provider and web3 instance.
         const web3 = await getWeb3();
@@ -294,33 +273,18 @@ export async function connectWeb3(lockSeason: LockSeason) {
         if (web3 instanceof Web3) {
             // Use web3 to get the user's accounts.
             const accounts = await web3.eth.getAccounts();
+            const lockdropAbi = Lockdrop.abi as Web3Utils.AbiItem[];
 
             // Get the contract instance.
-            const networkId = await web3.eth.net.getId();
-            const deployedNetwork = (Lockdrop as any).networks[networkId];
+            //const networkId = await web3.eth.net.getId();
+
+            //const deployedNetwork = (Lockdrop.networks as any)[networkId];
+
+            const networkType = await web3.eth.net.getNetworkType();
+            const contractAddress = (lockInfo.lockdropContracts[lockSeason] as any)[networkType];
 
             // create an empty contract instance first
-            let instance = new web3.eth.Contract(
-                Lockdrop.abi as any,
-                deployedNetwork && deployedNetwork.address,
-            ) as Contract;
-
-            //todo: switch contract instance depending on lockdrop type
-            //todo: assign different contract address depending on the lockdrop type
-            switch (lockSeason) {
-                case LockSeason.First:
-                    instance = new web3.eth.Contract(
-                        Lockdrop.abi as any,
-                        deployedNetwork && deployedNetwork.address,
-                    ) as Contract;
-                    break;
-                case LockSeason.Second:
-                    instance = new web3.eth.Contract(
-                        SecondLockdrop.abi as any,
-                        deployedNetwork && deployedNetwork.address,
-                    ) as Contract;
-                    break;
-            }
+            const instance = new web3.eth.Contract(lockdropAbi, contractAddress !== '0x' && contractAddress);
 
             return {
                 web3: web3,
@@ -342,44 +306,43 @@ export async function connectWeb3(lockSeason: LockSeason) {
 }
 
 /**
- * validate and create a transaction to the lock contract with the given parameter
+ * validate and create a transaction to the lock contract with the given parameter.
+ * This will return the transaction hash
  * @param txInput the lock parameter for the contract
  * @param address the address of the locker
  * @param contract smart contract instance used to invoke the contract method
- * @param messageToast message toast used to send feedback to the front end
  */
-export async function submitLockTx(txInput: LockInput, address: string, contract: Contract, messageToast: Toast) {
+export async function submitLockTx(txInput: LockInput, address: string, contract: Contract) {
     // checks user input
-    if (txInput.amount > new BN(0) && txInput.duration) {
-        //console.log(formInputVal);
-        // return a default address if user input is empty
-        const introducer = defaultAffiliation(txInput.affiliation).toLowerCase();
-        try {
-            // check user input
-            if (introducer === address) {
-                messageToast.error('You cannot affiliate yourself');
-            } else if (introducer && !Web3.utils.isAddress(introducer)) {
-                messageToast.error('Please input a valid Ethereum address');
-            } else if (!isValidIntroducerAddress(introducer)) {
-                messageToast.error('The given introducer is not registered in the affiliation program!');
-            } else {
-                // convert user input to Wei
-                const amountToSend = Web3.utils.toWei(txInput.amount, 'ether');
-
-                // communicate with the smart contract
-                await contract.methods.lock(txInput.duration, introducer).send({
-                    from: address,
-                    value: amountToSend,
-                });
-
-                messageToast.success(`Successfully locked ${txInput.amount} ETH for ${txInput.duration} days!`);
-                return true;
-            }
-        } catch (error) {
-            messageToast.error('error!\n' + error.message);
-        }
-    } else {
-        messageToast.error('You are missing an input!');
+    if (txInput.amount <= new BN(0) || txInput.duration <= 0) {
+        throw new Error('You are missing an input!');
     }
-    return false;
+    //console.log(formInputVal);
+    // return a default address if user input is empty
+    const introducer = defaultAffiliation(txInput.affiliation).toLowerCase();
+    // check user input
+    if (introducer === address) {
+        throw new Error('You cannot affiliate yourself');
+    }
+    if (introducer && !Web3.utils.isAddress(introducer)) {
+        throw new Error('Please input a valid Ethereum address');
+    }
+    if (!isValidIntroducerAddress(introducer)) {
+        throw new Error('The given introducer is not registered in the affiliation program!');
+    }
+
+    // convert user input to Wei
+    const amountToSend = Web3.utils.toWei(txInput.amount, 'ether');
+    let hash = '';
+    // communicate with the smart contract
+    await contract.methods
+        .lock(txInput.duration, introducer)
+        .send({
+            from: address,
+            value: amountToSend,
+        })
+        .on('transactionHash', (res: any) => {
+            hash = res;
+        });
+    return hash;
 }

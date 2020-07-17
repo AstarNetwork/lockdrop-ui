@@ -22,6 +22,9 @@ const useStyles = makeStyles(theme =>
             justifyContent: 'center',
             height: '100%',
         },
+        message: {
+            wordBreak: 'break-all',
+        },
         copyIcon: {
             verticalAlign: 'middle',
         },
@@ -49,7 +52,7 @@ const CopyMessageBox: React.FC<Props> = ({ header, message }) => {
                     {header}:
                 </Typography>
                 <div className={classes.signMessage}>
-                    <Typography component="h1" variant="h2">
+                    <Typography component="h1" variant="h2" className={classes.message}>
                         {message}
                     </Typography>
                     <div className={classes.copyIcon}>

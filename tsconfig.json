@@ -20,7 +20,9 @@
         "experimentalDecorators": true,
         "noFallthroughCasesInSwitch": true,
         "isolatedModules": true,
-        "noEmit": true
+        "baseUrl": ".",
+        "noEmit": true,
+        "typeRoots": ["./node_modules/@types"]
     },
     "include": ["src/**/*"],
     "exclude": ["node_modules", "build"]

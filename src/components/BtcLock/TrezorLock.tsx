@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TrezorConnect from 'trezor-connect';
 import {
     IonCard,
@@ -16,16 +16,16 @@ import {
     IonLoading,
 } from '@ionic/react';
 import { DropdownOption } from '../DropdownOption';
-import { btcDurations, rates } from '../../data/lockInfo';
+import { btcDustyDurations } from '../../data/lockInfo';
 import * as btcLock from '../../helpers/lockdrop/BitcoinLockdrop';
 import { toast } from 'react-toastify';
-import BigNumber from 'bignumber.js';
+//import BigNumber from 'bignumber.js';
 import { makeStyles, createStyles } from '@material-ui/core';
-import { BtcNetwork } from '../../types/LockdropModels';
 import QrEncodedAddress from './QrEncodedAddress';
-
+import * as bitcoinjs from 'bitcoinjs-lib';
+import { OptionItem } from 'src/types/LockdropModels';
 interface Props {
-    networkType: BtcNetwork;
+    networkType: bitcoinjs.Network;
 }
 
 toast.configure({
@@ -47,25 +47,21 @@ const useStyles = makeStyles(() =>
 
 const TrezorLock: React.FC<Props> = ({ networkType }) => {
     const classes = useStyles();
-    const [lockDuration, setDuration] = useState(0);
+    const defaultPath = networkType === bitcoinjs.networks.bitcoin ? "m/44'/0'/0'" : "m/44'/1'/0'";
+    const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
     const [p2shAddress, setP2sh] = useState('');
-    const [lockAmount, setAmount] = useState('');
+
     // changing the path to n/49'/x'/x' will return a signature error
     // this may be due to compatibility issues with BIP49
-    const [addressPath, setAddressPath] = useState(networkType === BtcNetwork.MainNet ? "m/44'/0'/0'" : "m/44'/1'/0'");
+    const [addressPath, setAddressPath] = useState(defaultPath);
     const [isLoading, setLoading] = useState(false);
+    const [publicKey, setPublicKey] = useState('');
 
     const inputValidation = () => {
-        if (lockDuration <= 0) {
+        if (lockDuration.value <= 0) {
             return { valid: false, message: 'Please provide a lock duration' };
         }
-        if (isNaN(parseInt(lockAmount))) {
-            return { valid: false, message: 'Please input a valid number' };
-        }
-        const lockVal = new BigNumber(lockAmount);
-        if (lockVal.isLessThanOrEqualTo(0)) {
-            return { valid: false, message: 'Lock value must be greater than 0' };
-        }
+
         return { valid: true, message: 'valid input' };
     };
 
@@ -81,34 +77,23 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
         TrezorConnect.signMessage({
             path: addressPath,
             message: btcLock.MESSAGE,
-            coin: networkType === BtcNetwork.MainNet ? 'BTC' : 'Testnet',
+            coin: networkType === bitcoinjs.networks.bitcoin ? 'BTC' : 'Testnet',
         }).then(res => {
             try {
                 if (res.success) {
                     console.log(res.payload);
 
-                    const pubKey = btcLock.getPublicKey(res.payload.address, res.payload.signature, 'compressed');
+                    const _pubKey = btcLock.getPublicKey(res.payload.address, res.payload.signature, 'compressed');
+                    setPublicKey(_pubKey);
 
-                    const lockScript = btcLock.getLockP2SH(lockDuration, pubKey, networkType);
+                    const lockScript = btcLock.getLockP2SH(lockDuration.value, _pubKey, networkType);
 
                     setP2sh(lockScript.address!);
-
-                    // TrezorConnect.getPublicKey({ coin: 'Testnet', path: addressPath }).then(r => {
-                    //     console.log(r);
-                    //     if (r.success) {
-                    //         const pubKey = r.payload.publicKey;
-
-                    //         const lockScript = btcLock.getLockP2SH(lockDuration, pubKey, networkType);
-
-                    //         setP2sh(lockScript.address!);
-                    //     }
-                    // });
-
-                    //todo: add send transaction method
                 } else {
                     throw new Error(res.payload.error);
                 }
                 setLoading(false);
+                toast.success('Successfully created lock script');
             } catch (e) {
                 toast.error(e.toString());
                 console.log(e);
@@ -117,22 +102,23 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
         });
     };
 
-    const getTokenRate = () => {
-        if (lockDuration) {
-            return rates.filter(x => x.key === lockDuration)[0].value;
+    useEffect(() => {
+        if (publicKey && p2shAddress) {
+            const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
+
+            setP2sh(lockScript.address!);
         }
-        return 0;
-    };
+    }, [lockDuration, publicKey, networkType, p2shAddress]);
 
     return (
         <div>
-            {p2shAddress ? <QrEncodedAddress address={p2shAddress} /> : <></>}
+            {p2shAddress ? <QrEncodedAddress address={p2shAddress} /> : null}
             <IonLoading isOpen={isLoading} message={'Waiting for Trezor to respond'} />
             <IonCard>
                 <IonCardHeader>
                     <IonCardSubtitle>
                         Please fill in the following form with the correct information. Your address path will default
-                        to <code>{addressPath}</code> if none is given. For more information, please check{' '}
+                        to <code>{defaultPath}</code> if none is given. For more information, please check{' '}
                         <a href="https://wiki.trezor.io/Address_path_(BIP32)" rel="noopener noreferrer" target="_blank">
                             this page
                         </a>
@@ -155,29 +141,28 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                     <IonItem>
                         <IonLabel position="floating">BIP32 Address Path</IonLabel>
                         <IonInput
-                            placeholder={addressPath}
+                            placeholder={defaultPath}
                             onIonChange={e => setAddressPath(e.detail.value!)}
-                        ></IonInput>
-                    </IonItem>
-                    <IonItem>
-                        <IonLabel position="floating">Number of BTC</IonLabel>
-                        <IonInput
-                            placeholder={'ex: 0.64646 BTC'}
-                            onIonChange={e => setAmount(e.detail.value!)}
                         ></IonInput>
                     </IonItem>
 
                     <IonLabel position="stacked">Lock Duration</IonLabel>
                     <IonItem>
                         <DropdownOption
-                            dataSets={btcDurations}
+                            dataSets={btcDustyDurations}
                             onChoose={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                setDuration((e.target.value as unknown) as number)
+                                setDuration(
+                                    btcDustyDurations.filter(
+                                        i => i.value === ((e.target.value as unknown) as number),
+                                    )[0],
+                                )
                             }
                         ></DropdownOption>
                         <IonChip>
                             <IonLabel>
-                                {lockDuration ? 'The rate is ' + getTokenRate() + 'x' : 'Please choose the duration'}
+                                {lockDuration.value
+                                    ? 'The rate is ' + lockDuration.rate + 'x'
+                                    : 'Please choose the duration'}
                             </IonLabel>
                         </IonChip>
                     </IonItem>

@@ -54,24 +54,6 @@ function a11yProps(index: any) {
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
-        listRoot: {
-            width: '100%',
-            maxWidth: 'auto',
-            backgroundColor: theme.palette.background.paper,
-            position: 'relative',
-            overflow: 'auto',
-            maxHeight: 360,
-        },
-        listSection: {
-            backgroundColor: 'inherit',
-        },
-        ul: {
-            backgroundColor: 'inherit',
-            padding: 0,
-        },
-        lockListPage: {
-            textAlign: 'center',
-        },
         tabMenu: {
             backgroundColor: theme.palette.background.paper,
             width: 'auto',

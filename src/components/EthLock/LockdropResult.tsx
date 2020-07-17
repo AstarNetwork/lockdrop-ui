@@ -277,9 +277,7 @@ const ClaimPlm: React.FC<ClaimProps> = ({ web3 }) => {
                         </div>
                     </SectionCard>
                 </>
-            ) : (
-                <></>
-            )}
+            ) : null}
         </>
     );
 };

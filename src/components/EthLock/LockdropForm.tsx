@@ -1,6 +1,6 @@
 import { IonLabel, IonButton, IonItem, IonInput, IonCard, IonCardContent, IonChip } from '@ionic/react';
 import React, { useState } from 'react';
-import { LockInput } from '../../types/LockdropModels';
+import { LockInput, OptionItem } from '../../types/LockdropModels';
 import SectionCard from '../SectionCard';
 import { DropdownOption } from '../DropdownOption';
 import Container from '@material-ui/core/Container';
@@ -10,7 +10,7 @@ import quantstampLogo from '../../resources/quantstamp-logo.png';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import Link from '@material-ui/core/Link';
 import parse from 'html-react-parser';
-import { durations, rates } from '../../data/lockInfo';
+import { ethDurations, ethDustyDurations } from '../../data/lockInfo';
 
 type InputProps = {
     token: string;
@@ -22,7 +22,7 @@ type InputProps = {
 const LockdropForm = ({ token, onSubmit, description, dusty }: InputProps) => {
     // states used in this component
     const [lockAmount, setAmount] = useState<BN>(new BN(0));
-    const [lockDuration, setDuration] = useState(0);
+    const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
     const [affAccount, setAff] = useState('');
 
     const useStyles = makeStyles((theme: Theme) =>
@@ -51,21 +51,13 @@ const LockdropForm = ({ token, onSubmit, description, dusty }: InputProps) => {
 
     const classes = useStyles();
 
-    function getTokenRate() {
-        if (lockDuration) {
-            // convert the string value to numeric value for the lock parameter
-            return rates.filter(x => x.key === lockDuration)[0].value;
-        }
-        return 0;
-    }
-
     // the submit button function
     function handleSubmit() {
         const inputs: LockInput = {
-            duration: lockDuration,
+            duration: lockDuration.value,
             amount: lockAmount,
             affiliation: affAccount,
-            rate: getTokenRate(),
+            rate: lockDuration.rate,
         };
         onSubmit(inputs);
     }
@@ -94,9 +86,7 @@ const LockdropForm = ({ token, onSubmit, description, dusty }: InputProps) => {
                         <IonCard className={classes.textBox}>
                             <IonCardContent>{parse(description)}</IonCardContent>
                         </IonCard>
-                    ) : (
-                        <></>
-                    )}
+                    ) : null}
 
                     <IonItem>
                         <IonLabel position="floating">Number of {token}</IonLabel>
@@ -108,14 +98,19 @@ const LockdropForm = ({ token, onSubmit, description, dusty }: InputProps) => {
                     <IonLabel className={classes.formLabel}>Lock Duration</IonLabel>
                     <IonItem>
                         <DropdownOption
-                            dataSets={durations}
-                            onChoose={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                setDuration((e.target.value as unknown) as number)
-                            }
+                            dataSets={dusty ? ethDustyDurations : ethDurations}
+                            onChoose={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                const durationSet = dusty ? ethDustyDurations : ethDurations;
+                                setDuration(
+                                    durationSet.filter(i => i.value === ((e.target.value as unknown) as number))[0],
+                                );
+                            }}
                         ></DropdownOption>
                         <IonChip>
                             <IonLabel>
-                                {lockDuration ? 'The rate is ' + getTokenRate() + 'x' : 'Please choose the duration'}
+                                {lockDuration.value
+                                    ? 'The rate is ' + lockDuration.rate + 'x'
+                                    : 'Please choose the duration'}
                             </IonLabel>
                         </IonChip>
                     </IonItem>
