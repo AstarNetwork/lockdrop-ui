@@ -10137,10 +10137,10 @@ pkg-up@^2.0.0:
   dependencies:
     find-up "^2.1.0"
 
-plasm-types@^0.0.1:
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/plasm-types/-/plasm-types-0.0.1.tgz#3c8bce249406abb21441c3cae6ef836386b8fec3"
-  integrity sha512-useaEMcPGHjxOTY7IEtpyiALLNjwq2m3HkEc35SnYiIaV2naplGTfzFQtWcQoPIMBG2JJCqTcQS28u3gU938iw==
+plasm-types@^0.0.2:
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/plasm-types/-/plasm-types-0.0.2.tgz#494277b596e3432859f25289fd2fc7ebfe9f4c12"
+  integrity sha512-1LSCXdDywJB8EQpPAq7eoV1qBhn+m4xjYMcIdToYTsoSKo/+ObC88Q7Y0k9THHLyeR8XmidCYuL4+kiGPKe97w==
 
 pn@^1.1.0:
   version "1.1.0"
