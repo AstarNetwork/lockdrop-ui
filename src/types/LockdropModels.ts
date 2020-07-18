@@ -1,7 +1,7 @@
 import BN from 'bn.js';
 import { Moment } from 'moment';
-import { u64, u128, U8aFixed } from '@polkadot/types';
-import { H256 } from '@polkadot/types/interfaces';
+import { u64, u128, U8aFixed, BTreeSet } from '@polkadot/types';
+import { H256, AuthorityId } from '@polkadot/types/interfaces';
 
 /**
  * lock contract parameter
@@ -101,8 +101,8 @@ export interface Lockdrop {
 
 export interface Claim {
     params: Lockdrop;
-    approve: BN; // AuthorityVote
-    decline: BN; // AuthorityVote
+    approve: BTreeSet<AuthorityId>;
+    decline: BTreeSet<AuthorityId>;
     amount: u128; // u128
     complete: boolean;
 }
