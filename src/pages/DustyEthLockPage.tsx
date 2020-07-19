@@ -6,6 +6,7 @@ import React from 'react';
 import LockdropForm from '../components/EthLock/LockdropForm';
 import { connectWeb3, getAllLockEvents, submitLockTx, getPubKey } from '../helpers/lockdrop/EthereumLockdrop';
 import Web3 from 'web3';
+import EthCrypto from 'eth-crypto';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
@@ -144,6 +145,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                 ${polkadotUtil.randomAsHex(3)}`,
             )
                 .then(pub => {
+                    console.log('public: ' + pub);
                     this.setState({ publicKey: pub });
                 })
                 .catch(e => {
@@ -162,7 +164,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                 const _param = plasmUtils.createLockParam(
                     LockdropType.Ethereum,
                     lock.transactionHash,
-                    this.state.publicKey,
+                    EthCrypto.publicKey.compress(this.state.publicKey),
                     this.durationToEpoch(lock.duration).toString(),
                     lock.eth.toString(),
                 );
@@ -196,7 +198,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
             const lockParam = plasmUtils.createLockParam(
                 LockdropType.Ethereum,
                 hash,
-                this.state.publicKey,
+                EthCrypto.publicKey.compress(this.state.publicKey),
                 this.durationToEpoch(formInputVal.duration).toString(),
                 Web3Utils.toWei(formInputVal.amount, 'ether').toString(),
             );
