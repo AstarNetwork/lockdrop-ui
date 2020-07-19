@@ -22,8 +22,11 @@ export enum PlasmNetwork {
  * @param femto minimum token value
  */
 export function femtoToPlm(femto: BigNumber) {
-    const plmDenominator = new BigNumber(10).pow(-15);
-    return femto.times(plmDenominator);
+    if (femto.isLessThanOrEqualTo(new BigNumber(0))) {
+        return new BigNumber(0);
+    }
+    const plmDenominator = new BigNumber(10).pow(new BigNumber(15));
+    return femto.dividedBy(plmDenominator);
 }
 
 /**

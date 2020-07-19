@@ -200,6 +200,7 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
             const _claim = await plasmUtils.getClaimStatus(plasmApi, claimId);
 
             setClaimData(_claim);
+
             // turn off loading if it's on
             if (isSending && _claim) setSending(false);
         }, 2000); // fetch every 5 seconds
