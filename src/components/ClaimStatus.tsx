@@ -28,6 +28,10 @@ import CheckIcon from '@material-ui/icons/Check';
 import { green } from '@material-ui/core/colors';
 import BigNumber from 'bignumber.js';
 import { H256 } from '@polkadot/types/interfaces';
+import Badge from '@material-ui/core/Badge';
+import ThumbUpIcon from '@material-ui/icons/ThumbUp';
+import ThumbDownIcon from '@material-ui/icons/ThumbDown';
+import { IonPopover, IonList, IonItem, IonListHeader, IonLabel } from '@ionic/react';
 
 interface Props {
     claimParams?: Lockdrop[];
@@ -76,6 +80,9 @@ const useStyles = makeStyles(theme =>
             alignItems: 'center',
             justifyContent: 'center',
             margin: 'auto',
+        },
+        claimVoteIcon: {
+            margin: theme.spacing(1),
         },
     }),
 );
@@ -145,6 +152,12 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
             lockParam.value.toString(),
         ).hash,
     );
+    const [approveList, setApproveList] = useState<string[]>([]);
+    const [declineList, setDeclineList] = useState<string[]>([]);
+
+    const [showApproves, setShowApproves] = useState(false);
+    const [showDeclines, setShowDeclines] = useState(false);
+
     const truncateString = (str: string, num: number) => {
         if (str.length <= num) {
             return str;
@@ -177,11 +190,19 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
             });
     };
 
+    const setVoteList = (_claim: Claim) => {
+        const approves = _claim.approve.toJSON() as string[];
+        setApproveList(approves);
+        const decline = _claim.decline.toJSON() as string[];
+        setDeclineList(decline);
+    };
+
     useEffect(() => {
         plasmUtils.getClaimStatus(plasmApi, claimId).then(i => {
             setClaimData(i);
             // turn off loading if it's on
             if (isSending && i) setSending(false);
+            if (i) setVoteList(i);
         });
         setClaimId(
             plasmUtils.createLockParam(
@@ -198,12 +219,10 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
     useEffect(() => {
         const interval = setInterval(async () => {
             const _claim = await plasmUtils.getClaimStatus(plasmApi, claimId);
-
-            setClaimData(_claim);
-
             // turn off loading if it's on
             if (isSending && _claim) setSending(false);
-        }, 2000); // fetch every 5 seconds
+            if (_claim) setVoteList(_claim);
+        }, 3000);
 
         // cleanup hook
         return () => {
@@ -213,6 +232,38 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
 
     return (
         <>
+            <IonPopover isOpen={showApproves} onDidDismiss={() => setShowApproves(false)}>
+                <IonList>
+                    <IonListHeader>Claim Approvals</IonListHeader>
+                    {approveList.length > 0 ? (
+                        approveList.map(authority => (
+                            <IonItem key={authority}>
+                                <IonLabel>{authority}</IonLabel>
+                            </IonItem>
+                        ))
+                    ) : (
+                        <IonItem>
+                            <IonLabel>No Approvals</IonLabel>
+                        </IonItem>
+                    )}
+                </IonList>
+            </IonPopover>
+            <IonPopover isOpen={showDeclines} onDidDismiss={() => setShowDeclines(false)}>
+                <IonList>
+                    <IonListHeader>Claim Declines</IonListHeader>
+                    {declineList.length > 0 ? (
+                        declineList.map(authority => (
+                            <IonItem key={authority}>
+                                <IonLabel>{authority}</IonLabel>
+                            </IonItem>
+                        ))
+                    ) : (
+                        <IonItem>
+                            <IonLabel>No Declines</IonLabel>
+                        </IonItem>
+                    )}
+                </IonList>
+            </IonPopover>
             <ListItem>
                 <ListItemIcon>
                     <Icon>
@@ -256,14 +307,44 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
                     </Typography>
                     {claimData && (
                         <>
-                            <br />
-                            <Typography component="p" variant="body2" className={classes.inline} color="textPrimary">
-                                Approval Votes: {claimData.approve.toString()}
-                            </Typography>
-                            <br />
-                            <Typography component="p" variant="body2" className={classes.inline} color="textPrimary">
-                                Decline Votes: {claimData.decline.toString()}
-                            </Typography>
+                            {/* <Typography component="p" variant="body2" className={classes.inline} color="textPrimary">
+                                Approval Votes: {approveList.length}
+                            </Typography> */}
+
+                            <IconButton color="primary" component="span" onClick={() => setShowApproves(true)}>
+                                <Badge
+                                    color="secondary"
+                                    badgeContent={approveList.length}
+                                    showZero
+                                    max={999}
+                                    className={classes.claimVoteIcon}
+                                    anchorOrigin={{
+                                        vertical: 'top',
+                                        horizontal: 'left',
+                                    }}
+                                >
+                                    <ThumbUpIcon />
+                                </Badge>
+                            </IconButton>
+                            {/* <Typography component="p" variant="body2" className={classes.inline} color="textPrimary">
+                                Decline Votes: {declineList.length}
+                            </Typography> */}
+
+                            <IconButton color="primary" component="span" onClick={() => setShowDeclines(true)}>
+                                <Badge
+                                    color="secondary"
+                                    badgeContent={declineList.length}
+                                    showZero
+                                    max={999}
+                                    className={classes.claimVoteIcon}
+                                    anchorOrigin={{
+                                        vertical: 'top',
+                                        horizontal: 'left',
+                                    }}
+                                >
+                                    <ThumbDownIcon />
+                                </Badge>
+                            </IconButton>
                         </>
                     )}
                 </ListItemText>
