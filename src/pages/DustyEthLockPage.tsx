@@ -164,7 +164,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                 const _param = plasmUtils.createLockParam(
                     LockdropType.Ethereum,
                     lock.transactionHash,
-                    EthCrypto.publicKey.compress(this.state.publicKey),
+                    '0x' + EthCrypto.publicKey.compress(this.state.publicKey.replace('0x', '')),
                     this.durationToEpoch(lock.duration).toString(),
                     lock.eth.toString(),
                 );
@@ -198,7 +198,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
             const lockParam = plasmUtils.createLockParam(
                 LockdropType.Ethereum,
                 hash,
-                EthCrypto.publicKey.compress(this.state.publicKey),
+                '0x' + EthCrypto.publicKey.compress(this.state.publicKey.replace('0x', '')),
                 this.durationToEpoch(formInputVal.duration).toString(),
                 Web3Utils.toWei(formInputVal.amount, 'ether').toString(),
             );
