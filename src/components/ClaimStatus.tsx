@@ -219,9 +219,12 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
     useEffect(() => {
         const interval = setInterval(async () => {
             const _claim = await plasmUtils.getClaimStatus(plasmApi, claimId);
-            // turn off loading if it's on
-            if (isSending && _claim) setSending(false);
-            if (_claim) setVoteList(_claim);
+            if (_claim) {
+                setClaimData(_claim);
+                setVoteList(_claim);
+                // turn off loading if it's on
+                if (isSending) setSending(false);
+            }
         }, 3000);
 
         // cleanup hook
