@@ -6,7 +6,6 @@ import React from 'react';
 import LockdropForm from '../components/EthLock/LockdropForm';
 import { connectWeb3, getAllLockEvents, submitLockTx, getPubKey } from '../helpers/lockdrop/EthereumLockdrop';
 import Web3 from 'web3';
-import EthCrypto from 'eth-crypto';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
@@ -43,7 +42,7 @@ interface PageStates {
     networkType: string;
     isProcessing: boolean;
     allLockEvents: LockEvent[];
-    lockParams: Lockdrop[] | undefined;
+    lockParams: Lockdrop[];
     error: null;
     fetchingLockData: boolean;
     publicKey: string;
@@ -126,9 +125,13 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
         try {
             // get all the lock events from the chain
             const _allLocks = await getAllLockEvents(this.state.web3, this.state.contract);
-            const _lockParam = this.getClaimParams();
 
-            this.setState({ allLockEvents: _allLocks, lockParams: _lockParam });
+            if (this.state.publicKey) {
+                const _lockParam = this.getClaimParams();
+                this.setState({ lockParams: _lockParam });
+            }
+
+            this.setState({ allLockEvents: _allLocks });
         } catch (error) {
             this.setState({ error });
             console.log(error);
@@ -149,6 +152,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                 })
                 .catch(e => {
                     toast.error(e.message.toString());
+                    console.log(e);
                 });
         }
     };
@@ -157,21 +161,19 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
      * Obtains list of lockdrop claim parameters
      */
     getClaimParams = () => {
-        if (this.state.publicKey) {
-            const userLocks = this.state.allLockEvents.filter(i => i.lockOwner === this.state.accounts[0]);
-            const claimIDs = userLocks.map(lock => {
-                const _param = plasmUtils.createLockParam(
-                    LockdropType.Ethereum,
-                    lock.transactionHash,
-                    '0x' + EthCrypto.publicKey.compress(this.state.publicKey.replace('0x', '')),
-                    this.durationToEpoch(lock.duration).toString(),
-                    lock.eth.toString(),
-                );
-                return plasmUtils.structToLockdrop(_param as any);
-            });
+        const userLocks = this.state.allLockEvents.filter(i => i.lockOwner === this.state.accounts[0]);
+        const claimIDs = userLocks.map(lock => {
+            const _param = plasmUtils.createLockParam(
+                LockdropType.Ethereum,
+                lock.transactionHash,
+                this.state.publicKey,
+                this.durationToEpoch(lock.duration).toString(),
+                lock.eth.toString(),
+            );
+            return plasmUtils.structToLockdrop(_param as any);
+        });
 
-            return claimIDs;
-        }
+        return claimIDs;
     };
 
     durationToEpoch = (duration: number) => {
@@ -223,7 +225,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                                 {this.isMainnet() ? (
                                     <SectionCard maxWidth="lg">
                                         <Typography variant="h2" component="h4" align="center">
-                                            Please access this page with a Ethereum testnet wallet
+                                            Please access this page with a Ethereum testnet wallet (Ropsten)
                                         </Typography>
                                     </SectionCard>
                                 ) : (
@@ -245,6 +247,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                                                     plasmApi={this.state.plasmApi}
                                                     networkType="ETH"
                                                     plasmNetwork="Dusty"
+                                                    publicKey={this.state.publicKey}
                                                 />
                                             ) : (
                                                 <>

@@ -14,12 +14,7 @@ import {
     Collapse,
     Typography,
 } from '@material-ui/core';
-import {
-    calculateTotalPlm,
-    ethFinalExRate,
-    getPubKey,
-    generatePlmAddress,
-} from '../../helpers/lockdrop/EthereumLockdrop';
+import { calculateTotalPlm, ethFinalExRate, getPubKey } from '../../helpers/lockdrop/EthereumLockdrop';
 import { PlmDrop } from '../../types/PlasmDrop';
 import BigNumber from 'bignumber.js';
 import CountUp from 'react-countup';
@@ -31,6 +26,7 @@ import SectionCard from '../SectionCard';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import VpnKeyIcon from '@material-ui/icons/VpnKey';
+import { generatePlmAddress } from 'src/helpers/plasmUtils';
 
 const etherScanSearch = 'https://etherscan.io/address/';
 

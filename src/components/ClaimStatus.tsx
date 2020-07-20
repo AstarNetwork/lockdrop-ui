@@ -17,7 +17,6 @@ import {
     Icon,
     ListItemSecondaryAction,
     IconButton,
-    Tooltip,
     CircularProgress,
 } from '@material-ui/core';
 import plasmIcon from '../resources/plasm-icon.svg';
@@ -33,12 +32,15 @@ import ThumbUpIcon from '@material-ui/icons/ThumbUp';
 import ThumbDownIcon from '@material-ui/icons/ThumbDown';
 import { IonPopover, IonList, IonItem, IonListHeader, IonLabel } from '@ionic/react';
 import { toast } from 'react-toastify';
+import HourglassEmptyIcon from '@material-ui/icons/HourglassEmpty';
+import ReplayIcon from '@material-ui/icons/Replay';
 
 interface Props {
-    claimParams?: Lockdrop[];
+    claimParams: Lockdrop[];
     plasmApi: ApiPromise;
     networkType: 'ETH' | 'BTC';
     plasmNetwork: 'Plasm' | 'Dusty';
+    publicKey: string;
 }
 
 toast.configure({
@@ -112,17 +114,55 @@ const epochToDays = (epoch: number) => {
     return epoch / epochDays;
 };
 
-const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'Plasm', networkType }) => {
+const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'Plasm', networkType, publicKey }) => {
     const classes = useStyles();
+    const [positiveVotes, setPositiveVotes] = useState(0);
+    const [voteThreshold, setVoteThreshold] = useState(0);
+    const [isLoading, setLoading] = useState(true);
+    const [plasmAddr, setPlasmAddr] = useState('');
+    const [balance, setBalance] = useState('');
+
+    useEffect(() => {
+        setPlasmAddr(plasmUtils.generatePlmAddress(publicKey));
+    }, [publicKey]);
+
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            const _bal = await plasmUtils.getAddressBalance(plasmApi, plasmAddr, true);
+            const _voteReq = await plasmUtils.getLockdropVoteRequirements(plasmApi);
+            setBalance(_bal);
+            setPositiveVotes(_voteReq.positiveVotes);
+            setVoteThreshold(_voteReq.voteThreshold);
+            isLoading && setLoading(false);
+        }, 3000);
+
+        // cleanup hook
+        return () => {
+            clearInterval(interval);
+        };
+    });
+
     return (
         <div>
             <Typography variant="h5" component="h2" align="center">
-                {plasmNetwork === 'Plasm' ? 'PLM' : 'PLD'} Claimable
+                Sending to {plasmAddr}
             </Typography>
+
+            {plasmAddr && balance && (
+                <Typography variant="body1" component="p" align="center">
+                    Has balance of {balance + ' '}
+                    {plasmNetwork === 'Plasm' ? 'PLM' : 'PLD'}
+                </Typography>
+            )}
+
             <List className={classes.listRoot} subheader={<li />}>
                 <li className={classes.listSection}>
                     <ul className={classes.ul}>
-                        {claimParams && claimParams.length > 0 ? (
+                        {isLoading ? (
+                            <div className={classes.emptyPanel}>
+                                <CircularProgress />
+                            </div>
+                        ) : claimParams.length > 0 ? (
                             <>
                                 <ListSubheader>You can claim {claimParams.length} locks</ListSubheader>
                                 <Divider />
@@ -135,6 +175,8 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'P
                                             plasmApi={plasmApi}
                                             plasmNetwork={plasmNetwork}
                                             networkType={networkType}
+                                            positiveVotes={positiveVotes}
+                                            voteThreshold={voteThreshold}
                                         />
                                     </>
                                 ))}
@@ -163,8 +205,18 @@ interface ItemProps {
     plasmApi: ApiPromise;
     plasmNetwork: 'Plasm' | 'Dusty';
     networkType: 'BTC' | 'ETH';
+    positiveVotes: number;
+    voteThreshold: number;
 }
-const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, networkType }) => {
+
+const ClaimItem: React.FC<ItemProps> = ({
+    lockParam,
+    plasmApi,
+    plasmNetwork,
+    networkType,
+    positiveVotes,
+    voteThreshold,
+}) => {
     const classes = useStyles();
     const [claimData, setClaimData] = useState<Claim>();
     const [claimId, setClaimId] = useState<H256>(
@@ -215,15 +267,11 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
             });
     };
 
+    const hasAllVotes = () => approveList.length + declineList.length >= voteThreshold;
+    const reqAccepted = () => approveList.length - declineList.length >= positiveVotes;
+
     const submitTokenClaim = (id: Uint8Array | H256) => {
-        try {
-            //todo: query plasm node to get voteThreshold and positiveVotes
-            if (approveList.length + declineList.length < 5) {
-                throw new Error('Not enough votes to make a claim');
-            }
-            if (approveList.length - declineList.length < 4) {
-                throw new Error('Not enough approving votes to make a claim');
-            }
+        if (hasAllVotes() && reqAccepted()) {
             setClaimingLock(true);
             plasmUtils
                 .sendLockdropClaim(plasmApi, id)
@@ -231,11 +279,8 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
                     console.log('Token claim transaction hash:\n' + res.toHex());
                 })
                 .catch(e => {
-                    // pass error message to try catch block
-                    throw new Error(e);
+                    console.log(e);
                 });
-        } catch (e) {
-            toast.error(e);
         }
     };
 
@@ -279,44 +324,15 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
         };
     });
 
-    const ActionButton = () => {
-        if (claimData) {
-            // if claim request is already sent but haven't claimed it yet
-            return (
-                <div>
-                    <Tooltip title="Claim your lockdrop token">
-                        <IconButton
-                            edge="end"
-                            aria-label="request"
-                            onClick={() => submitTokenClaim(claimId)}
-                            color="primary"
-                            disabled={claimingLock || claimData.complete.valueOf()}
-                        >
-                            <CheckIcon />
-                        </IconButton>
-                    </Tooltip>
-                    {claimingLock && <CircularProgress size={24} className={classes.iconProgress} />}
-                </div>
-            );
-        } else {
-            // if claim request has not been sent yet
-            return (
-                <div>
-                    <Tooltip title="Send lockdrop claim request">
-                        <IconButton
-                            edge="end"
-                            aria-label="request"
-                            onClick={() => submitClaimReq(lockParam)}
-                            color="primary"
-                            disabled={sendingRequest}
-                        >
-                            <SendIcon />
-                        </IconButton>
-                    </Tooltip>
-                    {sendingRequest && <CircularProgress size={24} className={classes.iconProgress} />}
-                </div>
-            );
+    const ActionIcon = () => {
+        if (claimData && !hasAllVotes()) {
+            return <HourglassEmptyIcon />;
+        } else if (claimData === undefined) {
+            return <SendIcon />;
+        } else if (claimData && !reqAccepted()) {
+            return <ReplayIcon />;
         }
+        return <CheckIcon />;
     };
 
     return (
@@ -395,7 +411,7 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
                         {claimData
                             ? claimData.complete.valueOf()
                                 ? 'Claimed Lockdrop'
-                                : 'Claim requested'
+                                : 'Claim requested (not claimed)'
                             : 'Claim not requested'}
                     </Typography>
                     {claimData && (
@@ -436,7 +452,29 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
                 </ListItemText>
 
                 <ListItemSecondaryAction>
-                    <ActionButton />
+                    <div>
+                        <IconButton
+                            edge="end"
+                            aria-label="request"
+                            onClick={() => {
+                                claimData === undefined || !reqAccepted()
+                                    ? submitClaimReq(lockParam)
+                                    : submitTokenClaim(claimId);
+                            }}
+                            color="primary"
+                            disabled={
+                                sendingRequest ||
+                                claimData?.complete.valueOf() ||
+                                claimingLock ||
+                                (claimData && !hasAllVotes())
+                            }
+                        >
+                            <ActionIcon />
+                        </IconButton>
+                        {sendingRequest || claimingLock ? (
+                            <CircularProgress size={24} className={classes.iconProgress} />
+                        ) : null}
+                    </div>
                 </ListItemSecondaryAction>
             </ListItem>
             <Divider />

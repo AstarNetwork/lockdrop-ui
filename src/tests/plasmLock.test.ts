@@ -118,66 +118,68 @@ describe('Plasm lockdrop RPC tests', () => {
         expect(param2.transactionHash.toString()).toEqual(btcTestnet3Lock.get('transactionHash')?.toString());
     });
 
-    // dusty does not implement the lock claim module yet
-    if ((plasmEndpoint as plasmUtils.PlasmNetwork) === plasmUtils.PlasmNetwork.Local) {
-        it(
-            'lock/claim Ropsten transactions',
-            async () => {
-                const nonce = plasmUtils.claimPowNonce(ropstenLock.hash);
-                console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
-                console.log('claim ID: ' + ropstenLock.hash.toString());
+    it(
+        'lock/claim Ropsten transactions',
+        async () => {
+            const nonce = plasmUtils.claimPowNonce(ropstenLock.hash);
+            console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
+            console.log('claim ID: ' + ropstenLock.hash.toString());
 
-                const claimRequestTx = api.tx.plasmLockdrop.request(ropstenLock.toU8a(), nonce);
-                await claimRequestTx.send();
+            const claimRequestTx = api.tx.plasmLockdrop.request(ropstenLock.toU8a(), nonce);
+            await claimRequestTx.send();
 
-                //const claimData = await api.query.plasmLockdrop.claims(ropstenLock.hash);
-                const claimData = await plasmUtils.getClaimStatus(api, ropstenLock.hash);
-                console.log(claimData);
-                const claimAmount = new BN(claimData!.amount.toString());
-                console.log('Receiving amount: ' + claimAmount.toString());
-                expect(claimData!.params.value.toString()).toEqual(ropstenLock.get('value')?.toString());
-            },
-            200 * 1000,
-        );
+            //const claimData = await api.query.plasmLockdrop.claims(ropstenLock.hash);
+            const claimData = await plasmUtils.getClaimStatus(api, ropstenLock.hash);
+            const claimAmount = new BN(claimData!.amount.toString());
+            console.log('Receiving amount: ' + claimAmount.toString());
+            expect(claimData!.params.value.toString()).toEqual(ropstenLock.get('value')?.toString());
+        },
+        200 * 1000,
+    );
 
-        it(
-            'lock/claim Ropsten transactions with plasm utils',
-            async () => {
-                const nonce = plasmUtils.claimPowNonce(sampleLock.hash);
-                console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
-                console.log('claim ID: ' + sampleLock.hash.toString());
+    it(
+        'lock/claim Ropsten transactions with plasm utils',
+        async () => {
+            const nonce = plasmUtils.claimPowNonce(sampleLock.hash);
+            console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
+            console.log('claim ID: ' + sampleLock.hash.toString());
 
-                await plasmUtils.sendLockClaimRequest(api, sampleLock as any, nonce);
+            await plasmUtils.sendLockClaimRequest(api, sampleLock as any, nonce);
 
-                const claimData = await plasmUtils.getClaimStatus(api, sampleLock.hash);
-                console.log(claimData);
-                const claimAmount = new BN(claimData!.amount.toString());
-                console.log('Receiving amount: ' + claimAmount.toString());
-                expect(claimData!.params.value.toString()).toEqual(sampleLock.get('value')?.toString());
-            },
-            200 * 1000,
-        );
+            const claimData = await plasmUtils.getClaimStatus(api, sampleLock.hash);
+            const claimAmount = new BN(claimData!.amount.toString());
+            console.log('Receiving amount: ' + claimAmount.toString());
+            expect(claimData!.params.value.toString()).toEqual(sampleLock.get('value')?.toString());
+        },
+        200 * 1000,
+    );
 
-        it(
-            'lock/claim BTC testnet3 transactions',
-            async () => {
-                const nonce = plasmUtils.claimPowNonce(btcTestnet3Lock.hash);
-                console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
-                console.log('claim ID: ' + ropstenLock.hash.toString());
+    it(
+        'lock/claim BTC testnet3 transactions',
+        async () => {
+            const nonce = plasmUtils.claimPowNonce(btcTestnet3Lock.hash);
+            console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
+            console.log('claim ID: ' + ropstenLock.hash.toString());
 
-                const claimRequestTx = api.tx.plasmLockdrop.request(btcTestnet3Lock.toU8a(), nonce);
-                await claimRequestTx.send();
+            const claimRequestTx = api.tx.plasmLockdrop.request(btcTestnet3Lock.toU8a(), nonce);
+            await claimRequestTx.send();
 
-                //const claimData = await api.query.plasmLockdrop.claims(btcTestnet3Lock.hash);
-                const claimData = await plasmUtils.getClaimStatus(api, btcTestnet3Lock.hash);
-                console.log(claimData);
-                const claimAmount = new BN(claimData!.amount.toString());
-                console.log('Receiving amount: ' + claimAmount.toString());
-                expect(claimData!.params.value.toString()).toEqual(btcTestnet3Lock.get('value')?.toString());
-            },
-            200 * 1000,
-        );
-    }
+            //const claimData = await api.query.plasmLockdrop.claims(btcTestnet3Lock.hash);
+            const claimData = await plasmUtils.getClaimStatus(api, btcTestnet3Lock.hash);
+            const claimAmount = new BN(claimData!.amount.toString());
+            console.log('Receiving amount: ' + claimAmount.toString());
+            expect(claimData!.params.value.toString()).toEqual(btcTestnet3Lock.get('value')?.toString());
+        },
+        200 * 1000,
+    );
+
+    it('checks lockdrop voting requirements', async () => {
+        const _voteThreshold = Number.parseInt((await api.query.plasmLockdrop.voteThreshold()).toString());
+        const _positiveVotes = Number.parseInt((await api.query.plasmLockdrop.positiveVotes()).toString());
+
+        expect(_voteThreshold).toEqual(5);
+        expect(_positiveVotes).toEqual(4);
+    });
 });
 
 describe('real-time lockdrop claim hash tests', () => {

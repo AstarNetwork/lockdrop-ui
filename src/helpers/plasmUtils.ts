@@ -160,6 +160,58 @@ export async function sendLockClaimRequest(api: ApiPromise, lockParam: Struct, n
 }
 
 /**
+ * generates a Plasm public address with the given ethereum public key
+ * @param ethPubKey an compressed ECDSA public key. With or without the 0x prefix
+ */
+export function generatePlmAddress(publicKey: string) {
+    // converts a given hex string into Uint8Array
+    const toByteArray = (hexString: string) => {
+        const result = [];
+        for (let i = 0; i < hexString.length; i += 2) {
+            result.push(parseInt(hexString.substr(i, 2), 16));
+        }
+        return new Uint8Array(result);
+    };
+
+    // hash to blake2
+    const plasmPubKey = polkadotUtil.blake2AsU8a(toByteArray(publicKey.replace('0x', '')), 256);
+    // encode address
+    const plasmAddress = polkadotUtil.encodeAddress(plasmPubKey, 5);
+    return plasmAddress;
+}
+
+/**
+ * Fetches the number of free balance for the given address in femto.
+ * @param api polkadot-js api instance
+ * @param plasmAddress Plasm network address
+ * @param asPlm if the output value should be in PLM. Default denominator is in femto
+ */
+export async function getAddressBalance(api: ApiPromise, plasmAddress: string, asPlm?: boolean) {
+    const { data: balance } = await api.query.system.account(plasmAddress);
+    let _bal = balance.free.toString();
+    if (asPlm) {
+        _bal = femtoToPlm(new BigNumber(balance.free.toString())).toFixed();
+    }
+    return _bal;
+}
+
+/**
+ * Fetches Plasm real-time lockdrop vote threshold and positive vote values.
+ * @param api polkadot-js api instance
+ */
+export async function getLockdropVoteRequirements(api: ApiPromise) {
+    // number of minium votes required for a claim request to be accepted
+    const _voteThreshold = Number.parseInt((await api.query.plasmLockdrop.voteThreshold()).toString());
+    // number of outstanding votes (approve votes - decline votes) required for a claim request to be accepted
+    const _positiveVotes = Number.parseInt((await api.query.plasmLockdrop.positiveVotes()).toString());
+
+    return {
+        voteThreshold: _voteThreshold,
+        positiveVotes: _positiveVotes,
+    };
+}
+
+/**
  * sends a lockdrop claim request to Plasm net node. This will fund the ECDSA address.
  * @param api polkadot API instance
  * @param claimId real-time lockdrop claim ID
