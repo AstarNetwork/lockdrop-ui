@@ -114,6 +114,18 @@ const epochToDays = (epoch: number) => {
 
 const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'Plasm', networkType }) => {
     const classes = useStyles();
+    const [positiveVotes, setPositiveVotes] = useState(0);
+    const [voteThreshold, setVoteThreshold] = useState(0);
+    const [isLoading, setLoading] = useState(true);
+
+    useEffect(() => {
+        plasmUtils.getLockdropVoteRequirements(plasmApi).then(i => {
+            setPositiveVotes(i.positiveVotes);
+            setVoteThreshold(i.voteThreshold);
+            setLoading(false);
+        });
+    }, []);
+
     return (
         <div>
             <Typography variant="h5" component="h2" align="center">
@@ -122,7 +134,9 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'P
             <List className={classes.listRoot} subheader={<li />}>
                 <li className={classes.listSection}>
                     <ul className={classes.ul}>
-                        {claimParams && claimParams.length > 0 ? (
+                        {isLoading ? (
+                            <CircularProgress />
+                        ) : claimParams && claimParams.length > 0 ? (
                             <>
                                 <ListSubheader>You can claim {claimParams.length} locks</ListSubheader>
                                 <Divider />
@@ -135,6 +149,8 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'P
                                             plasmApi={plasmApi}
                                             plasmNetwork={plasmNetwork}
                                             networkType={networkType}
+                                            positiveVotes={positiveVotes}
+                                            voteThreshold={voteThreshold}
                                         />
                                     </>
                                 ))}
@@ -163,8 +179,18 @@ interface ItemProps {
     plasmApi: ApiPromise;
     plasmNetwork: 'Plasm' | 'Dusty';
     networkType: 'BTC' | 'ETH';
+    positiveVotes: number;
+    voteThreshold: number;
 }
-const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, networkType }) => {
+
+const ClaimItem: React.FC<ItemProps> = ({
+    lockParam,
+    plasmApi,
+    plasmNetwork,
+    networkType,
+    positiveVotes,
+    voteThreshold,
+}) => {
     const classes = useStyles();
     const [claimData, setClaimData] = useState<Claim>();
     const [claimId, setClaimId] = useState<H256>(
@@ -215,15 +241,18 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
             });
     };
 
+    const canSendClaim = () => {
+        if (approveList.length + declineList.length < voteThreshold) {
+            return false;
+        }
+        if (approveList.length - declineList.length < positiveVotes) {
+            return false;
+        }
+        return true;
+    };
+
     const submitTokenClaim = (id: Uint8Array | H256) => {
-        try {
-            //todo: query plasm node to get voteThreshold and positiveVotes
-            if (approveList.length + declineList.length < 5) {
-                throw new Error('Not enough votes to make a claim');
-            }
-            if (approveList.length - declineList.length < 4) {
-                throw new Error('Not enough approving votes to make a claim');
-            }
+        if (canSendClaim()) {
             setClaimingLock(true);
             plasmUtils
                 .sendLockdropClaim(plasmApi, id)
@@ -231,11 +260,8 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
                     console.log('Token claim transaction hash:\n' + res.toHex());
                 })
                 .catch(e => {
-                    // pass error message to try catch block
-                    throw new Error(e);
+                    console.log(e);
                 });
-        } catch (e) {
-            toast.error(e);
         }
     };
 
@@ -279,6 +305,10 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
         };
     });
 
+    /**
+     * Real-time lockdrop submit button. This button will change its function and shape
+     * depending on the state of the component
+     */
     const ActionButton = () => {
         if (claimData) {
             // if claim request is already sent but haven't claimed it yet

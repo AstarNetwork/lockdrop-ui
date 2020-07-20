@@ -160,6 +160,22 @@ export async function sendLockClaimRequest(api: ApiPromise, lockParam: Struct, n
 }
 
 /**
+ * Fetches Plasm real-time lockdrop vote threshold and positive vote values.
+ * @param api polkadot-js api instance
+ */
+export async function getLockdropVoteRequirements(api: ApiPromise) {
+    // number of minium votes required for a claim request to be accepted
+    const _voteThreshold = Number.parseInt((await api.query.plasmLockdrop.voteThreshold()).toString());
+    // number of outstanding votes (approve votes - decline votes) required for a claim request to be accepted
+    const _positiveVotes = Number.parseInt((await api.query.plasmLockdrop.positiveVotes()).toString());
+
+    return {
+        voteThreshold: _voteThreshold,
+        positiveVotes: _positiveVotes,
+    };
+}
+
+/**
  * sends a lockdrop claim request to Plasm net node. This will fund the ECDSA address.
  * @param api polkadot API instance
  * @param claimId real-time lockdrop claim ID
