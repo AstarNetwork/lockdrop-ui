@@ -11,10 +11,9 @@ import { isValidIntroducerAddress, defaultAddress, affiliationRate } from '../..
 import { lockDurationToRate } from '../plasmUtils';
 import { PlmDrop } from '../../types/PlasmDrop';
 import Web3Utils from 'web3-utils';
-import EthCrypto from 'eth-crypto';
-import * as polkadotUtil from '@polkadot/util-crypto';
 import { ecrecover, fromRpcSig, toBuffer, bufferToHex } from 'ethereumjs-util';
 import * as lockInfo from '../../data/lockInfo';
+import EthCrypto from 'eth-crypto';
 
 // todo: reduce client-side operations and replace it with data from the plasm node
 
@@ -29,30 +28,8 @@ const totalAmountOfPLMs = new BigNumber('500000000.000000000000000');
 const totalAmountOfPLMsForLockdrop = totalAmountOfPLMs.times(new BigNumber('17').div(new BigNumber('20')));
 
 /**
- * generates a Plasm public address with the given ethereum public key
- * @param ethPubKey an uncompressed ethereum public key with the 0x prefix
- */
-export function generatePlmAddress(ethPubKey: string) {
-    // converts a given hex string into Uint8Array
-    const toByteArray = (hexString: string) => {
-        const result = [];
-        for (let i = 0; i < hexString.length; i += 2) {
-            result.push(parseInt(hexString.substr(i, 2), 16));
-        }
-        return new Uint8Array(result);
-    };
-
-    // compress 64byte key into 32+1 byte key
-    const compressedPubKey = EthCrypto.publicKey.compress(ethPubKey);
-    // hash to blake2
-    const plasmPubKey = polkadotUtil.blake2AsU8a(toByteArray(compressedPubKey), 256);
-    // encode address
-    const plmAccountId = polkadotUtil.encodeAddress(plasmPubKey, 5);
-    return plmAccountId;
-}
-
-/**
- * asks the user to sign a hashed message from their dApp browser to recover the user's public key
+ * asks the user to sign a hashed message from their dApp browser to recover the user's public key.
+ * This will return a compressed public key.
  * @param web3 a web3.js instance to access the user's wallet information
  * @param message an optional message that the user should sign
  */
@@ -68,8 +45,10 @@ export async function getPubKey(web3: Web3, message?: string) {
     // the password parameter is only used for specific wallets (most wallets will prompt the user to provide it)
     const sig = '0x' + (await web3.eth.personal.sign(msg, addresses[0], 'SecureP4ssW0rd')).slice(2);
     const res = fromRpcSig(sig);
+    const publicKey = bufferToHex(ecrecover(toBuffer(hash), res.v, res.r, res.s));
+    const compressedPubKey = '0x' + EthCrypto.publicKey.compress(publicKey.replace('0x', ''));
 
-    return bufferToHex(ecrecover(toBuffer(hash), res.v, res.r, res.s));
+    return compressedPubKey;
 }
 
 /**
