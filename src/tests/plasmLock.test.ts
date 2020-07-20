@@ -147,7 +147,7 @@ describe('Plasm lockdrop RPC tests', () => {
                 console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
                 console.log('claim ID: ' + sampleLock.hash.toString());
 
-                await plasmUtils.sendLockClaim(api, sampleLock as any, nonce);
+                await plasmUtils.sendLockClaimRequest(api, sampleLock as any, nonce);
 
                 const claimData = await plasmUtils.getClaimStatus(api, sampleLock.hash);
                 console.log(claimData);

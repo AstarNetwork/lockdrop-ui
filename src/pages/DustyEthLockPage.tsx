@@ -21,7 +21,6 @@ import * as plasmUtils from '../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import ClaimStatus from 'src/components/ClaimStatus';
-import Web3Utils from 'web3-utils';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -194,19 +193,7 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                 this.setState({ publicKey: _publicKey });
             }
 
-            const hash = await submitLockTx(formInputVal, this.state.accounts[0], this.state.contract);
-            const lockParam = plasmUtils.createLockParam(
-                LockdropType.Ethereum,
-                hash,
-                '0x' + EthCrypto.publicKey.compress(this.state.publicKey.replace('0x', '')),
-                this.durationToEpoch(formInputVal.duration).toString(),
-                Web3Utils.toWei(formInputVal.amount, 'ether').toString(),
-            );
-
-            const nonce = plasmUtils.claimPowNonce(lockParam.hash);
-            console.log('Your claim ID is ' + lockParam.hash.toString());
-            // we need to wrap the struct into a any type due to type overloading issues
-            await plasmUtils.sendLockClaim(this.state.plasmApi, lockParam as any, nonce);
+            await submitLockTx(formInputVal, this.state.accounts[0], this.state.contract);
             toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
         } catch (e) {
             toast.error(e.message.toString());
