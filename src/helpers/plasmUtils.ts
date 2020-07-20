@@ -147,12 +147,29 @@ export function getClaimId(lockdropParam: Struct) {
  * @param lockParam lockdrop parameter that contains the lock data
  * @param nonce nonce for PoW authentication with the node
  */
-export async function sendLockClaim(api: ApiPromise, lockParam: Struct, nonce: Uint8Array): Promise<Hash> {
+export async function sendLockClaimRequest(api: ApiPromise, lockParam: Struct, nonce: Uint8Array): Promise<Hash> {
     if (typeof api.tx.plasmLockdrop === 'undefined') {
         throw new Error('Plasm node cannot find lockdrop module');
     }
 
     const claimRequestTx = api.tx.plasmLockdrop.request(lockParam.toU8a(), nonce);
+
+    const txHash = await claimRequestTx.send();
+
+    return txHash;
+}
+
+/**
+ * sends a lockdrop claim request to Plasm net node. This will fund the ECDSA address.
+ * @param api polkadot API instance
+ * @param claimId real-time lockdrop claim ID
+ */
+export async function sendLockdropClaim(api: ApiPromise, claimId: Uint8Array | H256) {
+    if (typeof api.tx.plasmLockdrop === 'undefined') {
+        throw new Error('Plasm node cannot find lockdrop module');
+    }
+
+    const claimRequestTx = api.tx.plasmLockdrop.claim(claimId);
 
     const txHash = await claimRequestTx.send();
 
