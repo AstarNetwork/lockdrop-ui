@@ -217,6 +217,7 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
 
     const submitTokenClaim = (id: Uint8Array | H256) => {
         try {
+            //todo: query plasm node to get voteThreshold and positiveVotes
             if (approveList.length + declineList.length < 5) {
                 throw new Error('Not enough votes to make a claim');
             }
@@ -279,8 +280,7 @@ const ClaimItem: React.FC<ItemProps> = ({ lockParam, plasmApi, plasmNetwork, net
     });
 
     const ActionButton = () => {
-        //todo: change 4 to api.query.plasmLockdrop.positiveVotes()
-        if (claimData && approveList.length - declineList.length >= 4) {
+        if (claimData) {
             // if claim request is already sent but haven't claimed it yet
             return (
                 <div>
