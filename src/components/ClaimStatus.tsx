@@ -159,7 +159,9 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'P
                 <li className={classes.listSection}>
                     <ul className={classes.ul}>
                         {isLoading ? (
-                            <CircularProgress className={classes.emptyPanel} />
+                            <div className={classes.emptyPanel}>
+                                <CircularProgress />
+                            </div>
                         ) : claimParams.length > 0 ? (
                             <>
                                 <ListSubheader>You can claim {claimParams.length} locks</ListSubheader>
@@ -409,7 +411,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                         {claimData
                             ? claimData.complete.valueOf()
                                 ? 'Claimed Lockdrop'
-                                : 'Claim requested'
+                                : 'Claim requested (not claimed)'
                             : 'Claim not requested'}
                     </Typography>
                     {claimData && (
@@ -460,7 +462,12 @@ const ClaimItem: React.FC<ItemProps> = ({
                                     : submitTokenClaim(claimId);
                             }}
                             color="primary"
-                            disabled={sendingRequest || claimData?.complete.valueOf() || claimingLock || !hasAllVotes()}
+                            disabled={
+                                sendingRequest ||
+                                claimData?.complete.valueOf() ||
+                                claimingLock ||
+                                (claimData && !hasAllVotes())
+                            }
                         >
                             <ActionIcon />
                         </IconButton>
