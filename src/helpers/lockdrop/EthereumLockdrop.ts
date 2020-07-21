@@ -306,9 +306,9 @@ export async function submitLockTx(txInput: LockInput, address: string, contract
     if (introducer && !Web3.utils.isAddress(introducer)) {
         throw new Error('Please input a valid Ethereum address');
     }
-    if (!isValidIntroducerAddress(introducer)) {
-        throw new Error('The given introducer is not registered in the affiliation program!');
-    }
+    // if (!isValidIntroducerAddress(introducer)) {
+    //     throw new Error('The given introducer is not registered in the affiliation program!');
+    // }
 
     // convert user input to Wei
     const amountToSend = Web3.utils.toWei(txInput.amount, 'ether');
