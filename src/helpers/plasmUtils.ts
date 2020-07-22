@@ -188,9 +188,9 @@ export function generatePlmAddress(publicKey: string) {
  */
 export async function getAddressBalance(api: ApiPromise, plasmAddress: string, asPlm?: boolean) {
     const { data: balance } = await api.query.system.account(plasmAddress);
-    let _bal = balance.free.toString();
+    let _bal = new BigNumber(balance.free.toString());
     if (asPlm) {
-        _bal = femtoToPlm(new BigNumber(balance.free.toString())).toFixed();
+        _bal = femtoToPlm(new BigNumber(balance.free.toString()));
     }
     return _bal;
 }

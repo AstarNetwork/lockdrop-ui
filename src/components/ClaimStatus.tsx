@@ -128,9 +128,10 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'P
 
     useEffect(() => {
         const interval = setInterval(async () => {
-            const _bal = await plasmUtils.getAddressBalance(plasmApi, plasmAddr, true);
+            const _bal = (await plasmUtils.getAddressBalance(plasmApi, plasmAddr, true)).toFixed(3);
+            const formatBal = parseFloat(_bal).toLocaleString('en');
             const _voteReq = await plasmUtils.getLockdropVoteRequirements(plasmApi);
-            setBalance(_bal);
+            setBalance(formatBal);
             setPositiveVotes(_voteReq.positiveVotes);
             setVoteThreshold(_voteReq.voteThreshold);
             isLoading && setLoading(false);
