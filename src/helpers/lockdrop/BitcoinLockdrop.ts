@@ -6,11 +6,8 @@ import { Transaction, Signer, Network } from 'bitcoinjs-lib';
 import { BlockCypherApi } from '../../types/BlockCypherTypes';
 import BigNumber from 'bignumber.js';
 
-//const BTC_TX_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/txs/';
-//const BTC_ADDR_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/addrs/';
-
-//const BTC_TX_API_MAINNET = 'https://api.blockcypher.com/v1/btc/main/txs/';
-//const BTC_ADDR_API_MAINNET = 'https://api.blockcypher.com/v1/btc/main/addrs/';
+// https://www.blockchain.com/api/api_websocket
+export const BLOCKCHAIN_WS = 'wss://ws.blockchain.info/inv';
 
 /**
  * the message that will be hashed and signed by the client
@@ -367,5 +364,52 @@ export function btcUnlockTx(
         throw new Error('Transaction is invalid');
     }
 
+    return tx;
+}
+
+/**
+ * Creates a lockdrop redeem transaction in PSBT
+ * @param utx Unspent transaction of locker
+ * @param network bitcoin network the script is for
+ * @param lockTx lockdrop lock transaction (P2SH)
+ * @param lockScript the lock script
+ * @param lockSequence block sequence used in the lock script
+ */
+export function btcUnlockIoTx(
+    utx: Transaction,
+    network: Network,
+    lockTx: UnspentTx,
+    lockScript: Buffer,
+    lockSequence: number,
+) {
+    const p2sh = bitcoinjs.payments.p2sh({
+        redeem: {
+            output: lockScript,
+        },
+        network: network,
+    });
+    const randomPublicKey = bitcoinjs.ECPair.makeRandom({ network: network, compressed: true }).publicKey;
+    const randomAddress = bitcoinjs.payments.p2pkh({ pubkey: randomPublicKey, network: network }).address;
+
+    // for non segwit inputs, you must pass the full transaction buffer
+    const nonWitnessUtxo = Buffer.from(utx.toHex(), 'hex');
+
+    // This is an example of using the finalizeInput second parameter to
+    // define how you finalize the inputs, allowing for any type of script.
+    const tx = new bitcoinjs.Psbt({ network: network })
+        .setVersion(2)
+        .addInput({
+            hash: lockTx.txId,
+            index: lockTx.vout,
+            sequence: lockSequence,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            redeemScript: p2sh.redeem!.output!,
+            nonWitnessUtxo,
+        })
+        .addOutput({
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            address: randomAddress!,
+            value: 7e4,
+        });
     return tx;
 }

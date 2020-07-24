@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/camelcase */
 /* eslint-disable react/prop-types */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import React, { useState, useEffect } from 'react';
@@ -98,6 +99,37 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                 toast.error(e.toString());
                 console.log(e);
                 setLoading(false);
+            }
+        });
+
+        TrezorConnect.signTransaction({
+            inputs: [
+                {
+                    address_n: [(49 | 0x80000000) >>> 0, (0 | 0x80000000) >>> 0, (2 | 0x80000000) >>> 0, 1, 0],
+                    prev_index: 0,
+                    prev_hash: 'b035d89d4543ce5713c553d69431698116a822c57c03ddacf3f04b763d1999ac',
+                    amount: '3382047',
+                    script_type: 'SPENDP2SHWITNESS',
+                },
+            ],
+            outputs: [
+                {
+                    address_n: [(49 | 0x80000000) >>> 0, (0 | 0x80000000) >>> 0, (2 | 0x80000000) >>> 0, 1, 1],
+                    amount: '3181747',
+                    script_type: 'PAYTOP2SHWITNESS',
+                },
+                {
+                    address: '18WL2iZKmpDYWk1oFavJapdLALxwSjcSk2',
+                    amount: '200000',
+                    script_type: 'PAYTOADDRESS',
+                },
+            ],
+            coin: 'btc',
+        }).then(i => {
+            if (i.success) {
+                console.log(i.payload.serializedTx);
+                console.log(i.payload.signatures);
+                console.log(i.payload.txid);
             }
         });
     };
