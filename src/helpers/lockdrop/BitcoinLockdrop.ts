@@ -368,32 +368,32 @@ export function btcUnlockTx(
 }
 
 /**
- * Creates a lockdrop redeem transaction in PSBT
+ * Creates a unsigned lockdrop redeem transaction in PSBT
  * @param utx Unspent transaction of locker
  * @param network bitcoin network the script is for
  * @param lockTx lockdrop lock transaction (P2SH)
- * @param lockScript the lock script
+ * @param lockP2SH lock P2SH instance
  * @param lockSequence block sequence used in the lock script
+ * @param fee the transaction fee that occurred for the lock TX
  */
 export function btcUnlockIoTx(
     utx: Transaction,
     network: Network,
     lockTx: UnspentTx,
-    lockScript: Buffer,
+    lockP2SH: bitcoinjs.payments.Payment,
     lockSequence: number,
+    fee: number,
 ) {
-    const p2sh = bitcoinjs.payments.p2sh({
-        redeem: {
-            output: lockScript,
-        },
-        network: network,
-    });
-    const randomPublicKey = bitcoinjs.ECPair.makeRandom({ network: network, compressed: true }).publicKey;
-    const randomAddress = bitcoinjs.payments.p2pkh({ pubkey: randomPublicKey, network: network }).address;
+    if (lockSequence < 0) {
+        throw new Error('Block sequence cannot be less than zeo');
+    }
 
     // for non segwit inputs, you must pass the full transaction buffer
     const nonWitnessUtxo = Buffer.from(utx.toHex(), 'hex');
 
+    // this is used for the random output address
+    const randomPublicKey = bitcoinjs.ECPair.makeRandom({ network: network, compressed: true }).publicKey;
+    const randomAddress = bitcoinjs.payments.p2pkh({ pubkey: randomPublicKey, network: network }).address;
     // This is an example of using the finalizeInput second parameter to
     // define how you finalize the inputs, allowing for any type of script.
     const tx = new bitcoinjs.Psbt({ network: network })
@@ -403,13 +403,14 @@ export function btcUnlockIoTx(
             index: lockTx.vout,
             sequence: lockSequence,
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            redeemScript: p2sh.redeem!.output!,
+            redeemScript: lockP2SH.redeem!.output!,
             nonWitnessUtxo,
         })
         .addOutput({
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             address: randomAddress!,
-            value: 7e4,
+            value: lockTx.value - fee,
         });
+    // this is a unsigned transaction
     return tx;
 }
