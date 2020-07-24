@@ -1,10 +1,11 @@
 import { Message } from 'bitcore-lib';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import bip68 from 'bip68';
-import { UnspentTx } from '../../types/LockdropModels';
+import { UnspentTx, LockdropType } from '../../types/LockdropModels';
 import { Transaction, Signer, Network } from 'bitcoinjs-lib';
 import { BlockCypherApi } from '../../types/BlockCypherTypes';
 import BigNumber from 'bignumber.js';
+import * as plasmUtils from '../plasmUtils';
 
 // https://www.blockchain.com/api/api_websocket
 export const BLOCKCHAIN_WS = 'wss://ws.blockchain.info/inv';
@@ -413,4 +414,47 @@ export function btcUnlockIoTx(
         });
     // this is a unsigned transaction
     return tx;
+}
+
+/**
+ * creates a lockdrop parameter from the given lock script address and values
+ * by fetching all transactions in the lock script address
+ * @param scriptAddress the P2SH lock address
+ * @param lockDuration duration of the lock in days
+ * @param publicKey compressed BTC public key of the locker
+ * @param network bitcoin network
+ */
+export async function getLockParameter(
+    scriptAddress: string,
+    lockDuration: number,
+    publicKey: string,
+    network: 'main' | 'test3',
+) {
+    const btcNetwork = network === 'main' ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet;
+    const p2sh = bitcoinjs.payments.p2sh({
+        network: btcNetwork,
+        redeem: {
+            output: btcLockScript(publicKey, daysToBlockSequence(lockDuration), btcNetwork),
+        },
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    if (p2sh.address && p2sh.address !== scriptAddress) {
+        throw new Error('Lock script information does not match P2SH');
+    }
+
+    const locks = (await getAddressEndpoint(scriptAddress, network, 64)).txrefs;
+    const daysToEpoch = 60 * 60 * 24 * lockDuration;
+
+    const lockParams = locks.map(i => {
+        return plasmUtils.createLockParam(
+            LockdropType.Bitcoin,
+            i.tx_hash,
+            publicKey,
+            daysToEpoch.toString(),
+            i.value.toString(),
+        );
+    });
+
+    return lockParams;
 }
