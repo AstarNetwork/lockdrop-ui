@@ -17,14 +17,19 @@ import {
     IonLoading,
 } from '@ionic/react';
 import { DropdownOption } from '../DropdownOption';
-import { btcDustyDurations } from '../../data/lockInfo';
+import { btcDustyDurations, btcDurations } from '../../data/lockInfo';
 import * as btcLock from '../../helpers/lockdrop/BitcoinLockdrop';
 import { toast } from 'react-toastify';
 //import BigNumber from 'bignumber.js';
-import { makeStyles, createStyles } from '@material-ui/core';
+import { makeStyles, createStyles, Typography, Container } from '@material-ui/core';
 import QrEncodedAddress from './QrEncodedAddress';
 import * as bitcoinjs from 'bitcoinjs-lib';
-import { OptionItem } from 'src/types/LockdropModels';
+import { OptionItem, Lockdrop } from 'src/types/LockdropModels';
+import SectionCard from '../SectionCard';
+import ClaimStatus from '../ClaimStatus';
+import { ApiPromise } from '@polkadot/api';
+import * as plasmUtils from '../../helpers/plasmUtils';
+
 interface Props {
     networkType: bitcoinjs.Network;
 }
@@ -48,9 +53,15 @@ const useStyles = makeStyles(() =>
 
 const TrezorLock: React.FC<Props> = ({ networkType }) => {
     const classes = useStyles();
+
     const defaultPath = networkType === bitcoinjs.networks.bitcoin ? "m/44'/0'/0'" : "m/44'/1'/0'";
+    // switch lock duration depending on the chain network
+    const networkLockDur = networkType === bitcoinjs.networks.bitcoin ? btcDurations : btcDustyDurations;
+
     const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
     const [p2shAddress, setP2sh] = useState('');
+    const [plasmApi, setPlasmApi] = useState<ApiPromise>();
+    const [lockParams, setLockParams] = useState<Lockdrop[]>();
 
     // changing the path to n/49'/x'/x' will return a signature error
     // this may be due to compatibility issues with BIP49
@@ -64,6 +75,51 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
         }
 
         return { valid: true, message: 'valid input' };
+    };
+
+    const signLockdropClaims = () => {
+        const _msg = 'sign to display real-time lockdrop status';
+        setLoading(true);
+
+        if (!publicKey) {
+            TrezorConnect.signMessage({
+                path: addressPath,
+                message: _msg,
+                coin: networkType === bitcoinjs.networks.bitcoin ? 'BTC' : 'Testnet',
+            }).then(res => {
+                try {
+                    if (res.success) {
+                        const _pubKey = btcLock.getPublicKey(
+                            res.payload.address,
+                            res.payload.signature,
+                            'compressed',
+                            _msg,
+                        );
+                        setPublicKey(_pubKey);
+                    } else {
+                        throw new Error(res.payload.error);
+                    }
+                } catch (e) {
+                    toast.error(e.toString());
+                    console.log(e);
+                    setLoading(false);
+                }
+            });
+        }
+        if (!plasmApi) {
+            const netType =
+                networkType === bitcoinjs.networks.bitcoin
+                    ? plasmUtils.PlasmNetwork.Main
+                    : plasmUtils.PlasmNetwork.Dusty;
+
+            plasmUtils.createPlasmInstance(netType).then(e => {
+                setPlasmApi(e);
+            });
+        }
+
+        if (plasmApi && publicKey && lockParams) {
+            setLoading(false);
+        }
     };
 
     const signMessage = () => {
@@ -101,46 +157,51 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                 setLoading(false);
             }
         });
-
-        TrezorConnect.signTransaction({
-            inputs: [
-                {
-                    address_n: [(49 | 0x80000000) >>> 0, (0 | 0x80000000) >>> 0, (2 | 0x80000000) >>> 0, 1, 0],
-                    prev_index: 0,
-                    prev_hash: 'b035d89d4543ce5713c553d69431698116a822c57c03ddacf3f04b763d1999ac',
-                    amount: '3382047',
-                    script_type: 'SPENDP2SHWITNESS',
-                },
-            ],
-            outputs: [
-                {
-                    address_n: [(49 | 0x80000000) >>> 0, (0 | 0x80000000) >>> 0, (2 | 0x80000000) >>> 0, 1, 1],
-                    amount: '3181747',
-                    script_type: 'PAYTOP2SHWITNESS',
-                },
-                {
-                    address: '18WL2iZKmpDYWk1oFavJapdLALxwSjcSk2',
-                    amount: '200000',
-                    script_type: 'PAYTOADDRESS',
-                },
-            ],
-            coin: 'btc',
-        }).then(i => {
-            if (i.success) {
-                console.log(i.payload.serializedTx);
-                console.log(i.payload.signatures);
-                console.log(i.payload.txid);
-            }
-        });
+        signLockdropClaims();
     };
 
+    // initialize component variables
     useEffect(() => {
-        if (publicKey && p2shAddress) {
-            const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
+        const netType =
+            networkType === bitcoinjs.networks.bitcoin ? plasmUtils.PlasmNetwork.Main : plasmUtils.PlasmNetwork.Dusty;
 
-            setP2sh(lockScript.address!);
+        plasmUtils.createPlasmInstance(netType).then(e => {
+            setPlasmApi(e);
+        });
+    }, []);
+
+    useEffect(() => {
+        if (publicKey) {
+            const blockCypherNetwork = networkType === bitcoinjs.networks.bitcoin ? 'main' : 'test3';
+            // const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
+            // setP2sh(lockScript.address!);
+
+            // initialize lockdrop data array
+            const _lockParams: Lockdrop[] = [];
+
+            // get all the possible lock addresses
+            networkLockDur.map(i => {
+                const p2shAddr = btcLock.getLockP2SH(i.value, publicKey, networkType).address!;
+                // set the lock address to UI if it's the one that the user chose
+                // we do this to update the QR code
+                if (i.value === lockDuration.value) setP2sh(p2shAddr);
+
+                // make a real-time lockdrop data structure with the current P2SH and duration
+                btcLock.getLockParameter(p2shAddr, i.value, publicKey, blockCypherNetwork).then(lock => {
+                    // loop through all the token locks within the given script
+                    // this is to prevent nested array
+                    lock.map(e => {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        _lockParams.push(plasmUtils.structToLockdrop(e as any));
+                    });
+                });
+            });
+            if (_lockParams.length > 0) {
+                setLockParams(_lockParams);
+            }
+            console.log(_lockParams);
         }
-    }, [lockDuration, publicKey, networkType, p2shAddress]);
+    }, [lockDuration, publicKey, networkType]);
 
     return (
         <div>
@@ -181,12 +242,10 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                     <IonLabel position="stacked">Lock Duration</IonLabel>
                     <IonItem>
                         <DropdownOption
-                            dataSets={btcDustyDurations}
+                            dataSets={networkLockDur}
                             onChoose={(e: React.ChangeEvent<HTMLInputElement>) =>
                                 setDuration(
-                                    btcDustyDurations.filter(
-                                        i => i.value === ((e.target.value as unknown) as number),
-                                    )[0],
+                                    networkLockDur.filter(i => i.value === ((e.target.value as unknown) as number))[0],
                                 )
                             }
                         ></DropdownOption>
@@ -199,10 +258,34 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                         </IonChip>
                     </IonItem>
                     <div className={classes.button}>
-                        <IonButton onClick={() => signMessage()}>Generate Lock Script</IonButton>
+                        <IonButton onClick={() => signMessage()} disabled={p2shAddress !== ''}>
+                            Generate Lock Script
+                        </IonButton>
                     </div>
                 </IonCardContent>
             </IonCard>
+            <SectionCard maxWidth="lg">
+                <Typography variant="h4" component="h1" align="center">
+                    Real-time Lockdrop Status
+                </Typography>
+                {publicKey && lockParams && plasmApi ? (
+                    <ClaimStatus
+                        claimParams={lockParams}
+                        plasmApi={plasmApi}
+                        networkType="ETH"
+                        plasmNetwork="Dusty"
+                        publicKey={publicKey}
+                    />
+                ) : (
+                    <>
+                        <Container>
+                            <IonButton expand="block" onClick={() => signLockdropClaims()}>
+                                Click to view lock claims
+                            </IonButton>
+                        </Container>
+                    </>
+                )}
+            </SectionCard>
         </div>
     );
 };

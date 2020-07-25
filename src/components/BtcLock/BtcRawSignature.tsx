@@ -15,7 +15,7 @@ import {
     IonChip,
 } from '@ionic/react';
 import { makeStyles, createStyles } from '@material-ui/core';
-import { MESSAGE, getPublicKey, getNetworkFromAddress, getDustyLockP2SH } from '../../helpers/lockdrop/BitcoinLockdrop';
+import { MESSAGE, getPublicKey, getNetworkFromAddress, getLockP2SH } from '../../helpers/lockdrop/BitcoinLockdrop';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { DropdownOption } from '../DropdownOption';
@@ -71,7 +71,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                 setPublicKey(pub);
                 console.log(pub);
 
-                const p2sh = getDustyLockP2SH(lockDuration.value, pub, networkType);
+                const p2sh = getLockP2SH(lockDuration.value, pub, networkType);
 
                 if (typeof p2sh.address === 'string') {
                     setP2sh(p2sh.address);
@@ -90,7 +90,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
 
     useEffect(() => {
         if (publicKey && p2shAddress) {
-            const lockScript = getDustyLockP2SH(lockDuration.value, publicKey, networkType);
+            const lockScript = getLockP2SH(lockDuration.value, publicKey, networkType);
 
             setP2sh(lockScript.address!);
         }

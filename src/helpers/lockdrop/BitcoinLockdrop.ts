@@ -6,10 +6,13 @@ import { Transaction, Signer, Network } from 'bitcoinjs-lib';
 import { BlockCypherApi } from '../../types/BlockCypherTypes';
 import BigNumber from 'bignumber.js';
 import * as plasmUtils from '../plasmUtils';
+import { BlockStreamApi } from 'src/types/BlockStreamTypes';
 
 // https://www.blockchain.com/api/api_websocket
 export const BLOCKCHAIN_WS = 'wss://ws.blockchain.info/inv';
 
+export const BLOCKSTREAM_API_ADDRESS = 'https://blockstream.info/testnet/api/address/{address}/utxo';
+export const BLOCKSTREAM_API_TX = 'https://blockstream.info/testnet/api/tx/{txid}';
 /**
  * the message that will be hashed and signed by the client
  */
@@ -27,6 +30,28 @@ export async function qrEncodeUri(btcAddress: string, size = 300) {
     );
 
     return qrCode;
+}
+
+export async function getBtcTxsFromAddress(address: string, network: 'mainnet' | 'testnet') {
+    const api = `https://blockstream.info/${network === 'mainnet' ? '' : 'testnet/'}api/address/${address}/txs`;
+    const res = await (await fetch(api)).text();
+    if (res.includes('Invalid Bitcoin address')) {
+        throw new Error('Invalid Bitcoin address');
+    }
+
+    const txs: BlockStreamApi.Transaction[] = JSON.parse(res);
+    return txs;
+}
+
+export async function getBtcTxFromTxId(txid: string, network: 'mainnet' | 'testnet') {
+    const api = `https://blockstream.info/${network === 'mainnet' ? '' : 'testnet/'}api/tx/${txid}`;
+    const res = await (await fetch(api)).text();
+    if (res.includes('Invalid hex string')) {
+        throw new Error('Invalid hex string');
+    }
+
+    const tx: BlockStreamApi.Transaction = JSON.parse(res);
+    return tx;
 }
 
 /**
@@ -205,9 +230,18 @@ export function compressPubKey(publicKey: string, network: bitcoinjs.Network) {
  * @param address bitcoin address
  * @param signature base 64 signature for signing the plasm network message
  * @param compression should the public key be compressed or not
+ * @param msg optional message used to generate the signature
  */
-export function getPublicKey(address: string, signature: string, compression?: 'compressed' | 'uncompressed') {
-    const compressedPubKey = new Message(MESSAGE).recoverPublicKey(address, signature.replace(/(\r\n|\n|\r)/gm, ''));
+export function getPublicKey(
+    address: string,
+    signature: string,
+    compression?: 'compressed' | 'uncompressed',
+    msg?: string,
+) {
+    const compressedPubKey = new Message(msg ? msg : MESSAGE).recoverPublicKey(
+        address,
+        signature.replace(/(\r\n|\n|\r)/gm, ''),
+    );
     const addressNetwork = getNetworkFromAddress(address);
     return compression === 'compressed' ? compressedPubKey : decompressPubKey(compressedPubKey, addressNetwork);
 }
@@ -279,27 +313,13 @@ export function btcLockScript(publicKeyHex: string, blockSequence: number, netwo
  * @param network bitcoin network the script will generate for
  */
 export function getLockP2SH(lockDays: number, publicKey: string, network: bitcoinjs.Network) {
-    if (lockDays > 300 || lockDays < 30) {
-        throw new Error('Lock duration must be between 30 days to 300 days');
+    // only check lock duration boundaries for main net
+    if (network === bitcoinjs.networks.bitcoin) {
+        if (lockDays > 300 || lockDays < 30) {
+            throw new Error('Lock duration must be between 30 days to 300 days');
+        }
     }
 
-    return bitcoinjs.payments.p2sh({
-        network: network,
-        redeem: {
-            output: btcLockScript(publicKey, daysToBlockSequence(lockDays), network),
-        },
-    });
-}
-
-/**
- * creates a P2SH instance that locks the sent token for the given duration for Dusty network.
- * the locked tokens can only be claimed by the provided public key.
- * Unlike the mainnet lockdrop, Dusty will have a shorter lock period
- * @param lockDays the lock duration in days
- * @param publicKey public key of the locker. This can be both compressed or uncompressed
- * @param network bitcoin network the script will generate for
- */
-export function getDustyLockP2SH(lockDays: number, publicKey: string, network: bitcoinjs.Network) {
     return bitcoinjs.payments.p2sh({
         network: network,
         redeem: {
