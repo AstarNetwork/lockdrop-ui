@@ -9,6 +9,10 @@ import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
 import { UnspentTx } from '../types/LockdropModels';
 import { getAddressEndpoint, getTransactionEndpoint } from '../helpers/lockdrop/BitcoinLockdrop';
 import bip68 from 'bip68';
+import * as plasmUtils from '../helpers/plasmUtils';
+
+// we use a lot of API calls in this test, it's good to extend the timeout
+jest.setTimeout(60000);
 
 const regtest = regtestUtils.network;
 
@@ -143,13 +147,11 @@ describe('Bitcoin API fetch tests', () => {
     it('fetches address data from block cypher', async () => {
         const addressInfo = await getAddressEndpoint('13XXaBufpMvqRqLkyDty1AXqueZHVe6iyy', 'main');
         expect(addressInfo.total_received).toEqual(293710000);
-        expect(addressInfo.txrefs[0].tx_hash).toEqual(
-            'f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449',
-        );
+        expect(addressInfo.txs[0].hash).toEqual('f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449');
 
         const addressInfoTestnet = await getAddressEndpoint('2Mubm96PDzLyzcXJvfqX8kdyn2WHa7ssJ67', 'test3');
         expect(addressInfoTestnet.total_received).toEqual(284780111);
-        expect(addressInfoTestnet.txrefs[0].tx_hash).toEqual(
+        expect(addressInfoTestnet.txs[0].hash).toEqual(
             'f02a3881823238cd4290a8e18bf45db5dd7d9f23a6a8e3d64e307f68085e0929',
         );
     });
@@ -219,16 +221,6 @@ describe('BTC lock script tests', () => {
         expect(() => btcLockdrop.getLockP2SH(301, testSet3.publicKey, bitcoin.networks.testnet)).toThrowError(
             'Lock duration must be between 30 days to 300 days',
         );
-    });
-
-    it('validates generating lock script', () => {
-        expect(() =>
-            btcLockdrop.btcLockScript(
-                testSet2.privateKey,
-                btcLockdrop.daysToBlockSequence(3),
-                bitcoin.networks.bitcoin,
-            ),
-        ).toThrowError('Invalid public key');
 
         expect(() => {
             btcLockdrop.getLockP2SH(
@@ -245,6 +237,24 @@ describe('BTC lock script tests', () => {
                 bitcoin.networks.testnet,
             );
         }).toThrowError('Block sequence cannot be a negative number');
+    });
+
+    it('generates BTC lockdrop parameter', async () => {
+        // lock script locking for 3 days on testnet
+        const scriptAddr = '2N1MH1ikVDSh3wyqvGHaG9pKfFHC6mUiDiZ';
+        // known lock TX hash (https://api.blockcypher.com/v1/btc/test3/txs/384f54793b753e4acd9a9aca1da3ef7609931800d0a86de8c4ae6dc8ab7a96fd)
+        const lockTXHash = '0x384f54793b753e4acd9a9aca1da3ef7609931800d0a86de8c4ae6dc8ab7a96fd';
+        const locks = await btcLockdrop.getLockParameter(
+            scriptAddr,
+            3,
+            btcLockdrop.compressPubKey(testSet3.publicKey, bitcoin.networks.testnet),
+            'test3',
+        );
+        const lockParams = locks.map(i => {
+            return plasmUtils.structToLockdrop(i as any);
+        });
+
+        expect(lockParams[0].transactionHash.toHex()).toEqual(lockTXHash);
     });
 
     it(

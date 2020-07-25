@@ -69,6 +69,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
             if (new Message(MESSAGE).verify(addressInput, sigInput)) {
                 const pub = getPublicKey(addressInput, sigInput, 'compressed');
                 setPublicKey(pub);
+                console.log(pub);
 
                 const p2sh = getDustyLockP2SH(lockDuration.value, pub, networkType);
 

@@ -36,8 +36,14 @@ export async function qrEncodeUri(btcAddress: string, size = 300) {
  * @param network network type
  * @param limit filters the number of transaction references
  */
-export async function getAddressEndpoint(address: string, network: 'main' | 'test3', limit = 20) {
-    const api = `https://api.blockcypher.com/v1/btc/${network}/addrs/${address}?limit=${limit}`;
+export async function getAddressEndpoint(
+    address: string,
+    network: 'main' | 'test3',
+    limit = 50,
+    unspentOnly?: boolean,
+    includeScript?: boolean,
+) {
+    const api = `https://api.blockcypher.com/v1/btc/${network}/addrs/${address}/full?unspentOnly=${unspentOnly}&includeScript=${includeScript}?limit=${limit}`;
 
     const res = await (await fetch(api)).text();
 
@@ -87,6 +93,7 @@ export function validateBtcAddress(address: string, network?: bitcoinjs.networks
 
 /**
  * Validates the given public key hex by importing it through bitcoinjs ECPair.
+ * Returns true if it's valid, and false if it's invalid
  * @param publicKey Bitcoin public key hex string
  * @param network bitcoin network to check from. Defaults to mainnet
  */
@@ -426,7 +433,7 @@ export function btcUnlockIoTx(
  */
 export async function getLockParameter(
     scriptAddress: string,
-    lockDuration: number,
+    lockDurationDays: number,
     publicKey: string,
     network: 'main' | 'test3',
 ) {
@@ -434,7 +441,7 @@ export async function getLockParameter(
     const p2sh = bitcoinjs.payments.p2sh({
         network: btcNetwork,
         redeem: {
-            output: btcLockScript(publicKey, daysToBlockSequence(lockDuration), btcNetwork),
+            output: btcLockScript(publicKey, daysToBlockSequence(lockDurationDays), btcNetwork),
         },
     });
 
@@ -443,16 +450,24 @@ export async function getLockParameter(
         throw new Error('Lock script information does not match P2SH');
     }
 
-    const locks = (await getAddressEndpoint(scriptAddress, network, 64)).txrefs;
-    const daysToEpoch = 60 * 60 * 24 * lockDuration;
+    if (!validatePublicKey(publicKey, btcNetwork)) {
+        throw new Error('Invalid Public Key');
+    }
+
+    if (lockDurationDays < 0 || !Number.isInteger(lockDurationDays)) {
+        throw new Error('Invalid lock duration');
+    }
+
+    const locks = (await getAddressEndpoint(scriptAddress, network, 50, false, true)).txs;
+    const daysToEpoch = 60 * 60 * 24 * lockDurationDays;
 
     const lockParams = locks.map(i => {
         return plasmUtils.createLockParam(
             LockdropType.Bitcoin,
-            i.tx_hash,
-            publicKey,
+            '0x' + i.hash,
+            '0x' + publicKey,
             daysToEpoch.toString(),
-            i.value.toString(),
+            i.total.toString(),
         );
     });
 

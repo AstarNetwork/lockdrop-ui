@@ -37,7 +37,7 @@ interface Props {
  */
 const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
     const [lockedValue, setLockedValue] = useState('');
-    const [scriptLocks, setScriptLocks] = useState<BlockCypherApi.Txref[]>([{}] as any); // initialize value
+    const [scriptLocks, setScriptLocks] = useState<BlockCypherApi.Tx[]>([]); // initialize value
     const [showModal, setShowModal] = useState(false);
 
     // initial fetch
@@ -46,16 +46,16 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
         const networkToken =
             btcLockdrop.getNetworkFromAddress(scriptAddress) === bitcoinjs.networks.bitcoin ? 'main' : 'test3';
         // check the transactions in the P2SH address
-        btcLockdrop.getAddressEndpoint(scriptAddress, networkToken).then(lockTxData => {
+        btcLockdrop.getAddressEndpoint(scriptAddress, networkToken, 50, false, true).then(lockTxData => {
             if (lockTxData.final_balance > 0) {
                 setLockedValue(btcLockdrop.satoshiToBitcoin(lockTxData.final_balance).toFixed());
-                setScriptLocks(lockTxData.txrefs);
+                setScriptLocks(lockTxData.txs);
 
-                console.log(lockTxData.txrefs);
+                console.log(lockTxData.txs);
             } else {
                 // we need this to display the correct value when the user changes param
                 setLockedValue('');
-                setScriptLocks([{}] as any);
+                setScriptLocks([]);
             }
         });
     }, [scriptAddress]);
@@ -70,7 +70,7 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
             if (lockTxData.final_balance > 0) {
                 setLockedValue(btcLockdrop.satoshiToBitcoin(lockTxData.final_balance).toFixed());
             }
-        }, 20000); // fetch every 20 seconds
+        }, 10000); // fetch every 10 seconds
 
         // cleanup hook
         return () => {
@@ -99,9 +99,11 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
                             <IonCardContent>
                                 <IonList>
                                     {scriptLocks.map(e => (
-                                        <IonItem key={e.tx_hash}>
-                                            <h4>Transaction Hash: {e.tx_hash}</h4>
-                                            {/* <h5>Locked Amount: {btcLockdrop.satoshiToBitcoin(e.ref_balance).toFixed()}</h5> */}
+                                        <IonItem key={e.hash}>
+                                            <h4>Transaction Hash: {e.hash}</h4>
+                                            <br />
+                                            <h5>Locked Amount: {btcLockdrop.satoshiToBitcoin(e.total).toFixed()}</h5>
+                                            <br />
                                             <p>Locked in block no. {e.block_height}</p>
                                         </IonItem>
                                     ))}
