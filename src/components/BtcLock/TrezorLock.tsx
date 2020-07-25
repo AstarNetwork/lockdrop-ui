@@ -187,18 +187,18 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                 toast.error(err);
                 console.log(err);
             });
-    }, []);
+    }, [networkType]);
 
     useEffect(() => {
         if (publicKey) {
             const p2shAddr = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType).address!;
             setP2sh(p2shAddr);
         }
-    }, [lockDuration]);
+    }, [lockDuration, networkType, publicKey]);
 
     useEffect(() => {
         if (publicKey) {
-            const blockCypherNetwork = networkType === bitcoinjs.networks.bitcoin ? 'main' : 'test3';
+            const blockCypherNetwork = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
             // const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
             // setP2sh(lockScript.address!);
 
@@ -206,6 +206,7 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
             const _lockParams: Lockdrop[] = [];
 
             // get all the possible lock addresses
+            // eslint-disable-next-line
             networkLockDur.map(i => {
                 const p2shAddr = btcLock.getLockP2SH(i.value, publicKey, networkType).address!;
 
@@ -213,6 +214,7 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                 btcLock.getLockParameter(p2shAddr, i.value, publicKey, blockCypherNetwork).then(lock => {
                     // loop through all the token locks within the given script
                     // this is to prevent nested array
+                    // eslint-disable-next-line
                     lock.map(e => {
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         _lockParams.push(plasmUtils.structToLockdrop(e as any));
@@ -221,7 +223,7 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
             });
             setLockParams(_lockParams);
         }
-    }, [publicKey, networkType]);
+    }, [publicKey, networkType, networkLockDur]);
 
     return (
         <div>

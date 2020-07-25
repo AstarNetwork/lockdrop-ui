@@ -455,9 +455,9 @@ export async function getLockParameter(
     scriptAddress: string,
     lockDurationDays: number,
     publicKey: string,
-    network: 'main' | 'test3',
+    network: 'mainnet' | 'testnet',
 ) {
-    const btcNetwork = network === 'main' ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet;
+    const btcNetwork = network === 'mainnet' ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet;
     const p2sh = bitcoinjs.payments.p2sh({
         network: btcNetwork,
         redeem: {
@@ -478,16 +478,16 @@ export async function getLockParameter(
         throw new Error('Invalid lock duration');
     }
 
-    const locks = (await getAddressEndpoint(scriptAddress, network, 50, false, true)).txs;
+    const locks = await getBtcTxsFromAddress(scriptAddress, network);
     const daysToEpoch = 60 * 60 * 24 * lockDurationDays;
 
     const lockParams = locks.map(i => {
         return plasmUtils.createLockParam(
             LockdropType.Bitcoin,
-            '0x' + i.hash,
+            '0x' + i.txid,
             '0x' + publicKey,
             daysToEpoch.toString(),
-            i.total.toString(),
+            i.vout[0].value.toString(),
         );
     });
 

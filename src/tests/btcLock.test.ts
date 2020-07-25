@@ -278,7 +278,7 @@ describe('BTC lock script tests', () => {
             scriptAddr,
             3,
             btcLockdrop.compressPubKey(testSet3.publicKey, bitcoin.networks.testnet),
-            'test3',
+            'testnet',
         );
         const lockParams = locks.map(i => {
             return plasmUtils.structToLockdrop(i as any);
