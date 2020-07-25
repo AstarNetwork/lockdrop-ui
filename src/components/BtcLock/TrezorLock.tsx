@@ -60,13 +60,16 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
 
     const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
     const [p2shAddress, setP2sh] = useState('');
-    const [plasmApi, setPlasmApi] = useState<ApiPromise>();
-    const [lockParams, setLockParams] = useState<Lockdrop[]>();
+    const [plasmApi, setPlasmApi] = useState<ApiPromise>({} as ApiPromise);
+    const [lockParams, setLockParams] = useState<Lockdrop[]>([]);
 
     // changing the path to n/49'/x'/x' will return a signature error
     // this may be due to compatibility issues with BIP49
     const [addressPath, setAddressPath] = useState(defaultPath);
-    const [isLoading, setLoading] = useState(false);
+    const [isLoading, setLoading] = useState<{ loadState: boolean; message: string }>({
+        loadState: false,
+        message: '',
+    });
     const [publicKey, setPublicKey] = useState('');
 
     const inputValidation = () => {
@@ -79,7 +82,7 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
 
     const signLockdropClaims = () => {
         const _msg = 'sign to display real-time lockdrop status';
-        setLoading(true);
+        setLoading({ loadState: true, message: 'Waiting for Trezor' });
 
         if (!publicKey) {
             TrezorConnect.signMessage({
@@ -102,32 +105,28 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                 } catch (e) {
                     toast.error(e.toString());
                     console.log(e);
-                    setLoading(false);
+                    setLoading({
+                        loadState: false,
+                        message: '',
+                    });
                 }
             });
         }
-        if (!plasmApi) {
-            const netType =
-                networkType === bitcoinjs.networks.bitcoin
-                    ? plasmUtils.PlasmNetwork.Main
-                    : plasmUtils.PlasmNetwork.Dusty;
-
-            plasmUtils.createPlasmInstance(netType).then(e => {
-                setPlasmApi(e);
-            });
-        }
-
-        if (plasmApi && publicKey && lockParams) {
-            setLoading(false);
-        }
+        setLoading({
+            loadState: false,
+            message: '',
+        });
     };
 
-    const signMessage = () => {
-        setLoading(true);
+    const createLockAddress = () => {
+        setLoading({ loadState: true, message: 'Waiting for Trezor' });
 
         if (!inputValidation().valid) {
             toast.error(inputValidation().message);
-            setLoading(false);
+            setLoading({
+                loadState: false,
+                message: '',
+            });
             return;
         }
 
@@ -149,26 +148,53 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                 } else {
                     throw new Error(res.payload.error);
                 }
-                setLoading(false);
+                setLoading({
+                    loadState: false,
+                    message: '',
+                });
                 toast.success('Successfully created lock script');
             } catch (e) {
                 toast.error(e.toString());
                 console.log(e);
-                setLoading(false);
+                setLoading({
+                    loadState: false,
+                    message: '',
+                });
             }
         });
         signLockdropClaims();
     };
 
-    // initialize component variables
     useEffect(() => {
+        setLoading({
+            loadState: true,
+            message: 'Connecting to Plasm Network',
+        });
         const netType =
             networkType === bitcoinjs.networks.bitcoin ? plasmUtils.PlasmNetwork.Main : plasmUtils.PlasmNetwork.Dusty;
 
-        plasmUtils.createPlasmInstance(netType).then(e => {
-            setPlasmApi(e);
-        });
+        plasmUtils
+            .createPlasmInstance(netType)
+            .then(e => {
+                setPlasmApi(e);
+                setLoading({
+                    loadState: false,
+                    message: '',
+                });
+                console.log('connected to Plasm network');
+            })
+            .catch(err => {
+                toast.error(err);
+                console.log(err);
+            });
     }, []);
+
+    useEffect(() => {
+        if (publicKey) {
+            const p2shAddr = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType).address!;
+            setP2sh(p2shAddr);
+        }
+    }, [lockDuration]);
 
     useEffect(() => {
         if (publicKey) {
@@ -182,9 +208,6 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
             // get all the possible lock addresses
             networkLockDur.map(i => {
                 const p2shAddr = btcLock.getLockP2SH(i.value, publicKey, networkType).address!;
-                // set the lock address to UI if it's the one that the user chose
-                // we do this to update the QR code
-                if (i.value === lockDuration.value) setP2sh(p2shAddr);
 
                 // make a real-time lockdrop data structure with the current P2SH and duration
                 btcLock.getLockParameter(p2shAddr, i.value, publicKey, blockCypherNetwork).then(lock => {
@@ -196,17 +219,14 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                     });
                 });
             });
-            if (_lockParams.length > 0) {
-                setLockParams(_lockParams);
-            }
-            console.log(_lockParams);
+            setLockParams(_lockParams);
         }
-    }, [lockDuration, publicKey, networkType]);
+    }, [publicKey, networkType]);
 
     return (
         <div>
             {p2shAddress ? <QrEncodedAddress address={p2shAddress} /> : null}
-            <IonLoading isOpen={isLoading} message={'Waiting for Trezor to respond'} />
+            <IonLoading isOpen={isLoading.loadState} message={isLoading.message} />
             <IonCard>
                 <IonCardHeader>
                     <IonCardSubtitle>
@@ -258,7 +278,7 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                         </IonChip>
                     </IonItem>
                     <div className={classes.button}>
-                        <IonButton onClick={() => signMessage()} disabled={p2shAddress !== ''}>
+                        <IonButton onClick={() => createLockAddress()} disabled={p2shAddress !== ''}>
                             Generate Lock Script
                         </IonButton>
                     </div>
@@ -268,11 +288,11 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                 <Typography variant="h4" component="h1" align="center">
                     Real-time Lockdrop Status
                 </Typography>
-                {publicKey && lockParams && plasmApi ? (
+                {publicKey ? (
                     <ClaimStatus
                         claimParams={lockParams}
                         plasmApi={plasmApi}
-                        networkType="ETH"
+                        networkType="BTC"
                         plasmNetwork="Dusty"
                         publicKey={publicKey}
                     />
