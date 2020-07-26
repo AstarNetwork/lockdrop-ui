@@ -284,7 +284,7 @@ describe('BTC lock script tests', () => {
             return plasmUtils.structToLockdrop(i as any);
         });
 
-        expect(lockParams[0].transactionHash.toHex()).toEqual(lockTXHash);
+        expect(lockParams[lockParams.length - 1].transactionHash.toHex()).toEqual(lockTXHash);
     });
 
     it(
