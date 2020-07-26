@@ -169,9 +169,8 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'P
                                 <Divider />
 
                                 {claimParams.map(e => (
-                                    <>
+                                    <div key={e.transactionHash.toHex()}>
                                         <ClaimItem
-                                            key={e.transactionHash.toHex()}
                                             lockParam={e}
                                             plasmApi={plasmApi}
                                             plasmNetwork={plasmNetwork}
@@ -179,7 +178,7 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'P
                                             positiveVotes={positiveVotes}
                                             voteThreshold={voteThreshold}
                                         />
-                                    </>
+                                    </div>
                                 ))}
                             </>
                         ) : (
