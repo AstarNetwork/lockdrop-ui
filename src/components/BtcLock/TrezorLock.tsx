@@ -204,11 +204,11 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
 
             // get all the possible lock addresses
             // eslint-disable-next-line
-            networkLockDur.map(i => {
-                const p2shAddr = btcLock.getLockP2SH(i.value, publicKey, networkType).address!;
+            networkLockDur.map((dur, index) => {
+                const p2shAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
 
                 // make a real-time lockdrop data structure with the current P2SH and duration
-                btcLock.getLockParameter(p2shAddr, i.value, publicKey, blockCypherNetwork).then(lock => {
+                btcLock.getLockParameter(p2shAddr, dur.value, publicKey, blockCypherNetwork).then(lock => {
                     // loop through all the token locks within the given script
                     // this is to prevent nested array
                     // eslint-disable-next-line
@@ -217,10 +217,14 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
                         _lockParams.push(plasmUtils.structToLockdrop(e as any));
                     });
                 });
+                // set lockdrop param data if we're in the final loop
+                // we do this because we want to set the values inside the then block
+                if (_lockParams.length > lockParams.length && index === networkLockDur.length - 1) {
+                    setLockParams(_lockParams);
+                }
             });
-            setLockParams(_lockParams);
         }
-    }, [lockDuration, networkType, publicKey, networkLockDur]);
+    }, [lockDuration, networkType, publicKey, networkLockDur, lockParams.length]);
 
     return (
         <div>

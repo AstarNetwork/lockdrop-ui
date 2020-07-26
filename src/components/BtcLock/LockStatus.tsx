@@ -27,6 +27,7 @@ import { lock, time } from 'ionicons/icons';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import { Tooltip } from '@material-ui/core';
 import { BlockCypherApi } from 'src/types/BlockCypherTypes';
+import BigNumber from 'bignumber.js';
 
 interface Props {
     scriptAddress: string;
@@ -50,26 +51,40 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
         // we need this to display the correct value when the user changes param
         setScriptLocks([]);
         setLockedValue('');
-        // get total lock value
-        btcLockdrop.getAddressBalance(scriptAddress, networkToken).then(addr => {
-            if (addr.total_received > 0) {
-                setLockedValue(btcLockdrop.satoshiToBitcoin(addr.total_received).toFixed());
+
+        btcLockdrop.getBtcTxsFromAddress(scriptAddress, networkToken === 'main' ? 'mainnet' : 'testnet').then(tx => {
+            let totalBal = new BigNumber(0);
+            tx.map(i => {
+                const lockTx = i.vout.filter(e => e.scriptpubkey_address === scriptAddress)[0];
+                totalBal = totalBal.plus(new BigNumber(lockTx.value));
+                console.log(lockTx.value);
+                return null;
+            });
+            if (totalBal.isGreaterThan(new BigNumber(0))) {
+                setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
             }
+            console.log(totalBal.toFixed());
         });
     }, [scriptAddress, networkToken]);
 
     // fetch lock data in the background
     useEffect(() => {
         const interval = setInterval(() => {
-            // get total lock value
-            btcLockdrop.getAddressBalance(scriptAddress, networkToken).then(addr => {
-                if (addr.total_received > 0) {
-                    setLockedValue(btcLockdrop.satoshiToBitcoin(addr.total_received).toFixed());
-                } else {
-                    // we need this to display the correct value when the user changes param
-                    setLockedValue('');
-                }
-            });
+            btcLockdrop
+                .getBtcTxsFromAddress(scriptAddress, networkToken === 'main' ? 'mainnet' : 'testnet')
+                .then(tx => {
+                    let totalBal = new BigNumber(0);
+                    tx.map(i => {
+                        const lockTx = i.vout.filter(e => e.scriptpubkey_address === scriptAddress)[0];
+                        totalBal = totalBal.plus(new BigNumber(lockTx.value));
+                        console.log(lockTx.value);
+                        return null;
+                    });
+                    if (totalBal.isGreaterThan(new BigNumber(0))) {
+                        setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
+                    }
+                    console.log(totalBal.toFixed());
+                });
         }, 20 * 1000); // fetch every 20 seconds
 
         // cleanup hook

@@ -159,17 +159,11 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                     // we do this because we want to set the values inside the then block
                     if (_lockParams.length > lockParams.length && index === networkLockDur.length - 1) {
                         setLockParams(_lockParams);
-                        console.log(_lockParams.length);
-                        console.log(lockParams.length);
                     }
                 });
             });
         }
     }, [lockDuration, publicKey, networkType, p2shAddress, networkLockDur, lockParams]);
-
-    useEffect(() => {
-        console.log(lockParams);
-    }, [lockParams]);
 
     return (
         <div>

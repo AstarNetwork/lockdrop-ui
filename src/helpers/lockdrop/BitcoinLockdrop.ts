@@ -30,6 +30,12 @@ export async function qrEncodeUri(btcAddress: string, size = 300) {
     return qrCode;
 }
 
+/**
+ * Returns a list of transactions from the given address.
+ * This data is fetched from BlockStream
+ * @param address BTC address to look for
+ * @param network BTC network token (mainnet or testnet)
+ */
 export async function getBtcTxsFromAddress(address: string, network: 'mainnet' | 'testnet') {
     const api = `https://blockstream.info/${network === 'mainnet' ? '' : 'testnet/'}api/address/${address}/txs`;
     const res = await (await fetch(api)).text();
@@ -41,8 +47,14 @@ export async function getBtcTxsFromAddress(address: string, network: 'mainnet' |
     return txs;
 }
 
+/**
+ * Returns the transaction information from the given transaction hash/TXID.
+ * This data is fetched from BlockStream
+ * @param txid transaction hash or TXID in hex string
+ * @param network BTC network token (mainnet or testnet)
+ */
 export async function getBtcTxFromTxId(txid: string, network: 'mainnet' | 'testnet') {
-    const api = `https://blockstream.info/${network === 'mainnet' ? '' : 'testnet/'}api/tx/${txid}`;
+    const api = `https://blockstream.info/${network === 'mainnet' ? '' : 'testnet/'}api/tx/${txid.replace('0x', '')}`;
     const res = await (await fetch(api)).text();
     if (res.includes('Invalid hex string')) {
         throw new Error('Invalid hex string');
@@ -98,6 +110,11 @@ export async function getTransactionEndpoint(txHash: string, network: 'main' | '
     return hashEndpoint;
 }
 
+/**
+ * returns a high-level information about the given address such as total received, spent, final bal, etc.
+ * @param addr bitcoin address to look for
+ * @param network network type
+ */
 export async function getAddressBalance(addr: string, network: 'main' | 'test3') {
     const api = `https://api.blockcypher.com/v1/btc/${network}/addrs/${addr}/balance`;
 
