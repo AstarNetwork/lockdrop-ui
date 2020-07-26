@@ -165,6 +165,7 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
         signLockdropClaims();
     };
 
+    // establish a connection with plasm node
     useEffect(() => {
         setLoading({
             loadState: true,
@@ -191,16 +192,12 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
 
     useEffect(() => {
         if (publicKey) {
+            // set P2SH
             const p2shAddr = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType).address!;
             setP2sh(p2shAddr);
-        }
-    }, [lockDuration, networkType, publicKey]);
 
-    useEffect(() => {
-        if (publicKey) {
+            // fetch lockdrop param data
             const blockCypherNetwork = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
-            // const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
-            // setP2sh(lockScript.address!);
 
             // initialize lockdrop data array
             const _lockParams: Lockdrop[] = [];
@@ -223,7 +220,7 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
             });
             setLockParams(_lockParams);
         }
-    }, [publicKey, networkType, networkLockDur]);
+    }, [lockDuration, networkType, publicKey, networkLockDur]);
 
     return (
         <div>

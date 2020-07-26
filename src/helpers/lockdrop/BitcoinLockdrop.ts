@@ -11,8 +11,6 @@ import { BlockStreamApi } from 'src/types/BlockStreamTypes';
 // https://www.blockchain.com/api/api_websocket
 export const BLOCKCHAIN_WS = 'wss://ws.blockchain.info/inv';
 
-export const BLOCKSTREAM_API_ADDRESS = 'https://blockstream.info/testnet/api/address/{address}/utxo';
-export const BLOCKSTREAM_API_TX = 'https://blockstream.info/testnet/api/tx/{txid}';
 /**
  * the message that will be hashed and signed by the client
  */
@@ -98,6 +96,19 @@ export async function getTransactionEndpoint(txHash: string, network: 'main' | '
 
     const hashEndpoint: BlockCypherApi.BtcTxHash = JSON.parse(res);
     return hashEndpoint;
+}
+
+export async function getAddressBalance(addr: string, network: 'main' | 'test3') {
+    const api = `https://api.blockcypher.com/v1/btc/${network}/addrs/${addr}/balance`;
+
+    const res = await (await fetch(api)).text();
+
+    if (res.includes('error')) {
+        throw new Error(res);
+    }
+
+    const addressInfo: BlockCypherApi.AddressBalance = JSON.parse(res);
+    return addressInfo;
 }
 
 /**
@@ -445,7 +456,7 @@ export function btcUnlockIoTx(
 
 /**
  * creates a lockdrop parameter from the given lock script address and values
- * by fetching all transactions in the lock script address
+ * by fetching all transactions in the lock script address from block stream
  * @param scriptAddress the P2SH lock address
  * @param lockDuration duration of the lock in days
  * @param publicKey compressed BTC public key of the locker
@@ -481,13 +492,16 @@ export async function getLockParameter(
     const locks = await getBtcTxsFromAddress(scriptAddress, network);
     const daysToEpoch = 60 * 60 * 24 * lockDurationDays;
 
+    //todo: properly calculate total locked value
+
     const lockParams = locks.map(i => {
+        const lockVal = i.vout.filter(locked => locked.scriptpubkey_address === scriptAddress);
         return plasmUtils.createLockParam(
             LockdropType.Bitcoin,
             '0x' + i.txid,
             '0x' + publicKey,
             daysToEpoch.toString(),
-            i.vout[0].value.toString(),
+            lockVal[0].value.toString(),
         );
     });
 
