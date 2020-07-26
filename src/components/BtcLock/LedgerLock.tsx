@@ -30,6 +30,7 @@ import { ApiPromise } from '@polkadot/api';
 import * as plasmUtils from '../../helpers/plasmUtils';
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import AppBtc from '@ledgerhq/hw-app-btc';
+import TransportU2F from '@ledgerhq/hw-transport-u2f';
 
 interface Props {
     networkType: bitcoinjs.Network;
@@ -83,69 +84,82 @@ const LedgerLock: React.FC<Props> = ({ networkType }) => {
         return { valid: true, message: 'valid input' };
     };
 
-    const makeLedgerTransport = async () => {
-        const ts = await TransportWebUSB.create();
-        const btc = new AppBtc(ts);
-        return btc;
+    const ledgerApiInstance = async () => {
+        if (btcApi === undefined) {
+            try {
+                const ts = await TransportWebUSB.create();
+                const btc = new AppBtc(ts);
+                setBtcApi(btc);
+                return btc;
+            } catch (e) {
+                if (e.message === 'No device selected.') {
+                    throw new Error(e);
+                }
+                console.log(e);
+                console.log('failed to connect via WebUSB, trying U2F');
+                try {
+                    const ts = await TransportU2F.create();
+                    const btc = new AppBtc(ts);
+                    setBtcApi(btc);
+                    return btc;
+                } catch (err) {
+                    console.log(err);
+                    throw new Error(err);
+                }
+            }
+        } else {
+            return btcApi;
+        }
     };
 
     const signLockdropClaims = () => {
         if (!publicKey) {
             setLoading({ loadState: true, message: 'Waiting for Ledger' });
-            //todo: sign with ledger and get public key
 
-            if (btcApi) {
-                btcApi.getWalletPublicKey(addressPath).then(wallet => {
-                    setPublicKey(wallet.publicKey);
-
+            ledgerApiInstance()
+                .then(btc => {
+                    btc.getWalletPublicKey(addressPath).then(wallet => {
+                        setPublicKey(wallet.publicKey);
+                    });
+                })
+                .catch(e => {
+                    toast.error(e.message);
+                    console.log(e);
+                })
+                .finally(() => {
                     setLoading({
                         loadState: false,
                         message: '',
                     });
                 });
-            } else {
-                makeLedgerTransport().then(btc => {
-                    setBtcApi(btc);
-                    btc.getWalletPublicKey(addressPath).then(wallet => {
-                        setPublicKey(wallet.publicKey);
-
-                        setLoading({
-                            loadState: false,
-                            message: '',
-                        });
-                    });
-                });
-            }
-            setLoading({
-                loadState: false,
-                message: '',
-            });
         }
     };
 
     const createLockAddress = () => {
-        setLoading({ loadState: true, message: 'Waiting for Ledger' });
-
         if (!inputValidation().valid) {
             toast.error(inputValidation().message);
-            setLoading({
-                loadState: false,
-                message: '',
-            });
             return;
         }
 
-        makeLedgerTransport().then(btc => {
-            setBtcApi(btc);
-            btc.getWalletPublicKey(addressPath).then(wallet => {
-                setPublicKey(wallet.publicKey);
+        setLoading({ loadState: true, message: 'Waiting for Ledger' });
 
+        ledgerApiInstance()
+            .then(btc => {
+                btc.getWalletPublicKey(addressPath).then(wallet => {
+                    setPublicKey(wallet.publicKey);
+                    toast.success('Successfully created lock script');
+                });
+            })
+            .catch(e => {
+                toast.error(e.message);
+                console.log(e);
+            })
+            .finally(() => {
                 setLoading({
                     loadState: false,
                     message: '',
                 });
             });
-        });
     };
 
     // establish a connection with plasm node
