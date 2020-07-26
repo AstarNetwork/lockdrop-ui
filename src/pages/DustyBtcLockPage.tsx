@@ -23,6 +23,7 @@ import ledgerLogo from '../resources/ledger_logo.svg';
 import { BtcWalletType } from '../types/LockdropModels';
 import BtcRawSignature from '../components/BtcLock/BtcRawSignature';
 import TrezorLock from '../components/BtcLock/TrezorLock';
+import LedgerLock from '../components/BtcLock/LedgerLock';
 import TrezorConnect, { DEVICE } from 'trezor-connect';
 import * as bitcoinjs from 'bitcoinjs-lib';
 
@@ -100,6 +101,8 @@ export default function DustyBtcLockPage() {
                 return <BtcRawSignature networkType={bitcoinjs.networks.testnet} />;
             case BtcWalletType.Trezor:
                 return <TrezorLock networkType={bitcoinjs.networks.testnet} />;
+            case BtcWalletType.Ledger:
+                return <LedgerLock networkType={bitcoinjs.networks.testnet} />;
         }
     };
 
@@ -139,7 +142,7 @@ export default function DustyBtcLockPage() {
                                     <IonLabel>Sign in with Trezor</IonLabel>
                                 </IonItem>
 
-                                <IonItem button onClick={() => handleLedger()} disabled>
+                                <IonItem button onClick={() => handleLedger()}>
                                     <IonIcon icon={ledgerLogo} slot="start" />
                                     <IonLabel>Sign in with Ledger</IonLabel>
                                 </IonItem>

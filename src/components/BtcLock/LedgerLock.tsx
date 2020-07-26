@@ -2,7 +2,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import React, { useState, useEffect } from 'react';
-import TrezorConnect from 'trezor-connect';
 import {
     IonCard,
     IonCardHeader,
@@ -29,6 +28,8 @@ import SectionCard from '../SectionCard';
 import ClaimStatus from '../ClaimStatus';
 import { ApiPromise } from '@polkadot/api';
 import * as plasmUtils from '../../helpers/plasmUtils';
+import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
+import AppBtc from '@ledgerhq/hw-app-btc';
 
 interface Props {
     networkType: bitcoinjs.Network;
@@ -51,7 +52,7 @@ const useStyles = makeStyles(() =>
     }),
 );
 
-const TrezorLock: React.FC<Props> = ({ networkType }) => {
+const LedgerLock: React.FC<Props> = ({ networkType }) => {
     const classes = useStyles();
 
     const defaultPath = networkType === bitcoinjs.networks.bitcoin ? "m/44'/0'/0'" : "m/44'/1'/0'";
@@ -62,6 +63,8 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
     const [p2shAddress, setP2sh] = useState('');
     const [plasmApi, setPlasmApi] = useState<ApiPromise>({} as ApiPromise);
     const [lockParams, setLockParams] = useState<Lockdrop[]>([]);
+
+    const [btcApi, setBtcApi] = useState<AppBtc>();
 
     // changing the path to n/49'/x'/x' will return a signature error
     // this may be due to compatibility issues with BIP49
@@ -80,47 +83,48 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
         return { valid: true, message: 'valid input' };
     };
 
-    const signLockdropClaims = () => {
-        const _msg = 'sign to display real-time lockdrop status';
-        setLoading({ loadState: true, message: 'Waiting for Trezor' });
+    const makeLedgerTransport = async () => {
+        const ts = await TransportWebUSB.create();
+        const btc = new AppBtc(ts);
+        return btc;
+    };
 
+    const signLockdropClaims = () => {
         if (!publicKey) {
-            // we have initiated the Trezor instance before this component mounted
-            TrezorConnect.signMessage({
-                path: addressPath,
-                message: _msg,
-                coin: networkType === bitcoinjs.networks.bitcoin ? 'BTC' : 'Testnet',
-            }).then(res => {
-                try {
-                    if (res.success) {
-                        const _pubKey = btcLock.getPublicKey(
-                            res.payload.address,
-                            res.payload.signature,
-                            'compressed',
-                            _msg,
-                        );
-                        setPublicKey(_pubKey);
-                    } else {
-                        throw new Error(res.payload.error);
-                    }
-                } catch (e) {
-                    toast.error(e.toString());
-                    console.log(e);
+            setLoading({ loadState: true, message: 'Waiting for Ledger' });
+            //todo: sign with ledger and get public key
+
+            if (btcApi) {
+                btcApi.getWalletPublicKey(addressPath).then(wallet => {
+                    setPublicKey(wallet.publicKey);
+
                     setLoading({
                         loadState: false,
                         message: '',
                     });
-                }
+                });
+            } else {
+                makeLedgerTransport().then(btc => {
+                    setBtcApi(btc);
+                    btc.getWalletPublicKey(addressPath).then(wallet => {
+                        setPublicKey(wallet.publicKey);
+
+                        setLoading({
+                            loadState: false,
+                            message: '',
+                        });
+                    });
+                });
+            }
+            setLoading({
+                loadState: false,
+                message: '',
             });
         }
-        setLoading({
-            loadState: false,
-            message: '',
-        });
     };
 
     const createLockAddress = () => {
-        setLoading({ loadState: true, message: 'Waiting for Trezor' });
+        setLoading({ loadState: true, message: 'Waiting for Ledger' });
 
         if (!inputValidation().valid) {
             toast.error(inputValidation().message);
@@ -131,37 +135,16 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
             return;
         }
 
-        TrezorConnect.signMessage({
-            path: addressPath,
-            message: btcLock.MESSAGE,
-            coin: networkType === bitcoinjs.networks.bitcoin ? 'BTC' : 'Testnet',
-        }).then(res => {
-            try {
-                if (res.success) {
-                    console.log(res.payload);
+        makeLedgerTransport().then(btc => {
+            setBtcApi(btc);
+            btc.getWalletPublicKey(addressPath).then(wallet => {
+                setPublicKey(wallet.publicKey);
 
-                    const _pubKey = btcLock.getPublicKey(res.payload.address, res.payload.signature, 'compressed');
-                    setPublicKey(_pubKey);
-
-                    const lockScript = btcLock.getLockP2SH(lockDuration.value, _pubKey, networkType);
-
-                    setP2sh(lockScript.address!);
-                } else {
-                    throw new Error(res.payload.error);
-                }
                 setLoading({
                     loadState: false,
                     message: '',
                 });
-                toast.success('Successfully created lock script');
-            } catch (e) {
-                toast.error(e.toString());
-                console.log(e);
-                setLoading({
-                    loadState: false,
-                    message: '',
-                });
-            }
+            });
         });
     };
 
@@ -313,4 +296,4 @@ const TrezorLock: React.FC<Props> = ({ networkType }) => {
     );
 };
 
-export default TrezorLock;
+export default LedgerLock;
