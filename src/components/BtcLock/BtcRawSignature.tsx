@@ -13,7 +13,6 @@ import {
     IonTextarea,
     IonButton,
     IonChip,
-    IonLoading,
 } from '@ionic/react';
 import { makeStyles, createStyles, Container, Typography } from '@material-ui/core';
 import * as btcLock from '../../helpers/lockdrop/BitcoinLockdrop';
@@ -32,6 +31,7 @@ import * as plasmUtils from '../../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
 interface Props {
     networkType: bitcoinjs.Network;
+    plasmApi: ApiPromise;
 }
 
 const useStyles = makeStyles(() =>
@@ -55,7 +55,7 @@ toast.configure({
  * Obtains lockdrop participant's public key by receiving raw signatures and BTC address
  * @param networkType Bitcoin network to use
  */
-const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
+const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
     const classes = useStyles();
     // switch lock duration depending on the chain network
     const networkLockDur = networkType === bitcoinjs.networks.bitcoin ? btcDurations : btcDustyDurations;
@@ -65,12 +65,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
     const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
     const [p2shAddress, setP2sh] = useState('');
     const [publicKey, setPublicKey] = useState('');
-    const [plasmApi, setPlasmApi] = useState<ApiPromise>({} as ApiPromise);
     const [lockParams, setLockParams] = useState<Lockdrop[]>([]);
-    const [isLoading, setLoading] = useState<{ loadState: boolean; message: string }>({
-        loadState: false,
-        message: '',
-    });
 
     const onSubmit = () => {
         try {
@@ -88,11 +83,11 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                 if (typeof p2sh.address === 'string') {
                     setP2sh(p2sh.address);
                 } else {
-                    toast.error('cannot create P2SH address!');
+                    throw new Error('Cannot create P2SH address!');
                 }
                 toast.success('Successfully created lock script');
             } else {
-                toast.error('cannot verify signature!');
+                throw new Error('Cannot verify signature!');
             }
         } catch (e) {
             console.log(e);
@@ -100,54 +95,21 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
         }
     };
 
-    // connect to plasm node on mount
     useEffect(() => {
-        setLoading({
-            loadState: true,
-            message: 'Connecting to Plasm Network',
-        });
-        const netType =
-            networkType === bitcoinjs.networks.bitcoin ? plasmUtils.PlasmNetwork.Main : plasmUtils.PlasmNetwork.Dusty;
+        const fetchLockdropParams = async () => {
+            // fetch user lock param data
+            if (publicKey) {
+                const blockStreamNet = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
+                // initialize lockdrop data array
+                const _lockParams: Lockdrop[] = [];
 
-        plasmUtils
-            .createPlasmInstance(netType)
-            .then(e => {
-                setPlasmApi(e);
-                setLoading({
-                    loadState: false,
-                    message: '',
-                });
-                console.log('connected to Plasm network');
-            })
-            .catch(err => {
-                toast.error(err);
-                console.log(err);
-            });
-    }, [networkType]);
+                // get all the possible lock addresses
+                // eslint-disable-next-line
+                networkLockDur.map(async (dur, index) => {
+                    const p2shAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
 
-    useEffect(() => {
-        // change P2SH if the user changed the lock duration
-        if (publicKey && p2shAddress) {
-            const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
-
-            setP2sh(lockScript.address!);
-        }
-        // fetch user lock param data
-        if (publicKey) {
-            const blockCypherNetwork = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
-            // const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
-            // setP2sh(lockScript.address!);
-
-            // initialize lockdrop data array
-            const _lockParams: Lockdrop[] = [];
-
-            // get all the possible lock addresses
-            // eslint-disable-next-line
-            networkLockDur.map((dur, index) => {
-                const p2shAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
-
-                // make a real-time lockdrop data structure with the current P2SH and duration
-                btcLock.getLockParameter(p2shAddr, dur.value, publicKey, blockCypherNetwork).then(lock => {
+                    // make a real-time lockdrop data structure with the current P2SH and duration
+                    const lock = await btcLock.getLockParameter(p2shAddr, dur.value, publicKey, blockStreamNet);
                     // loop through all the token locks within the given script
                     // this is to prevent nested array
                     // eslint-disable-next-line
@@ -161,14 +123,20 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                         setLockParams(_lockParams);
                     }
                 });
-            });
+            }
+        };
+        // change P2SH if the user changed the lock duration
+        if (publicKey && p2shAddress) {
+            const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
+            setP2sh(lockScript.address!);
         }
+
+        fetchLockdropParams();
     }, [lockDuration, publicKey, networkType, p2shAddress, networkLockDur, lockParams]);
 
     return (
         <div>
             {p2shAddress ? <QrEncodedAddress address={p2shAddress} /> : null}
-            <IonLoading isOpen={isLoading.loadState} message={isLoading.message} />
             <IonCard>
                 <IonCardHeader>
                     <IonCardSubtitle>

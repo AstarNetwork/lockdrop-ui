@@ -34,6 +34,7 @@ import TransportU2F from '@ledgerhq/hw-transport-u2f';
 
 interface Props {
     networkType: bitcoinjs.Network;
+    plasmApi: ApiPromise;
 }
 
 toast.configure({
@@ -53,7 +54,7 @@ const useStyles = makeStyles(() =>
     }),
 );
 
-const LedgerLock: React.FC<Props> = ({ networkType }) => {
+const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
     const classes = useStyles();
 
     const defaultPath = networkType === bitcoinjs.networks.bitcoin ? "m/44'/0'/0'" : "m/44'/1'/0'";
@@ -62,9 +63,7 @@ const LedgerLock: React.FC<Props> = ({ networkType }) => {
 
     const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
     const [p2shAddress, setP2sh] = useState('');
-    const [plasmApi, setPlasmApi] = useState<ApiPromise>({} as ApiPromise);
     const [lockParams, setLockParams] = useState<Lockdrop[]>([]);
-
     const [btcApi, setBtcApi] = useState<AppBtc>();
 
     // changing the path to n/49'/x'/x' will return a signature error
@@ -162,31 +161,6 @@ const LedgerLock: React.FC<Props> = ({ networkType }) => {
             });
     };
 
-    // establish a connection with plasm node
-    useEffect(() => {
-        setLoading({
-            loadState: true,
-            message: 'Connecting to Plasm Network',
-        });
-        const netType =
-            networkType === bitcoinjs.networks.bitcoin ? plasmUtils.PlasmNetwork.Main : plasmUtils.PlasmNetwork.Dusty;
-
-        plasmUtils
-            .createPlasmInstance(netType)
-            .then(e => {
-                setPlasmApi(e);
-                setLoading({
-                    loadState: false,
-                    message: '',
-                });
-                console.log('connected to Plasm network');
-            })
-            .catch(err => {
-                toast.error(err);
-                console.log(err);
-            });
-    }, [networkType]);
-
     useEffect(() => {
         if (publicKey) {
             // set P2SH
@@ -232,7 +206,11 @@ const LedgerLock: React.FC<Props> = ({ networkType }) => {
                     <IonCardSubtitle>
                         Please fill in the following form with the correct information. Your address path will default
                         to <code>{defaultPath}</code> if none is given. For more information, please check{' '}
-                        <a href="https://wiki.trezor.io/Address_path_(BIP32)" rel="noopener noreferrer" target="_blank">
+                        <a
+                            href="https://www.ledger.com/academy/crypto/what-are-hierarchical-deterministic-hd-wallets"
+                            rel="noopener noreferrer"
+                            target="_blank"
+                        >
                             this page
                         </a>
                         . Regarding the audit by Quantstamp, click{' '}

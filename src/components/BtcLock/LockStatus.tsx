@@ -51,40 +51,41 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
         // we need this to display the correct value when the user changes param
         setScriptLocks([]);
         setLockedValue('');
+        const setLockTotalBal = async () => {
+            const tx = await btcLockdrop.getBtcTxsFromAddress(
+                scriptAddress,
+                networkToken === 'main' ? 'mainnet' : 'testnet',
+            );
 
-        btcLockdrop.getBtcTxsFromAddress(scriptAddress, networkToken === 'main' ? 'mainnet' : 'testnet').then(tx => {
             let totalBal = new BigNumber(0);
             tx.map(i => {
                 const lockTx = i.vout.filter(e => e.scriptpubkey_address === scriptAddress)[0];
                 totalBal = totalBal.plus(new BigNumber(lockTx.value));
-                console.log(lockTx.value);
-                return null;
             });
             if (totalBal.isGreaterThan(new BigNumber(0))) {
                 setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
             }
-            console.log(totalBal.toFixed());
-        });
+        };
+
+        setLockTotalBal();
     }, [scriptAddress, networkToken]);
 
     // fetch lock data in the background
     useEffect(() => {
-        const interval = setInterval(() => {
-            btcLockdrop
-                .getBtcTxsFromAddress(scriptAddress, networkToken === 'main' ? 'mainnet' : 'testnet')
-                .then(tx => {
-                    let totalBal = new BigNumber(0);
-                    tx.map(i => {
-                        const lockTx = i.vout.filter(e => e.scriptpubkey_address === scriptAddress)[0];
-                        totalBal = totalBal.plus(new BigNumber(lockTx.value));
-                        console.log(lockTx.value);
-                        return null;
-                    });
-                    if (totalBal.isGreaterThan(new BigNumber(0))) {
-                        setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
-                    }
-                    console.log(totalBal.toFixed());
-                });
+        const interval = setInterval(async () => {
+            const tx = await btcLockdrop.getBtcTxsFromAddress(
+                scriptAddress,
+                networkToken === 'main' ? 'mainnet' : 'testnet',
+            );
+
+            let totalBal = new BigNumber(0);
+            tx.map(i => {
+                const lockTx = i.vout.filter(e => e.scriptpubkey_address === scriptAddress)[0];
+                totalBal = totalBal.plus(new BigNumber(lockTx.value));
+            });
+            if (totalBal.isGreaterThan(new BigNumber(0))) {
+                setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
+            }
         }, 20 * 1000); // fetch every 20 seconds
 
         // cleanup hook
@@ -95,18 +96,21 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
 
     // fetch modal content
     useEffect(() => {
+        const fetchModalData = async () => {
+            setLoading(true);
+            const lockTxData = await btcLockdrop.getAddressEndpoint(scriptAddress, networkToken, 50, false, true);
+            if (lockTxData.total_received > 0) {
+                setScriptLocks(lockTxData.txs);
+            } else {
+                // we need this to display the correct value when the user changes param
+                setScriptLocks([]);
+            }
+            setLoading(false);
+        };
+
         // only fetch if the user opens the modal
         if (showModal && scriptLocks.length === 0) {
-            setLoading(true);
-            btcLockdrop.getAddressEndpoint(scriptAddress, networkToken, 50, false, true).then(lockTxData => {
-                if (lockTxData.total_received > 0) {
-                    setScriptLocks(lockTxData.txs);
-                } else {
-                    // we need this to display the correct value when the user changes param
-                    setScriptLocks([]);
-                }
-                setLoading(false);
-            });
+            fetchModalData();
         }
     }, [showModal, scriptAddress, networkToken, scriptLocks]);
 
