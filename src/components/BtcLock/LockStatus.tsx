@@ -58,7 +58,7 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
             );
 
             let totalBal = new BigNumber(0);
-            tx.map(i => {
+            tx.forEach(i => {
                 const lockTx = i.vout.filter(e => e.scriptpubkey_address === scriptAddress)[0];
                 totalBal = totalBal.plus(new BigNumber(lockTx.value));
             });
@@ -79,7 +79,7 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
             );
 
             let totalBal = new BigNumber(0);
-            tx.map(i => {
+            tx.forEach(i => {
                 const lockTx = i.vout.filter(e => e.scriptpubkey_address === scriptAddress)[0];
                 totalBal = totalBal.plus(new BigNumber(lockTx.value));
             });

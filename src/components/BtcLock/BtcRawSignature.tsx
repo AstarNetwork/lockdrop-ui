@@ -104,8 +104,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                 const _lockParams: Lockdrop[] = [];
 
                 // get all the possible lock addresses
-                // eslint-disable-next-line
-                networkLockDur.map(async (dur, index) => {
+                networkLockDur.forEach(async (dur, index) => {
                     const p2shAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
 
                     // make a real-time lockdrop data structure with the current P2SH and duration
