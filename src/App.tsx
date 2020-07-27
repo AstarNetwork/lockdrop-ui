@@ -5,7 +5,7 @@ import { IonReactHashRouter } from '@ionic/react-router';
 import LandingPage from './pages/LandingPage';
 import EthLockdropPage from './pages/EthLockdropPage';
 import DustyEthLockPage from './pages/DustyEthLockPage';
-//import DustyBtcLockPage from './pages/DustyBtcLockPage';
+// import DustyBtcLockPage from './pages/DustyBtcLockPage';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';

@@ -1,16 +1,15 @@
 import { Message } from 'bitcore-lib';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import bip68 from 'bip68';
-import { UnspentTx } from '../../types/LockdropModels';
+import { UnspentTx, LockdropType } from '../../types/LockdropModels';
 import { Transaction, Signer, Network } from 'bitcoinjs-lib';
 import { BlockCypherApi } from '../../types/BlockCypherTypes';
 import BigNumber from 'bignumber.js';
+import * as plasmUtils from '../plasmUtils';
+import { BlockStreamApi } from 'src/types/BlockStreamTypes';
 
-//const BTC_TX_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/txs/';
-//const BTC_ADDR_API_TESTNET = 'https://api.blockcypher.com/v1/btc/test3/addrs/';
-
-//const BTC_TX_API_MAINNET = 'https://api.blockcypher.com/v1/btc/main/txs/';
-//const BTC_ADDR_API_MAINNET = 'https://api.blockcypher.com/v1/btc/main/addrs/';
+// https://www.blockchain.com/api/api_websocket
+export const BLOCKCHAIN_WS = 'wss://ws.blockchain.info/inv';
 
 /**
  * the message that will be hashed and signed by the client
@@ -32,14 +31,54 @@ export async function qrEncodeUri(btcAddress: string, size = 300) {
 }
 
 /**
+ * Returns a list of transactions from the given address.
+ * This data is fetched from BlockStream
+ * @param address BTC address to look for
+ * @param network BTC network token (mainnet or testnet)
+ */
+export async function getBtcTxsFromAddress(address: string, network: 'mainnet' | 'testnet') {
+    const api = `https://blockstream.info/${network === 'mainnet' ? '' : 'testnet/'}api/address/${address}/txs`;
+    const res = await (await fetch(api)).text();
+    if (res.includes('Invalid Bitcoin address')) {
+        throw new Error('Invalid Bitcoin address');
+    }
+
+    const txs: BlockStreamApi.Transaction[] = JSON.parse(res);
+    return txs;
+}
+
+/**
+ * Returns the transaction information from the given transaction hash/TXID.
+ * This data is fetched from BlockStream
+ * @param txid transaction hash or TXID in hex string
+ * @param network BTC network token (mainnet or testnet)
+ */
+export async function getBtcTxFromTxId(txid: string, network: 'mainnet' | 'testnet') {
+    const api = `https://blockstream.info/${network === 'mainnet' ? '' : 'testnet/'}api/tx/${txid.replace('0x', '')}`;
+    const res = await (await fetch(api)).text();
+    if (res.includes('Invalid hex string')) {
+        throw new Error('Invalid hex string');
+    }
+
+    const tx: BlockStreamApi.Transaction = JSON.parse(res);
+    return tx;
+}
+
+/**
  * returns the detailed information of the given address via blockcypher API calls.
  * such information includes transaction references, account balances, and more
  * @param address bitcoin address
  * @param network network type
  * @param limit filters the number of transaction references
  */
-export async function getAddressEndpoint(address: string, network: 'main' | 'test3', limit = 20) {
-    const api = `https://api.blockcypher.com/v1/btc/${network}/addrs/${address}?limit=${limit}`;
+export async function getAddressEndpoint(
+    address: string,
+    network: 'main' | 'test3',
+    limit = 50,
+    unspentOnly?: boolean,
+    includeScript?: boolean,
+) {
+    const api = `https://api.blockcypher.com/v1/btc/${network}/addrs/${address}/full?unspentOnly=${unspentOnly}&includeScript=${includeScript}?limit=${limit}`;
 
     const res = await (await fetch(api)).text();
 
@@ -72,6 +111,24 @@ export async function getTransactionEndpoint(txHash: string, network: 'main' | '
 }
 
 /**
+ * returns a high-level information about the given address such as total received, spent, final bal, etc.
+ * @param addr bitcoin address to look for
+ * @param network network type
+ */
+export async function getAddressBalance(addr: string, network: 'main' | 'test3') {
+    const api = `https://api.blockcypher.com/v1/btc/${network}/addrs/${addr}/balance`;
+
+    const res = await (await fetch(api)).text();
+
+    if (res.includes('error')) {
+        throw new Error(res);
+    }
+
+    const addressInfo: BlockCypherApi.AddressBalance = JSON.parse(res);
+    return addressInfo;
+}
+
+/**
  * Validates the given BTC address by checking if it's in the correct format.
  * The default network is set to mainnet, byt anything else will require you to explicitly
  * pass it as the parameter.
@@ -89,6 +146,7 @@ export function validateBtcAddress(address: string, network?: bitcoinjs.networks
 
 /**
  * Validates the given public key hex by importing it through bitcoinjs ECPair.
+ * Returns true if it's valid, and false if it's invalid
  * @param publicKey Bitcoin public key hex string
  * @param network bitcoin network to check from. Defaults to mainnet
  */
@@ -200,9 +258,18 @@ export function compressPubKey(publicKey: string, network: bitcoinjs.Network) {
  * @param address bitcoin address
  * @param signature base 64 signature for signing the plasm network message
  * @param compression should the public key be compressed or not
+ * @param msg optional message used to generate the signature
  */
-export function getPublicKey(address: string, signature: string, compression?: 'compressed' | 'uncompressed') {
-    const compressedPubKey = new Message(MESSAGE).recoverPublicKey(address, signature.replace(/(\r\n|\n|\r)/gm, ''));
+export function getPublicKey(
+    address: string,
+    signature: string,
+    compression?: 'compressed' | 'uncompressed',
+    msg?: string,
+) {
+    const compressedPubKey = new Message(msg ? msg : MESSAGE).recoverPublicKey(
+        address,
+        signature.replace(/(\r\n|\n|\r)/gm, ''),
+    );
     const addressNetwork = getNetworkFromAddress(address);
     return compression === 'compressed' ? compressedPubKey : decompressPubKey(compressedPubKey, addressNetwork);
 }
@@ -274,27 +341,13 @@ export function btcLockScript(publicKeyHex: string, blockSequence: number, netwo
  * @param network bitcoin network the script will generate for
  */
 export function getLockP2SH(lockDays: number, publicKey: string, network: bitcoinjs.Network) {
-    if (lockDays > 300 || lockDays < 30) {
-        throw new Error('Lock duration must be between 30 days to 300 days');
+    // only check lock duration boundaries for main net
+    if (network === bitcoinjs.networks.bitcoin) {
+        if (lockDays > 300 || lockDays < 30) {
+            throw new Error('Lock duration must be between 30 days to 300 days');
+        }
     }
 
-    return bitcoinjs.payments.p2sh({
-        network: network,
-        redeem: {
-            output: btcLockScript(publicKey, daysToBlockSequence(lockDays), network),
-        },
-    });
-}
-
-/**
- * creates a P2SH instance that locks the sent token for the given duration for Dusty network.
- * the locked tokens can only be claimed by the provided public key.
- * Unlike the mainnet lockdrop, Dusty will have a shorter lock period
- * @param lockDays the lock duration in days
- * @param publicKey public key of the locker. This can be both compressed or uncompressed
- * @param network bitcoin network the script will generate for
- */
-export function getDustyLockP2SH(lockDays: number, publicKey: string, network: bitcoinjs.Network) {
     return bitcoinjs.payments.p2sh({
         network: network,
         redeem: {
@@ -368,4 +421,106 @@ export function btcUnlockTx(
     }
 
     return tx;
+}
+
+/**
+ * Creates a unsigned lockdrop redeem transaction in PSBT
+ * @param utx Unspent transaction of locker
+ * @param network bitcoin network the script is for
+ * @param lockTx lockdrop lock transaction (P2SH)
+ * @param lockP2SH lock P2SH instance
+ * @param lockSequence block sequence used in the lock script
+ * @param fee the transaction fee that occurred for the lock TX
+ */
+export function btcUnlockIoTx(
+    utx: Transaction,
+    network: Network,
+    lockTx: UnspentTx,
+    lockP2SH: bitcoinjs.payments.Payment,
+    lockSequence: number,
+    fee: number,
+) {
+    if (lockSequence < 0) {
+        throw new Error('Block sequence cannot be less than zeo');
+    }
+
+    // for non segwit inputs, you must pass the full transaction buffer
+    const nonWitnessUtxo = Buffer.from(utx.toHex(), 'hex');
+
+    // this is used for the random output address
+    const randomPublicKey = bitcoinjs.ECPair.makeRandom({ network: network, compressed: true }).publicKey;
+    const randomAddress = bitcoinjs.payments.p2pkh({ pubkey: randomPublicKey, network: network }).address;
+    // This is an example of using the finalizeInput second parameter to
+    // define how you finalize the inputs, allowing for any type of script.
+    const tx = new bitcoinjs.Psbt({ network: network })
+        .setVersion(2)
+        .addInput({
+            hash: lockTx.txId,
+            index: lockTx.vout,
+            sequence: lockSequence,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            redeemScript: lockP2SH.redeem!.output!,
+            nonWitnessUtxo,
+        })
+        .addOutput({
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            address: randomAddress!,
+            value: lockTx.value - fee,
+        });
+    // this is a unsigned transaction
+    return tx;
+}
+
+/**
+ * creates a lockdrop parameter from the given lock script address and values
+ * by fetching all transactions in the lock script address from block stream
+ * @param scriptAddress the P2SH lock address
+ * @param lockDuration duration of the lock in days
+ * @param publicKey compressed BTC public key of the locker
+ * @param network bitcoin network
+ */
+export async function getLockParameter(
+    scriptAddress: string,
+    lockDurationDays: number,
+    publicKey: string,
+    network: 'mainnet' | 'testnet',
+) {
+    const btcNetwork = network === 'mainnet' ? bitcoinjs.networks.bitcoin : bitcoinjs.networks.testnet;
+    const p2sh = bitcoinjs.payments.p2sh({
+        network: btcNetwork,
+        redeem: {
+            output: btcLockScript(publicKey, daysToBlockSequence(lockDurationDays), btcNetwork),
+        },
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    if (p2sh.address && p2sh.address !== scriptAddress) {
+        throw new Error('Lock script information does not match P2SH');
+    }
+
+    if (!validatePublicKey(publicKey, btcNetwork)) {
+        throw new Error('Invalid Public Key');
+    }
+
+    if (lockDurationDays < 0 || !Number.isInteger(lockDurationDays)) {
+        throw new Error('Invalid lock duration');
+    }
+
+    const locks = await getBtcTxsFromAddress(scriptAddress, network);
+    const daysToEpoch = 60 * 60 * 24 * lockDurationDays;
+
+    //todo: properly calculate total locked value
+
+    const lockParams = locks.map(i => {
+        const lockVal = i.vout.filter(locked => locked.scriptpubkey_address === scriptAddress);
+        return plasmUtils.createLockParam(
+            LockdropType.Bitcoin,
+            '0x' + i.txid,
+            '0x' + publicKey,
+            daysToEpoch.toString(),
+            lockVal[0].value.toString(),
+        );
+    });
+
+    return lockParams;
 }

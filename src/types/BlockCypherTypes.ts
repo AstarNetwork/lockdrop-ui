@@ -5,12 +5,13 @@ export declare namespace BlockCypherApi {
     export interface Input {
         prev_hash: string;
         output_index: number;
-        script: string;
         output_value: number;
         sequence: number;
         addresses: string[];
         script_type: string;
         age: number;
+        witness: string[];
+        script: string;
     }
 
     export interface Output {
@@ -21,18 +22,28 @@ export declare namespace BlockCypherApi {
         script_type: string;
     }
 
-    export interface Txref {
-        tx_hash: string;
+    export interface Tx {
+        block_hash: string;
         block_height: number;
-        tx_input_n: number;
-        tx_output_n: number;
-        value: number;
-        ref_balance: number;
-        confirmations: number;
+        block_index: number;
+        hash: string;
+        addresses: string[];
+        total: number;
+        fees: number;
+        size: number;
+        preference: string;
+        relayed_by: string;
         confirmed: Date;
+        received: Date;
+        ver: number;
+        lock_time: number;
         double_spend: boolean;
-        spent?: boolean;
-        spent_by: string;
+        vin_sz: number;
+        vout_sz: number;
+        confirmations: number;
+        confidence: number;
+        inputs: Input[];
+        outputs: Output[];
     }
 
     export interface BtcAddress {
@@ -45,8 +56,19 @@ export declare namespace BlockCypherApi {
         n_tx: number;
         unconfirmed_n_tx: number;
         final_n_tx: number;
-        txrefs: Txref[];
-        tx_url: string;
+        txs: Tx[];
+    }
+
+    export interface AddressBalance {
+        address: string;
+        total_received: number;
+        total_sent: number;
+        balance: number;
+        unconfirmed_balance: number;
+        final_balance: number;
+        n_tx: number;
+        unconfirmed_n_tx: number;
+        final_n_tx: number;
     }
 
     export interface BtcTxHash {

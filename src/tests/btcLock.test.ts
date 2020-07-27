@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { PrivateKey, Message } from 'bitcore-lib';
 import eccrypto from 'eccrypto';
@@ -7,8 +8,11 @@ import * as assert from 'assert';
 import { regtestUtils } from './_regtest';
 import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
 import { UnspentTx } from '../types/LockdropModels';
-import { getAddressEndpoint, getTransactionEndpoint } from '../helpers/lockdrop/BitcoinLockdrop';
 import bip68 from 'bip68';
+import * as plasmUtils from '../helpers/plasmUtils';
+
+// we use a lot of API calls in this test, it's good to extend the timeout
+jest.setTimeout(60000);
 
 const regtest = regtestUtils.network;
 
@@ -141,31 +145,59 @@ describe('Bitcoin lockdrop helper tests', () => {
 
 describe('Bitcoin API fetch tests', () => {
     it('fetches address data from block cypher', async () => {
-        const addressInfo = await getAddressEndpoint('13XXaBufpMvqRqLkyDty1AXqueZHVe6iyy', 'main');
+        const addressInfo = await btcLockdrop.getAddressEndpoint('13XXaBufpMvqRqLkyDty1AXqueZHVe6iyy', 'main');
         expect(addressInfo.total_received).toEqual(293710000);
-        expect(addressInfo.txrefs[0].tx_hash).toEqual(
-            'f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449',
-        );
+        expect(addressInfo.txs[0].hash).toEqual('f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449');
 
-        const addressInfoTestnet = await getAddressEndpoint('2Mubm96PDzLyzcXJvfqX8kdyn2WHa7ssJ67', 'test3');
+        const addressInfoTestnet = await btcLockdrop.getAddressEndpoint('2Mubm96PDzLyzcXJvfqX8kdyn2WHa7ssJ67', 'test3');
         expect(addressInfoTestnet.total_received).toEqual(284780111);
-        expect(addressInfoTestnet.txrefs[0].tx_hash).toEqual(
+        expect(addressInfoTestnet.txs[0].hash).toEqual(
             'f02a3881823238cd4290a8e18bf45db5dd7d9f23a6a8e3d64e307f68085e0929',
         );
     });
 
     it('fetches transaction hash data from block cypher', async () => {
-        const txInfo = await getTransactionEndpoint(
+        const txInfo = await btcLockdrop.getTransactionEndpoint(
             'f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449',
             'main',
         );
         expect(txInfo.total).toEqual(70320221545);
 
-        const txInfoTestnet = await getTransactionEndpoint(
+        const txInfoTestnet = await btcLockdrop.getTransactionEndpoint(
             '2336a60b02f69a892b797b21aedafa128779338e9f69650fc87373a4f8036611',
             'test3',
         );
         expect(txInfoTestnet.total).toEqual(284852111);
+    });
+
+    it('fetches transaction data from BlockStream', async () => {
+        const allTxFromAddr = await btcLockdrop.getBtcTxsFromAddress('13XXaBufpMvqRqLkyDty1AXqueZHVe6iyy', 'mainnet');
+        const allTxFromAddrTest = await btcLockdrop.getBtcTxsFromAddress(
+            '2Mubm96PDzLyzcXJvfqX8kdyn2WHa7ssJ67',
+            'testnet',
+        );
+
+        console.log(allTxFromAddr);
+
+        expect(allTxFromAddr.length).toEqual(2);
+        expect(allTxFromAddr[0].txid).toEqual('f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449');
+
+        expect(allTxFromAddrTest.length).toEqual(2);
+        expect(allTxFromAddrTest[0].txid).toEqual('f02a3881823238cd4290a8e18bf45db5dd7d9f23a6a8e3d64e307f68085e0929');
+
+        const txInfo = await btcLockdrop.getBtcTxFromTxId(
+            'f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449',
+            'mainnet',
+        );
+        const txInfoTestnet = await btcLockdrop.getBtcTxFromTxId(
+            '2336a60b02f69a892b797b21aedafa128779338e9f69650fc87373a4f8036611',
+            'testnet',
+        );
+
+        expect(txInfo.status.block_height).toEqual(293000);
+        expect(txInfo.vout[0].value).toEqual(70320221545);
+        expect(txInfoTestnet.status.block_height).toEqual(1770515);
+        expect(txInfoTestnet.vout[0].value).toEqual(284780111);
     });
 });
 
@@ -214,21 +246,11 @@ describe('BTC lock script tests', () => {
         ).toThrowError('Invalid public key');
 
         expect(() => btcLockdrop.getLockP2SH(-1, testSet3.publicKey, bitcoin.networks.testnet)).toThrowError(
+            'Block sequence cannot be a negative number',
+        );
+        expect(() => btcLockdrop.getLockP2SH(301, testSet1.publicKey, bitcoin.networks.bitcoin)).toThrowError(
             'Lock duration must be between 30 days to 300 days',
         );
-        expect(() => btcLockdrop.getLockP2SH(301, testSet3.publicKey, bitcoin.networks.testnet)).toThrowError(
-            'Lock duration must be between 30 days to 300 days',
-        );
-    });
-
-    it('validates generating lock script', () => {
-        expect(() =>
-            btcLockdrop.btcLockScript(
-                testSet2.privateKey,
-                btcLockdrop.daysToBlockSequence(3),
-                bitcoin.networks.bitcoin,
-            ),
-        ).toThrowError('Invalid public key');
 
         expect(() => {
             btcLockdrop.getLockP2SH(
@@ -245,6 +267,24 @@ describe('BTC lock script tests', () => {
                 bitcoin.networks.testnet,
             );
         }).toThrowError('Block sequence cannot be a negative number');
+    });
+
+    it('generates BTC lockdrop parameter', async () => {
+        // lock script locking for 3 days on testnet
+        const scriptAddr = '2N1MH1ikVDSh3wyqvGHaG9pKfFHC6mUiDiZ';
+        // known lock TX hash (https://api.blockcypher.com/v1/btc/test3/txs/384f54793b753e4acd9a9aca1da3ef7609931800d0a86de8c4ae6dc8ab7a96fd)
+        const lockTXHash = '0x384f54793b753e4acd9a9aca1da3ef7609931800d0a86de8c4ae6dc8ab7a96fd';
+        const locks = await btcLockdrop.getLockParameter(
+            scriptAddr,
+            3,
+            btcLockdrop.compressPubKey(testSet3.publicKey, bitcoin.networks.testnet),
+            'testnet',
+        );
+        const lockParams = locks.map(i => {
+            return plasmUtils.structToLockdrop(i as any);
+        });
+
+        expect(lockParams[lockParams.length - 1].transactionHash.toHex()).toEqual(lockTXHash);
     });
 
     it(
