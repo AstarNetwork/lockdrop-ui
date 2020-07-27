@@ -164,8 +164,10 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
     useEffect(() => {
         const fetchLockParams = async () => {
             // set P2SH
-            const p2shAddr = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType).address!;
-            setP2sh(p2shAddr);
+            if (lockDuration.value > 0) {
+                const p2shAddr = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType).address!;
+                setP2sh(p2shAddr);
+            }
 
             // fetch lockdrop param data
             const blockCypherNetwork = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';

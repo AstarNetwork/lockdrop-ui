@@ -26,8 +26,8 @@ import {
 import { lock, time } from 'ionicons/icons';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import { Tooltip } from '@material-ui/core';
-import { BlockCypherApi } from 'src/types/BlockCypherTypes';
 import BigNumber from 'bignumber.js';
+import { BlockStreamApi } from 'src/types/BlockStreamTypes';
 
 interface Props {
     scriptAddress: string;
@@ -40,22 +40,27 @@ interface Props {
 const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
     // check what network this address belongs to
     const networkToken =
-        btcLockdrop.getNetworkFromAddress(scriptAddress) === bitcoinjs.networks.bitcoin ? 'main' : 'test3';
+        btcLockdrop.getNetworkFromAddress(scriptAddress) === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
     const [lockedValue, setLockedValue] = useState('');
-    const [scriptLocks, setScriptLocks] = useState<BlockCypherApi.Tx[]>([]); // initialize value
+    const [scriptLocks, setScriptLocks] = useState<BlockStreamApi.Transaction[]>([]); // initialize value
     const [showModal, setShowModal] = useState(false);
     const [isLoading, setLoading] = useState(false);
+
+    const getLockBtcValues = (tx: BlockStreamApi.Transaction) => {
+        const lockTx = tx.vout.filter(e => e.scriptpubkey_address === scriptAddress)[0];
+
+        return btcLockdrop.satoshiToBitcoin(lockTx.value).toFixed();
+    };
 
     // initial fetch
     useEffect(() => {
         // we need this to display the correct value when the user changes param
         setScriptLocks([]);
         setLockedValue('');
+        setLoading(true);
         const setLockTotalBal = async () => {
-            const tx = await btcLockdrop.getBtcTxsFromAddress(
-                scriptAddress,
-                networkToken === 'main' ? 'mainnet' : 'testnet',
-            );
+            const tx = await btcLockdrop.getBtcTxsFromAddress(scriptAddress, networkToken);
+            setScriptLocks(tx);
 
             let totalBal = new BigNumber(0);
             tx.forEach(i => {
@@ -65,19 +70,18 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
             if (totalBal.isGreaterThan(new BigNumber(0))) {
                 setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
             }
+            console.log(JSON.stringify(tx));
         };
 
         setLockTotalBal();
+        setLoading(false);
     }, [scriptAddress, networkToken]);
 
     // fetch lock data in the background
     useEffect(() => {
         const interval = setInterval(async () => {
-            const tx = await btcLockdrop.getBtcTxsFromAddress(
-                scriptAddress,
-                networkToken === 'main' ? 'mainnet' : 'testnet',
-            );
-
+            const tx = await btcLockdrop.getBtcTxsFromAddress(scriptAddress, networkToken);
+            setScriptLocks(tx);
             let totalBal = new BigNumber(0);
             tx.forEach(i => {
                 const lockTx = i.vout.filter(e => e.scriptpubkey_address === scriptAddress)[0];
@@ -93,26 +97,6 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
             clearInterval(interval);
         };
     });
-
-    // fetch modal content
-    useEffect(() => {
-        const fetchModalData = async () => {
-            setLoading(true);
-            const lockTxData = await btcLockdrop.getAddressEndpoint(scriptAddress, networkToken, 50, false, true);
-            if (lockTxData.total_received > 0) {
-                setScriptLocks(lockTxData.txs);
-            } else {
-                // we need this to display the correct value when the user changes param
-                setScriptLocks([]);
-            }
-            setLoading(false);
-        };
-
-        // only fetch if the user opens the modal
-        if (showModal && scriptLocks.length === 0) {
-            fetchModalData();
-        }
-    }, [showModal, scriptAddress, networkToken, scriptLocks]);
 
     return (
         <>
@@ -133,7 +117,7 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
                     {isLoading ? (
                         <IonCardContent>
                             <IonList>
-                                {[0, 1, 2].map(e => (
+                                {[0, 1, 2, 3].map(e => (
                                     <IonItem key={e}>
                                         <IonLabel>
                                             <h2>
@@ -152,26 +136,15 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
                         </IonCardContent>
                     ) : (
                         <>
-                            {scriptLocks.length > 0 ? (
+                            {scriptLocks.length > 0 && lockedValue ? (
                                 <IonCardContent>
                                     <IonList>
                                         {scriptLocks.map(e => (
-                                            <IonItem key={e.hash}>
+                                            <IonItem key={e.txid}>
                                                 <IonLabel>
-                                                    <h2>Transaction Hash: {e.hash}</h2>
-                                                    <h3>
-                                                        Locked Amount:{' '}
-                                                        {e.outputs[0] &&
-                                                            btcLockdrop
-                                                                .satoshiToBitcoin(
-                                                                    e.outputs.filter(
-                                                                        e => e.addresses[0] === scriptAddress,
-                                                                    )[0].value,
-                                                                )
-                                                                .toFixed()}{' '}
-                                                        BTC
-                                                    </h3>
-                                                    <p>Locked in block no. {e.block_height}</p>
+                                                    <h2>Transaction Hash: {e.txid}</h2>
+                                                    <h3>Locked Amount: {getLockBtcValues(e)} BTC</h3>
+                                                    <p>Locked in block no. {e.status.block_height}</p>
                                                 </IonLabel>
                                             </IonItem>
                                         ))}

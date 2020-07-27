@@ -169,10 +169,12 @@ const TrezorLock: React.FC<Props> = ({ networkType, plasmApi }) => {
     };
 
     useEffect(() => {
-        if (publicKey) {
+        const fetchLockParams = async () => {
             // set P2SH
-            const p2shAddr = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType).address!;
-            setP2sh(p2shAddr);
+            if (lockDuration.value > 0) {
+                const p2shAddr = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType).address!;
+                setP2sh(p2shAddr);
+            }
 
             // fetch lockdrop param data
             const blockCypherNetwork = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
@@ -181,26 +183,29 @@ const TrezorLock: React.FC<Props> = ({ networkType, plasmApi }) => {
             const _lockParams: Lockdrop[] = [];
 
             // get all the possible lock addresses
-            // eslint-disable-next-line
-            networkLockDur.map((dur, index) => {
+            networkLockDur.forEach(async (dur, index) => {
                 const p2shAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
 
                 // make a real-time lockdrop data structure with the current P2SH and duration
-                btcLock.getLockParameter(p2shAddr, dur.value, publicKey, blockCypherNetwork).then(lock => {
-                    // loop through all the token locks within the given script
-                    // this is to prevent nested array
-                    // eslint-disable-next-line
-                    lock.map(e => {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        _lockParams.push(plasmUtils.structToLockdrop(e as any));
-                    });
+                const lock = await btcLock.getLockParameter(p2shAddr, dur.value, publicKey, blockCypherNetwork);
+
+                // loop through all the token locks within the given script
+                // this is to prevent nested array
+                // eslint-disable-next-line
+                lock.map(e => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    _lockParams.push(plasmUtils.structToLockdrop(e as any));
                 });
                 // set lockdrop param data if we're in the final loop
-                // we do this because we want to set the values inside the then block
+                // we do this because we want to set the values inside the async block
                 if (_lockParams.length > lockParams.length && index === networkLockDur.length - 1) {
                     setLockParams(_lockParams);
                 }
             });
+        };
+
+        if (publicKey) {
+            fetchLockParams();
         }
     }, [lockDuration, networkType, publicKey, networkLockDur, lockParams.length]);
 
