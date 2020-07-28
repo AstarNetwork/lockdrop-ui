@@ -112,7 +112,7 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
         }
     };
 
-    const signLockdropClaims = () => {
+    const viewClaims = () => {
         if (!publicKey) {
             setLoading({ loadState: true, message: 'Waiting for Ledger' });
 
@@ -146,8 +146,15 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
         ledgerApiInstance()
             .then(btc => {
                 btc.getWalletPublicKey(addressPath).then(wallet => {
-                    setPublicKey(wallet.publicKey);
-                    toast.success('Successfully created lock script');
+                    try {
+                        const lockScript = btcLock.getLockP2SH(lockDuration.value, wallet.publicKey, networkType);
+                        setPublicKey(wallet.publicKey);
+                        setP2sh(lockScript.address!);
+                        toast.success('Successfully created lock script');
+                    } catch (err) {
+                        toast.error(err);
+                        console.log(err);
+                    }
                 });
             })
             .catch(e => {
@@ -285,7 +292,7 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                 ) : (
                     <>
                         <Container>
-                            <IonButton expand="block" onClick={() => signLockdropClaims()}>
+                            <IonButton expand="block" onClick={() => viewClaims()}>
                                 Click to view lock claims
                             </IonButton>
                         </Container>
