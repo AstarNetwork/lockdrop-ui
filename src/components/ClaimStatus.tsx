@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { ApiPromise } from '@polkadot/api';
 import * as plasmUtils from '../helpers/plasmUtils';
 import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
@@ -99,8 +99,6 @@ const useStyles = makeStyles(theme =>
     }),
 );
 
-// helper functions
-
 const truncateString = (str: string, num: number) => {
     if (str.length <= num) {
         return str;
@@ -116,16 +114,46 @@ const epochToDays = (epoch: number) => {
 
 const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'Plasm', networkType, publicKey }) => {
     const classes = useStyles();
+    const plasmAddr = useMemo(() => {
+        return plasmUtils.generatePlmAddress(publicKey);
+    }, [publicKey]);
     const [positiveVotes, setPositiveVotes] = useState(0);
     const [voteThreshold, setVoteThreshold] = useState(0);
-    const [isLoading, setLoading] = useState(true);
-    const [plasmAddr, setPlasmAddr] = useState('');
+    const [isLoadingBal, setLoadingBal] = useState(true);
+    const [isLoadingClaims, setLoadingClaims] = useState(true);
     const [balance, setBalance] = useState('');
+    const [claims, setClaims] = useState<(Claim | undefined)[]>([]);
 
+    const fetchLockData = useCallback(async () => {
+        // create claims IDs from all the lock parameters
+        const claimIds = claimParams.map(c => {
+            // get claim ID of current parameter
+            return plasmUtils.createLockParam(
+                c.type,
+                c.transactionHash.toHex(),
+                c.publicKey.toHex(),
+                c.duration.toString(),
+                c.value.toString(),
+            ).hash;
+        });
+
+        const lockdropStates = claimIds.map(async id => {
+            // parse plasm node to check claim status
+            const claimRes = await plasmUtils.getClaimStatus(plasmApi, id);
+            return claimRes;
+        });
+
+        setClaims(await Promise.all(lockdropStates));
+    }, [claimParams, plasmApi]);
+
+    // initial set claim status
     useEffect(() => {
-        setPlasmAddr(plasmUtils.generatePlmAddress(publicKey));
-    }, [publicKey]);
+        fetchLockData().finally(() => {
+            setLoadingClaims(false);
+        });
+    }, [fetchLockData]);
 
+    // fetch address balance periodically
     useEffect(() => {
         const interval = setInterval(async () => {
             const _bal = (await plasmUtils.getAddressBalance(plasmApi, plasmAddr, true)).toFixed(3);
@@ -134,7 +162,9 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'P
             setBalance(formatBal);
             setPositiveVotes(_voteReq.positiveVotes);
             setVoteThreshold(_voteReq.voteThreshold);
-            isLoading && setLoading(false);
+            isLoadingBal && setLoadingBal(false);
+
+            await fetchLockData();
         }, 3000);
 
         // cleanup hook
@@ -149,7 +179,7 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'P
                 Sending to {plasmAddr}
             </Typography>
 
-            {plasmAddr && balance && (
+            {balance && (
                 <Typography variant="body1" component="p" align="center">
                     Has balance of {balance + ' '}
                     {plasmNetwork === 'Plasm' ? 'PLM' : 'PLD'}
@@ -159,7 +189,7 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'P
             <List className={classes.listRoot} subheader={<li />}>
                 <li className={classes.listSection}>
                     <ul className={classes.ul}>
-                        {isLoading ? (
+                        {isLoadingBal || isLoadingClaims ? (
                             <div className={classes.emptyPanel}>
                                 <CircularProgress />
                             </div>
@@ -168,7 +198,7 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'P
                                 <ListSubheader>You can claim {claimParams.length} locks</ListSubheader>
                                 <Divider />
 
-                                {claimParams.map(e => (
+                                {claimParams.map((e, i) => (
                                     <div key={e.transactionHash.toHex()}>
                                         <ClaimItem
                                             lockParam={e}
@@ -177,6 +207,7 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'P
                                             networkType={networkType}
                                             positiveVotes={positiveVotes}
                                             voteThreshold={voteThreshold}
+                                            claimData={claims[i]}
                                         />
                                     </div>
                                 ))}
@@ -207,6 +238,7 @@ interface ItemProps {
     networkType: 'BTC' | 'ETH';
     positiveVotes: number;
     voteThreshold: number;
+    claimData?: Claim;
 }
 
 const ClaimItem: React.FC<ItemProps> = ({
@@ -216,24 +248,24 @@ const ClaimItem: React.FC<ItemProps> = ({
     networkType,
     positiveVotes,
     voteThreshold,
+    claimData,
 }) => {
     const classes = useStyles();
-    const [claimData, setClaimData] = useState<Claim>();
-    const [claimId, setClaimId] = useState<H256>(
-        plasmUtils.createLockParam(
+
+    const claimId = useMemo(() => {
+        return plasmUtils.createLockParam(
             lockParam.type,
             lockParam.transactionHash.toHex(),
             lockParam.publicKey.toHex(),
             lockParam.duration.toString(),
             lockParam.value.toString(),
-        ).hash,
-    );
+        ).hash;
+    }, [lockParam]);
 
     // plasmLockdrop.request()
     const [sendingRequest, setSendingRequest] = useState(false);
     // plasmLockdrop.claim()
     const [claimingLock, setClaimingLock] = useState(false);
-
     const [approveList, setApproveList] = useState<string[]>([]);
     const [declineList, setDeclineList] = useState<string[]>([]);
 
@@ -262,8 +294,7 @@ const ClaimItem: React.FC<ItemProps> = ({
         plasmUtils // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .sendLockClaimRequest(plasmApi, _lock as any, _nonce)
             .then(res => {
-                console.log('Claim ID: ' + _lock.hash);
-                console.log('Request transaction hash:\n' + res.toHex());
+                console.log('Claim ID: ' + _lock.hash + '\nRequest transaction hash:\n' + res.toHex());
             });
     };
 
@@ -279,50 +310,23 @@ const ClaimItem: React.FC<ItemProps> = ({
                     console.log('Token claim transaction hash:\n' + res.toHex());
                 })
                 .catch(e => {
+                    toast.error(e);
                     console.log(e);
                 });
         }
     };
 
+    // initial set claim status
     useEffect(() => {
-        plasmUtils.getClaimStatus(plasmApi, claimId).then(i => {
-            setClaimData(i);
+        // turn off loading if it's on
+        if (claimData) {
+            setVoteList(claimData);
+
             // turn off loading if it's on
-            if (i) {
-                setVoteList(i);
-                if (sendingRequest) setSendingRequest(false);
-                if (i.complete.valueOf() && claimingLock) setClaimingLock(false);
-            }
-        });
-        setClaimId(
-            plasmUtils.createLockParam(
-                lockParam.type,
-                lockParam.transactionHash.toHex(),
-                lockParam.publicKey.toHex(),
-                lockParam.duration.toString(),
-                lockParam.value.toString(),
-            ).hash,
-        );
-        // eslint-disable-next-line
-    }, []);
-
-    useEffect(() => {
-        const interval = setInterval(async () => {
-            const _claim = await plasmUtils.getClaimStatus(plasmApi, claimId);
-            if (_claim) {
-                setClaimData(_claim);
-                setVoteList(_claim);
-                // turn off loading if it's on
-                if (sendingRequest) setSendingRequest(false);
-                if (_claim.complete.valueOf() && claimingLock) setClaimingLock(false);
-            }
-        }, 3000);
-
-        // cleanup hook
-        return () => {
-            clearInterval(interval);
-        };
-    });
+            if (sendingRequest) setSendingRequest(false);
+            if (claimData.complete.valueOf() && claimingLock) setClaimingLock(false);
+        }
+    }, [claimData, claimingLock, sendingRequest]);
 
     const ActionIcon = () => {
         if (claimData && !hasAllVotes()) {

@@ -54,7 +54,7 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ lockData }) => {
 
     return (
         <div className={classes.lockListPage}>
-            <>
+<>
                 {lockEvents.length > 0 ? (
                     <>
                         <h1>Global Locks</h1>
