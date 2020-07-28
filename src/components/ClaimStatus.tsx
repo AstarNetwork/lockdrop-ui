@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { ApiPromise } from '@polkadot/api';
 import * as plasmUtils from '../helpers/plasmUtils';
 import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
@@ -114,7 +114,9 @@ const epochToDays = (epoch: number) => {
 
 const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'Plasm', networkType, publicKey }) => {
     const classes = useStyles();
-    const plasmAddr = plasmUtils.generatePlmAddress(publicKey);
+    const plasmAddr = useMemo(() => {
+        return plasmUtils.generatePlmAddress(publicKey);
+    }, [publicKey]);
     const [positiveVotes, setPositiveVotes] = useState(0);
     const [voteThreshold, setVoteThreshold] = useState(0);
     const [isLoadingBal, setLoadingBal] = useState(true);
@@ -163,7 +165,7 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'P
             isLoadingBal && setLoadingBal(false);
 
             await fetchLockData();
-        }, 5000);
+        }, 3000);
 
         // cleanup hook
         return () => {
@@ -249,15 +251,16 @@ const ClaimItem: React.FC<ItemProps> = ({
     claimData,
 }) => {
     const classes = useStyles();
-    const [claimId, setClaimId] = useState<H256>(
-        plasmUtils.createLockParam(
+
+    const claimId = useMemo(() => {
+        return plasmUtils.createLockParam(
             lockParam.type,
             lockParam.transactionHash.toHex(),
             lockParam.publicKey.toHex(),
             lockParam.duration.toString(),
             lockParam.value.toString(),
-        ).hash,
-    );
+        ).hash;
+    }, [lockParam]);
 
     // plasmLockdrop.request()
     const [sendingRequest, setSendingRequest] = useState(false);
@@ -307,6 +310,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                     console.log('Token claim transaction hash:\n' + res.toHex());
                 })
                 .catch(e => {
+                    toast.error(e);
                     console.log(e);
                 });
         }
@@ -314,51 +318,15 @@ const ClaimItem: React.FC<ItemProps> = ({
 
     // initial set claim status
     useEffect(() => {
-        plasmUtils
-            .getClaimStatus(plasmApi, claimId)
-            .then(i => {
-                setClaimId(
-                    plasmUtils.createLockParam(
-                        lockParam.type,
-                        lockParam.transactionHash.toHex(),
-                        lockParam.publicKey.toHex(),
-                        lockParam.duration.toString(),
-                        lockParam.value.toString(),
-                    ).hash,
-                );
-                // turn off loading if it's on
-                if (i) {
-                    setVoteList(i);
+        // turn off loading if it's on
+        if (claimData) {
+            setVoteList(claimData);
 
-                    if (i.complete.valueOf() && claimingLock) setClaimingLock(false);
-                }
-            })
-            .catch(e => {
-                toast.error(e);
-                console.log(e);
-            })
-            .finally(() => {
-                if (sendingRequest) setSendingRequest(false);
-            });
-    }, [plasmApi, claimId, lockParam, claimingLock, sendingRequest]);
-
-    // fetch claim state in the background
-    useEffect(() => {
-        const interval = setInterval(async () => {
-            const _claim = await plasmUtils.getClaimStatus(plasmApi, claimId);
-            if (_claim) {
-                setVoteList(_claim);
-                // turn off loading if it's on
-                if (sendingRequest) setSendingRequest(false);
-                if (_claim.complete.valueOf() && claimingLock) setClaimingLock(false);
-            }
-        }, 3000);
-
-        // cleanup hook
-        return () => {
-            clearInterval(interval);
-        };
-    });
+            // turn off loading if it's on
+            if (sendingRequest) setSendingRequest(false);
+            if (claimData.complete.valueOf() && claimingLock) setClaimingLock(false);
+        }
+    }, [claimData, claimingLock, sendingRequest]);
 
     const ActionIcon = () => {
         if (claimData && !hasAllVotes()) {
