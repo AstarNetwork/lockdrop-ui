@@ -122,10 +122,12 @@ const ClaimStatus: React.FC<Props> = ({ claimParams, plasmApi, plasmNetwork = 'P
     const [plasmAddr, setPlasmAddr] = useState('');
     const [balance, setBalance] = useState('');
 
+    // set plasm address
     useEffect(() => {
         setPlasmAddr(plasmUtils.generatePlmAddress(publicKey));
     }, [publicKey]);
 
+    // fetch address balance periodically
     useEffect(() => {
         const interval = setInterval(async () => {
             const _bal = (await plasmUtils.getAddressBalance(plasmApi, plasmAddr, true)).toFixed(3);
@@ -233,7 +235,6 @@ const ClaimItem: React.FC<ItemProps> = ({
     const [sendingRequest, setSendingRequest] = useState(false);
     // plasmLockdrop.claim()
     const [claimingLock, setClaimingLock] = useState(false);
-
     const [approveList, setApproveList] = useState<string[]>([]);
     const [declineList, setDeclineList] = useState<string[]>([]);
 
@@ -262,8 +263,7 @@ const ClaimItem: React.FC<ItemProps> = ({
         plasmUtils // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .sendLockClaimRequest(plasmApi, _lock as any, _nonce)
             .then(res => {
-                console.log('Claim ID: ' + _lock.hash);
-                console.log('Request transaction hash:\n' + res.toHex());
+                console.log('Claim ID: ' + _lock.hash + '\nRequest transaction hash:\n' + res.toHex());
             });
     };
 
@@ -284,28 +284,38 @@ const ClaimItem: React.FC<ItemProps> = ({
         }
     };
 
+    // initial set claim status
     useEffect(() => {
-        plasmUtils.getClaimStatus(plasmApi, claimId).then(i => {
-            setClaimData(i);
-            // turn off loading if it's on
-            if (i) {
-                setVoteList(i);
-                if (sendingRequest) setSendingRequest(false);
-                if (i.complete.valueOf() && claimingLock) setClaimingLock(false);
-            }
-        });
-        setClaimId(
-            plasmUtils.createLockParam(
-                lockParam.type,
-                lockParam.transactionHash.toHex(),
-                lockParam.publicKey.toHex(),
-                lockParam.duration.toString(),
-                lockParam.value.toString(),
-            ).hash,
-        );
-        // eslint-disable-next-line
-    }, []);
+        plasmUtils
+            .getClaimStatus(plasmApi, claimId)
+            .then(i => {
+                setClaimId(
+                    plasmUtils.createLockParam(
+                        lockParam.type,
+                        lockParam.transactionHash.toHex(),
+                        lockParam.publicKey.toHex(),
+                        lockParam.duration.toString(),
+                        lockParam.value.toString(),
+                    ).hash,
+                );
+                setClaimData(i);
+                // turn off loading if it's on
+                if (i) {
+                    setVoteList(i);
 
+                    if (i.complete.valueOf() && claimingLock) setClaimingLock(false);
+                }
+            })
+            .catch(e => {
+                toast.error(e);
+                console.log(e);
+            })
+            .finally(() => {
+                if (sendingRequest) setSendingRequest(false);
+            });
+    }, [plasmApi, claimId, lockParam, claimingLock, sendingRequest]);
+
+    // fetch claim state in the background
     useEffect(() => {
         const interval = setInterval(async () => {
             const _claim = await plasmUtils.getClaimStatus(plasmApi, claimId);
