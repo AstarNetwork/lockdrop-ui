@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 //import { makeStyles, createStyles } from '@material-ui/core';
 import * as btcLockdrop from '../../helpers/lockdrop/BitcoinLockdrop';
 import {
@@ -34,7 +34,7 @@ interface Props {
 }
 
 /**
- * Shows the number of BTC locked in the given P2SH address. Information is fetched from block cypher.
+ * Shows the number of BTC locked in the given P2SH address. Information is fetched from block stream
  * @param param0 P2SH address to look for
  */
 const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
@@ -44,7 +44,7 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
     const [lockedValue, setLockedValue] = useState('');
     const [scriptLocks, setScriptLocks] = useState<BlockStreamApi.Transaction[]>([]); // initialize value
     const [showModal, setShowModal] = useState(false);
-    const [isLoading, setLoading] = useState(false);
+    const [isLoading, setLoading] = useState(true);
 
     const getLockBtcValues = (tx: BlockStreamApi.Transaction) => {
         const lockTx = tx.vout.filter(e => e.scriptpubkey_address === scriptAddress)[0];
@@ -52,44 +52,36 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
         return btcLockdrop.satoshiToBitcoin(lockTx.value).toFixed();
     };
 
+    const setLockTotalBal = useCallback(async () => {
+        const tx = await btcLockdrop.getBtcTxsFromAddress(scriptAddress, networkToken);
+        setScriptLocks(tx);
+
+        let totalBal = new BigNumber(0);
+        tx.forEach(i => {
+            const lockTx = i.vout.filter(e => e.scriptpubkey_address === scriptAddress)[0];
+            totalBal = totalBal.plus(new BigNumber(lockTx.value));
+        });
+        if (totalBal.isGreaterThan(new BigNumber(0))) {
+            setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
+        }
+        console.log(JSON.stringify(tx));
+    }, [scriptAddress, networkToken]);
+
     // initial fetch
     useEffect(() => {
         // we need this to display the correct value when the user changes param
         setScriptLocks([]);
         setLockedValue('');
-        setLoading(true);
-        const setLockTotalBal = async () => {
-            const tx = await btcLockdrop.getBtcTxsFromAddress(scriptAddress, networkToken);
-            setScriptLocks(tx);
 
-            let totalBal = new BigNumber(0);
-            tx.forEach(i => {
-                const lockTx = i.vout.filter(e => e.scriptpubkey_address === scriptAddress)[0];
-                totalBal = totalBal.plus(new BigNumber(lockTx.value));
-            });
-            if (totalBal.isGreaterThan(new BigNumber(0))) {
-                setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
-            }
-            console.log(JSON.stringify(tx));
-        };
-
-        setLockTotalBal();
-        setLoading(false);
-    }, [scriptAddress, networkToken]);
+        setLockTotalBal().finally(() => {
+            setLoading(false);
+        });
+    }, [setLockTotalBal]);
 
     // fetch lock data in the background
     useEffect(() => {
         const interval = setInterval(async () => {
-            const tx = await btcLockdrop.getBtcTxsFromAddress(scriptAddress, networkToken);
-            setScriptLocks(tx);
-            let totalBal = new BigNumber(0);
-            tx.forEach(i => {
-                const lockTx = i.vout.filter(e => e.scriptpubkey_address === scriptAddress)[0];
-                totalBal = totalBal.plus(new BigNumber(lockTx.value));
-            });
-            if (totalBal.isGreaterThan(new BigNumber(0))) {
-                setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
-            }
+            await setLockTotalBal();
         }, 20 * 1000); // fetch every 20 seconds
 
         // cleanup hook

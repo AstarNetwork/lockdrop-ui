@@ -204,7 +204,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                 ) : (
                     <>
                         <Container>
-                            <Typography variant="h4" component="h2" align="center">
+                            <Typography variant="h5" component="h2" align="center">
                                 Provide signature to view
                             </Typography>
                         </Container>

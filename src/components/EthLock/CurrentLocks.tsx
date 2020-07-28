@@ -74,20 +74,10 @@ const CurrentLocks: React.FC<CurrentLockProps> = ({ web3, accounts, lockData }) 
     const [lockEvents, setEvents] = useState<LockEvent[]>([]);
     const [isLoadingComp, setLoadState] = useState(true);
 
-    const getUserLocks = () => {
-        return lockData.filter(i => i.lockOwner === accounts[0]);
-    };
-
     useEffect(() => {
-        const interval = setInterval(() => {
-            setEvents(getUserLocks);
-            setLoadState(false);
-        }, 1000);
-        // cleanup hook
-        return () => {
-            clearInterval(interval);
-        };
-    });
+        setEvents(lockData.filter(i => i.lockOwner === accounts[0]));
+        setLoadState(false);
+    }, [lockData, accounts]);
 
     return (
         <div className={classes.lockListPage}>
@@ -172,15 +162,11 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
         const lockClaimState = lockBalance === '0';
         // console.log(lockBalance);
         setUnlockState(lockClaimState);
-        // manually change the loading state
-        setLoading(false);
         return today > unlockDate;
     }, [lockInfo, web3]);
 
     // update time value every second
     useEffect(() => {
-        //const abortController = new AbortController();
-
         const interval = setInterval(async () => {
             setUnlockDate(calculateTimeLeft());
             setLockState(await checkUnlock());
@@ -197,6 +183,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
         checkUnlock().then(setLockState);
     }, [calculateTimeLeft, checkUnlock]);
 
+    // click unlock ETH
     const handleClick = () => {
         setLoading(true);
         web3.eth
@@ -205,15 +192,26 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
                 to: lockInfo.lock,
                 value: '0',
             })
-            .then(
-                () => {
-                    setLoading(false);
-                },
-                error => {
-                    console.log(error);
-                    setLoading(false);
-                },
-            );
+            .catch(error => {
+                console.log(error);
+            })
+            .finally(() => {
+                // get contract balance
+                web3.eth
+                    .getBalance(lockInfo.lock)
+                    .then(lockBalance => {
+                        // check if the balance is 0 or not
+                        const lockClaimState = lockBalance === '0';
+
+                        setUnlockState(lockClaimState);
+                    })
+                    .catch(err => {
+                        console.log(err);
+                    })
+                    .finally(() => {
+                        setLoading(false);
+                    });
+            });
     };
 
     return (
