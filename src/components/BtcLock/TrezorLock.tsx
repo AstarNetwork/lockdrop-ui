@@ -212,6 +212,20 @@ const TrezorLock: React.FC<Props> = ({ networkType, plasmApi }) => {
         publicKey && fetchLockdropParams();
     }, [fetchLockdropParams, lockDuration.value, networkType, publicKey, p2shAddress]);
 
+    // fetch lock data in the background
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            if (publicKey) {
+                fetchLockdropParams();
+            }
+        }, 5 * 1000);
+
+        // cleanup hook
+        return () => {
+            clearInterval(interval);
+        };
+    });
+
     return (
         <div>
             {p2shAddress ? <QrEncodedAddress address={p2shAddress} lockData={currentScriptLocks} /> : null}

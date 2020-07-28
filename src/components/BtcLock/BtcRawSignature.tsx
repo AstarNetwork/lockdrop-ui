@@ -145,7 +145,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
             if (publicKey) {
                 fetchLockdropParams();
             }
-        }, 10 * 1000);
+        }, 5 * 1000);
 
         // cleanup hook
         return () => {
