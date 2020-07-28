@@ -10,7 +10,6 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListSubheader from '@material-ui/core/ListSubheader';
 import { Divider } from '@material-ui/core';
-import CircularProgress from '@material-ui/core/CircularProgress';
 import { defaultAddress } from '../../data/affiliationProgram';
 import Web3Utils from 'web3-utils';
 
@@ -48,70 +47,54 @@ const useStyles = makeStyles((theme: Theme) =>
 const GlobalLocks: React.FC<LockHistoryProps> = ({ lockData }) => {
     const classes = useStyles();
     const [lockEvents, setEvents] = useState<LockEvent[]>([]);
-    const [isLoadingComp, setLoadState] = useState(true);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setEvents(lockData);
-        }, 1000);
-        // cleanup hook
-        return () => {
-            clearInterval(interval);
-        };
-    }, [lockData]);
 
     useEffect(() => {
         setEvents(lockData);
-        setLoadState(false);
     }, [lockData]);
 
     return (
         <div className={classes.lockListPage}>
-            {isLoadingComp ? (
-                <CircularProgress />
-            ) : (
-                <>
-                    {lockEvents.length > 0 ? (
-                        <>
-                            <h1>Global Locks</h1>
-                            <h3>{getTotalLockVal(lockEvents)} ETH locked</h3>
-                            <List className={classes.listRoot} subheader={<li />}>
-                                <li className={classes.listSection}>
-                                    <ul className={classes.ul}>
-                                        <ListSubheader>There are {lockEvents.length} locks</ListSubheader>
-                                        <Divider />
-                                        {lockEvents.map(eventItem => (
-                                            <div key={eventItem.lock}>
-                                                <ListItem>
-                                                    <ListItemText>
-                                                        <h4>Lock address: {eventItem.lock}</h4>
-                                                        <h5>Locked in block no. {eventItem.blockNo}</h5>
-                                                        <p>
-                                                            Locked {Web3Utils.fromWei(eventItem.eth, 'ether')} ETH for{' '}
-                                                            {eventItem.duration} days
-                                                        </p>
-                                                        {eventItem.introducer !== defaultAddress ? (
-                                                            <p>Introducer: {eventItem.introducer}</p>
-                                                        ) : (
-                                                            <p>No introducer</p>
-                                                        )}
-                                                    </ListItemText>
-                                                </ListItem>
-                                                <Divider />
-                                            </div>
-                                        ))}
-                                    </ul>
-                                </li>
-                            </List>
-                        </>
-                    ) : (
-                        <>
-                            <h1>No Locks</h1>
-                            <h4>Please lock some ETH!</h4>
-                        </>
-                    )}
-                </>
-            )}
+            <>
+                {lockEvents.length > 0 ? (
+                    <>
+                        <h1>Global Locks</h1>
+                        <h3>{getTotalLockVal(lockEvents)} ETH locked</h3>
+                        <List className={classes.listRoot} subheader={<li />}>
+                            <li className={classes.listSection}>
+                                <ul className={classes.ul}>
+                                    <ListSubheader>There are {lockEvents.length} locks</ListSubheader>
+                                    <Divider />
+                                    {lockEvents.map(eventItem => (
+                                        <>
+                                            <ListItem key={eventItem.lock}>
+                                                <ListItemText>
+                                                    <h4>Lock address: {eventItem.lock}</h4>
+                                                    <h5>Locked in block no. {eventItem.blockNo}</h5>
+                                                    <p>
+                                                        Locked {Web3Utils.fromWei(eventItem.eth, 'ether')} ETH for{' '}
+                                                        {eventItem.duration} days
+                                                    </p>
+                                                    {eventItem.introducer !== defaultAddress ? (
+                                                        <p>Introducer: {eventItem.introducer}</p>
+                                                    ) : (
+                                                        <p>No introducer</p>
+                                                    )}
+                                                </ListItemText>
+                                            </ListItem>
+                                            <Divider />
+                                        </>
+                                    ))}
+                                </ul>
+                            </li>
+                        </List>
+                    </>
+                ) : (
+                    <>
+                        <h1>No Locks</h1>
+                        <h4>Please lock some ETH!</h4>
+                    </>
+                )}
+            </>
         </div>
     );
 };

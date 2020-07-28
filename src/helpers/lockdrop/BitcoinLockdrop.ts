@@ -428,7 +428,7 @@ export function btcUnlockTx(
  * @param utx Unspent transaction of locker
  * @param network bitcoin network the script is for
  * @param lockTx lockdrop lock transaction (P2SH)
- * @param lockP2SH lock P2SH instance
+ * @param lockP2SH lock P2SH instance made with the same lock parameters
  * @param lockSequence block sequence used in the lock script
  * @param fee the transaction fee that occurred for the lock TX
  */
@@ -443,7 +443,9 @@ export function btcUnlockIoTx(
     if (lockSequence < 0) {
         throw new Error('Block sequence cannot be less than zeo');
     }
-
+    if (typeof lockP2SH.redeem === 'undefined') {
+        throw new Error('Could not get redeem script from P2SH');
+    }
     // for non segwit inputs, you must pass the full transaction buffer
     const nonWitnessUtxo = Buffer.from(utx.toHex(), 'hex');
 
@@ -459,7 +461,7 @@ export function btcUnlockIoTx(
             index: lockTx.vout,
             sequence: lockSequence,
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            redeemScript: lockP2SH.redeem!.output!,
+            redeemScript: lockP2SH.redeem.output,
             nonWitnessUtxo,
         })
         .addOutput({
@@ -507,6 +509,7 @@ export async function getLockParameter(
     }
 
     const locks = await getBtcTxsFromAddress(scriptAddress, network);
+    console.log('fetching data from block stream');
     const daysToEpoch = 60 * 60 * 24 * lockDurationDays;
 
     //todo: properly calculate total locked value
