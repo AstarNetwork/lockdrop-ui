@@ -105,10 +105,10 @@ const CurrentLocks: React.FC<CurrentLockProps> = ({ web3, accounts, lockData }) 
                                         <ListSubheader>You have {lockEvents.length} locks</ListSubheader>
                                         <Divider />
                                         {lockEvents.map(eventItem => (
-                                            <>
+                                            <div key={eventItem.blockHash}>
                                                 <UnlockInfo lockInfo={eventItem} web3={web3} address={accounts[0]} />
                                                 <Divider />
-                                            </>
+                                            </div>
                                         ))}
                                     </ul>
                                 </li>
@@ -218,7 +218,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
 
     return (
         <>
-            <ListItem key={lockInfo.lock}>
+            <ListItem>
                 <Grid container spacing={4} alignItems="center">
                     <Grid item xs={9}>
                         <ListItemText>

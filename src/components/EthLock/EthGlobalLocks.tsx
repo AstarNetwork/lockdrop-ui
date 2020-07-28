@@ -81,8 +81,8 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ lockData }) => {
                                         <ListSubheader>There are {lockEvents.length} locks</ListSubheader>
                                         <Divider />
                                         {lockEvents.map(eventItem => (
-                                            <>
-                                                <ListItem key={eventItem.lock}>
+                                            <div key={eventItem.lock}>
+                                                <ListItem>
                                                     <ListItemText>
                                                         <h4>Lock address: {eventItem.lock}</h4>
                                                         <h5>Locked in block no. {eventItem.blockNo}</h5>
@@ -98,7 +98,7 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ lockData }) => {
                                                     </ListItemText>
                                                 </ListItem>
                                                 <Divider />
-                                            </>
+                                            </div>
                                         ))}
                                     </ul>
                                 </li>
