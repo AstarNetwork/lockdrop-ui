@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/camelcase */
 /* eslint-disable react/prop-types */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import TrezorConnect from 'trezor-connect';
 import {
     IonCard,
@@ -61,7 +61,8 @@ const TrezorLock: React.FC<Props> = ({ networkType, plasmApi }) => {
 
     const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
     const [p2shAddress, setP2sh] = useState('');
-    const [lockParams, setLockParams] = useState<Lockdrop[]>([]);
+    const [allLockParams, setAllLockParams] = useState<Lockdrop[]>([]);
+    const [currentScriptLocks, setCurrentScriptLocks] = useState<Lockdrop[]>([]);
 
     // changing the path to n/49'/x'/x' will return a signature error
     // this may be due to compatibility issues with BIP49
@@ -168,50 +169,59 @@ const TrezorLock: React.FC<Props> = ({ networkType, plasmApi }) => {
             });
     };
 
-    useEffect(() => {
-        const fetchLockParams = async () => {
-            // set P2SH
-            if (lockDuration.value > 0) {
-                const p2shAddr = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType).address!;
-                setP2sh(p2shAddr);
-            }
-
-            // fetch lockdrop param data
-            const blockCypherNetwork = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
-
+    const fetchLockdropParams = useCallback(async () => {
+        // fetch user lock param data
+        if (publicKey) {
+            const blockStreamNet = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
             // initialize lockdrop data array
             const _lockParams: Lockdrop[] = [];
 
             // get all the possible lock addresses
             networkLockDur.forEach(async (dur, index) => {
-                const p2shAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
+                const _p2shAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
 
                 // make a real-time lockdrop data structure with the current P2SH and duration
-                const lock = await btcLock.getLockParameter(p2shAddr, dur.value, publicKey, blockCypherNetwork);
+                const lock = await btcLock.getLockParameter(_p2shAddr, dur.value, publicKey, blockStreamNet);
 
                 // loop through all the token locks within the given script
                 // this is to prevent nested array
-                // eslint-disable-next-line
-                lock.map(e => {
+                lock.forEach(e => {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    _lockParams.push(plasmUtils.structToLockdrop(e as any));
+                    const currentParam = plasmUtils.structToLockdrop(e as any);
+                    _lockParams.push(currentParam);
+                    if (p2shAddress === _p2shAddr && dur.value === lockDuration.value) {
+                        const hasLock =
+                            currentScriptLocks.find(
+                                item => item.transactionHash.toHex() === currentParam.transactionHash.toHex(),
+                            ) === undefined;
+                        if (hasLock) {
+                            currentScriptLocks.push(currentParam);
+                        }
+                    } else if (currentScriptLocks.length > 0 && currentScriptLocks.length !== 0) {
+                        setCurrentScriptLocks([]);
+                    }
                 });
                 // set lockdrop param data if we're in the final loop
-                // we do this because we want to set the values inside the async block
-                if (_lockParams.length > lockParams.length && index === networkLockDur.length - 1) {
-                    setLockParams(_lockParams);
+                // we do this because we want to set the values inside the then block
+                if (_lockParams.length > allLockParams.length && index === networkLockDur.length - 1) {
+                    setAllLockParams(_lockParams);
                 }
             });
-        };
-
-        if (publicKey) {
-            fetchLockParams();
         }
-    }, [lockDuration, networkType, publicKey, networkLockDur, lockParams.length]);
+    }, [publicKey, networkType, p2shAddress, networkLockDur, allLockParams, currentScriptLocks, lockDuration.value]);
+
+    useEffect(() => {
+        // change P2SH if the user changed the lock duration
+        if (publicKey && p2shAddress) {
+            const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
+            setP2sh(lockScript.address!);
+        }
+        publicKey && fetchLockdropParams();
+    }, [fetchLockdropParams, lockDuration.value, networkType, publicKey, p2shAddress]);
 
     return (
         <div>
-            {p2shAddress ? <QrEncodedAddress address={p2shAddress} /> : null}
+            {p2shAddress ? <QrEncodedAddress address={p2shAddress} lockData={currentScriptLocks} /> : null}
             <IonLoading isOpen={isLoading.loadState} message={isLoading.message} />
             <IonCard>
                 <IonCardHeader>
@@ -276,7 +286,7 @@ const TrezorLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                 </Typography>
                 {publicKey ? (
                     <ClaimStatus
-                        claimParams={lockParams}
+                        claimParams={allLockParams}
                         plasmApi={plasmApi}
                         networkType="BTC"
                         plasmNetwork="Dusty"
