@@ -509,6 +509,7 @@ export async function getLockParameter(
     }
 
     const locks = await getBtcTxsFromAddress(scriptAddress, network);
+    console.log('fetching data from block stream');
     const daysToEpoch = 60 * 60 * 24 * lockDurationDays;
 
     //todo: properly calculate total locked value

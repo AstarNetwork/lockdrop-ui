@@ -163,45 +163,38 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
     };
 
     const fetchLockdropParams = useCallback(async () => {
-        // fetch user lock param data
-        if (publicKey) {
-            const blockStreamNet = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
-            // initialize lockdrop data array
-            const _lockParams: Lockdrop[] = [];
+        const blockStreamNet = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
+        // initialize lockdrop data array
+        const _lockParams: Lockdrop[] = [];
 
-            // get all the possible lock addresses
-            networkLockDur.forEach(async (dur, index) => {
-                const _p2shAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
+        // get all the possible lock addresses
+        networkLockDur.forEach(async (dur, index) => {
+            const scriptAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
+            // make a real-time lockdrop data structure with the current P2SH and duration
+            const lock = await btcLock.getLockParameter(scriptAddr, dur.value, publicKey, blockStreamNet);
 
-                // make a real-time lockdrop data structure with the current P2SH and duration
-                const lock = await btcLock.getLockParameter(_p2shAddr, dur.value, publicKey, blockStreamNet);
+            // loop through all the token locks within the given script
+            // this is to prevent nested array
+            lock.forEach(e => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const currentParam = plasmUtils.structToLockdrop(e as any);
 
-                // loop through all the token locks within the given script
-                // this is to prevent nested array
-                lock.forEach(e => {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const currentParam = plasmUtils.structToLockdrop(e as any);
-                    _lockParams.push(currentParam);
-                    if (p2shAddress === _p2shAddr && dur.value === lockDuration.value) {
-                        const hasLock =
-                            currentScriptLocks.find(
-                                item => item.transactionHash.toHex() === currentParam.transactionHash.toHex(),
-                            ) === undefined;
-                        if (hasLock) {
-                            currentScriptLocks.push(currentParam);
-                        }
-                    } else if (currentScriptLocks.length > 0 && currentScriptLocks.length !== 0) {
-                        setCurrentScriptLocks([]);
-                    }
-                });
-                // set lockdrop param data if we're in the final loop
-                // we do this because we want to set the values inside the then block
-                if (_lockParams.length > allLockParams.length && index === networkLockDur.length - 1) {
-                    setAllLockParams(_lockParams);
-                }
+                _lockParams.push(currentParam);
             });
-        }
-    }, [publicKey, networkType, p2shAddress, networkLockDur, allLockParams, currentScriptLocks, lockDuration.value]);
+
+            if (p2shAddress === scriptAddr && dur.value === lockDuration.value) {
+                const _thisLocks = _lockParams.filter(lock => {
+                    return lock.duration.toNumber() === dur.value * (60 * 60 * 24);
+                });
+                setCurrentScriptLocks(_thisLocks);
+            }
+            // set lockdrop param data if we're in the final loop
+            // we do this because we want to set the values inside the then block
+            if (_lockParams.length > allLockParams.length && index === networkLockDur.length - 1) {
+                setAllLockParams(_lockParams);
+            }
+        });
+    }, [publicKey, networkType, p2shAddress, networkLockDur, allLockParams, lockDuration.value]);
 
     useEffect(() => {
         // change P2SH if the user changed the lock duration

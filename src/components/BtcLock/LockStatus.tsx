@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 //import { makeStyles, createStyles } from '@material-ui/core';
 import * as btcLockdrop from '../../helpers/lockdrop/BitcoinLockdrop';
 import {
@@ -45,7 +45,10 @@ const LockStatus: React.FC<Props> = ({ lockData }) => {
         return days;
     };
 
-    const setLockTotalBal = useCallback(() => {
+    useEffect(() => {
+        console.log(lockData.length);
+        console.log(lockData);
+        console.log(lockedValue);
         if (lockData.length === 0) {
             setLockedValue('');
         } else {
@@ -54,28 +57,9 @@ const LockStatus: React.FC<Props> = ({ lockData }) => {
                 totalBal = totalBal.plus(new BigNumber(i.value.toString()));
             });
 
-            if (totalBal.isGreaterThan(new BigNumber(0))) {
-                setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
-            }
+            setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
         }
-    }, [lockData]);
-
-    // initial fetch
-    useEffect(() => {
-        setLockTotalBal();
-    }, [setLockTotalBal]);
-
-    // fetch lock data in the background
-    useEffect(() => {
-        const interval = setInterval(async () => {
-            setLockTotalBal();
-        }, 20 * 1000); // fetch every 20 seconds
-
-        // cleanup hook
-        return () => {
-            clearInterval(interval);
-        };
-    });
+    }, [lockData, lockedValue]);
 
     return (
         <>
