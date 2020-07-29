@@ -75,7 +75,7 @@ const LockStatus: React.FC<Props> = ({ lockData, onUnlock, scriptAddress }) => {
 
             setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
         }
-    }, [lockData, lockedValue]);
+    }, [lockData, lockedValue, scriptAddress]);
 
     return (
         <>
