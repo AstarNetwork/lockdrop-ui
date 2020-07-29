@@ -23,7 +23,7 @@ import { toast } from 'react-toastify';
 import { makeStyles, createStyles, Typography, Container } from '@material-ui/core';
 import QrEncodedAddress from './QrEncodedAddress';
 import * as bitcoinjs from 'bitcoinjs-lib';
-import { OptionItem, Lockdrop } from 'src/types/LockdropModels';
+import { OptionItem, Lockdrop, LockdropType } from 'src/types/LockdropModels';
 import SectionCard from '../SectionCard';
 import ClaimStatus from '../ClaimStatus';
 import { ApiPromise } from '@polkadot/api';
@@ -31,6 +31,7 @@ import * as plasmUtils from '../../helpers/plasmUtils';
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import AppBtc from '@ledgerhq/hw-app-btc';
 import TransportU2F from '@ledgerhq/hw-transport-u2f';
+import { BlockStreamApi } from 'src/types/BlockStreamTypes';
 
 interface Props {
     networkType: bitcoinjs.Network;
@@ -64,7 +65,7 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
     const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
     const [p2shAddress, setP2sh] = useState('');
     const [allLockParams, setAllLockParams] = useState<Lockdrop[]>([]);
-    const [currentScriptLocks, setCurrentScriptLocks] = useState<Lockdrop[]>([]);
+    const [currentScriptLocks, setCurrentScriptLocks] = useState<BlockStreamApi.Transaction[]>([]);
     const [btcApi, setBtcApi] = useState<AppBtc>();
 
     // changing the path to n/49'/x'/x' will return a signature error
@@ -175,26 +176,41 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
         const _lockParams: Lockdrop[] = [];
 
         // get all the possible lock addresses
-        networkLockDur.forEach(async (dur, index) => {
+        networkLockDur.map(async (dur, index) => {
             const scriptAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
             // make a real-time lockdrop data structure with the current P2SH and duration
-            const lock = await btcLock.getLockParameter(scriptAddr, dur.value, publicKey, blockStreamNet);
+            //const lock = await btcLock.getLockParameter(scriptAddr, dur.value, publicKey, blockStreamNet);
+
+            const locks = await btcLock.getBtcTxsFromAddress(scriptAddr, blockStreamNet);
+            console.log('fetching data from block stream');
+            const daysToEpoch = 60 * 60 * 24 * dur.value;
+
+            const lockParams = locks.map(i => {
+                const lockVal = i.vout.filter(locked => locked.scriptpubkey_address === scriptAddr);
+
+                return plasmUtils.createLockParam(
+                    LockdropType.Bitcoin,
+                    '0x' + i.txid,
+                    '0x' + publicKey,
+                    daysToEpoch.toString(),
+                    lockVal[0].value.toString(),
+                );
+            });
+
+            // if the lock data is the one that the user is viewing
+            if (p2shAddress === scriptAddr && dur.value === lockDuration.value) {
+                setCurrentScriptLocks(locks);
+            }
 
             // loop through all the token locks within the given script
             // this is to prevent nested array
-            lock.forEach(e => {
+            lockParams.forEach(e => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const currentParam = plasmUtils.structToLockdrop(e as any);
 
                 _lockParams.push(currentParam);
             });
 
-            if (p2shAddress === scriptAddr && dur.value === lockDuration.value) {
-                const _thisLocks = _lockParams.filter(lock => {
-                    return lock.duration.toNumber() === dur.value * (60 * 60 * 24);
-                });
-                setCurrentScriptLocks(_thisLocks);
-            }
             // set lockdrop param data if we're in the final loop
             // we do this because we want to set the values inside the then block
             if (_lockParams.length > allLockParams.length && index === networkLockDur.length - 1) {

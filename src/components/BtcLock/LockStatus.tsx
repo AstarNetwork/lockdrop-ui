@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 //import { makeStyles, createStyles } from '@material-ui/core';
 import * as btcLockdrop from '../../helpers/lockdrop/BitcoinLockdrop';
 import {
@@ -25,36 +25,52 @@ import {
 import { lock, time } from 'ionicons/icons';
 import { Tooltip } from '@material-ui/core';
 import BigNumber from 'bignumber.js';
-import { Lockdrop } from 'src/types/LockdropModels';
+import { BlockStreamApi } from 'src/types/BlockStreamTypes';
 
 interface Props {
-    lockData: Lockdrop[];
+    scriptAddress: string;
+    lockData: BlockStreamApi.Transaction[];
+    onUnlock?: Function;
 }
 
 /**
  * Shows the number of BTC locked in the given P2SH address. Information is fetched from block stream
  * @param param0 P2SH address to look for
  */
-const LockStatus: React.FC<Props> = ({ lockData }) => {
+const LockStatus: React.FC<Props> = ({ lockData, onUnlock, scriptAddress }) => {
     const [lockedValue, setLockedValue] = useState('');
     const [showModal, setShowModal] = useState(false);
 
-    const epochToDays = (epoch: string) => {
-        const epochDay = 60 * 60 * 24;
-        const days = new BigNumber(epoch).dividedBy(epochDay).toFixed();
-        return days;
+    // const epochToDays = (epoch: string) => {
+    //     const epochDay = 60 * 60 * 24;
+    //     const days = new BigNumber(epoch).dividedBy(epochDay).toFixed();
+    //     return days;
+    // };
+
+    const handleUnlock = () => {
+        console.log('hey');
     };
 
+    const getTotalLockBal = useCallback(
+        (lock: BlockStreamApi.Transaction) => {
+            const _lockVout = lock.vout.find(locked => locked.scriptpubkey_address === scriptAddress);
+            if (_lockVout) return btcLockdrop.satoshiToBitcoin(_lockVout.value.toFixed()).toFixed();
+            else return '0';
+        },
+        [scriptAddress],
+    );
+
     useEffect(() => {
-        console.log(lockData.length);
-        console.log(lockData);
-        console.log(lockedValue);
         if (lockData.length === 0) {
             setLockedValue('');
         } else {
             let totalBal = new BigNumber(0);
             lockData.forEach(i => {
-                totalBal = totalBal.plus(new BigNumber(i.value.toString()));
+                totalBal = totalBal.plus(
+                    new BigNumber(
+                        i.vout.filter(locked => locked.scriptpubkey_address === scriptAddress)[0].value.toFixed(),
+                    ),
+                );
             });
 
             setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
@@ -82,15 +98,22 @@ const LockStatus: React.FC<Props> = ({ lockData }) => {
                             <IonCardContent>
                                 <IonList>
                                     {lockData.map(e => (
-                                        <IonItem key={e.transactionHash.toHex()}>
+                                        <IonItem key={e.txid}>
                                             <IonLabel>
-                                                <h2>Transaction Hash: {e.transactionHash.toHex().replace('0x', '')}</h2>
-                                                <h3>
-                                                    Locked Amount:{' '}
-                                                    {btcLockdrop.satoshiToBitcoin(e.value.toString()).toFixed()} BTC
-                                                </h3>
-                                                <p>Locked for {epochToDays(e.duration.toString())} days</p>
+                                                <h2>Transaction Hash: {e.txid}</h2>
+                                                <h3>Locked Amount: {getTotalLockBal(e)} BTC</h3>
+                                                <p>Locked in block no. {e.status.block_height}</p>
                                             </IonLabel>
+                                            {onUnlock && (
+                                                <IonButton
+                                                    fill="outline"
+                                                    slot="end"
+                                                    disabled={true}
+                                                    onClick={() => handleUnlock()}
+                                                >
+                                                    Unlock
+                                                </IonButton>
+                                            )}
                                         </IonItem>
                                     ))}
                                 </IonList>

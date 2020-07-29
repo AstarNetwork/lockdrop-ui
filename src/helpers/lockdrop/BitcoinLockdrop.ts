@@ -512,8 +512,6 @@ export async function getLockParameter(
     console.log('fetching data from block stream');
     const daysToEpoch = 60 * 60 * 24 * lockDurationDays;
 
-    //todo: properly calculate total locked value
-
     const lockParams = locks.map(i => {
         const lockVal = i.vout.filter(locked => locked.scriptpubkey_address === scriptAddress);
         return plasmUtils.createLockParam(

@@ -24,11 +24,12 @@ import { Message } from 'bitcore-lib';
 import QrEncodedAddress from './QrEncodedAddress';
 import CopyMessageBox from '../CopyMessageBox';
 import * as bitcoinjs from 'bitcoinjs-lib';
-import { OptionItem, Lockdrop } from 'src/types/LockdropModels';
+import { OptionItem, Lockdrop, LockdropType } from 'src/types/LockdropModels';
 import SectionCard from '../SectionCard';
 import ClaimStatus from '../ClaimStatus';
 import * as plasmUtils from '../../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
+import { BlockStreamApi } from 'src/types/BlockStreamTypes';
 interface Props {
     networkType: bitcoinjs.Network;
     plasmApi: ApiPromise;
@@ -66,7 +67,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
     const [p2shAddress, setP2sh] = useState('');
     const [publicKey, setPublicKey] = useState('');
     const [allLockParams, setAllLockParams] = useState<Lockdrop[]>([]);
-    const [currentScriptLocks, setCurrentScriptLocks] = useState<Lockdrop[]>([]);
+    const [currentScriptLocks, setCurrentScriptLocks] = useState<BlockStreamApi.Transaction[]>([]);
 
     const onSubmit = () => {
         try {
@@ -105,23 +106,38 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
         networkLockDur.map(async (dur, index) => {
             const scriptAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
             // make a real-time lockdrop data structure with the current P2SH and duration
-            const lock = await btcLock.getLockParameter(scriptAddr, dur.value, publicKey, blockStreamNet);
+            //const lock = await btcLock.getLockParameter(scriptAddr, dur.value, publicKey, blockStreamNet);
+
+            const locks = await btcLock.getBtcTxsFromAddress(scriptAddr, blockStreamNet);
+            console.log('fetching data from block stream');
+            const daysToEpoch = 60 * 60 * 24 * dur.value;
+
+            const lockParams = locks.map(i => {
+                const lockVal = i.vout.filter(locked => locked.scriptpubkey_address === scriptAddr)[0].value;
+
+                return plasmUtils.createLockParam(
+                    LockdropType.Bitcoin,
+                    '0x' + i.txid,
+                    '0x' + publicKey,
+                    daysToEpoch.toString(),
+                    lockVal.toString(),
+                );
+            });
+
+            // if the lock data is the one that the user is viewing
+            if (p2shAddress === scriptAddr && dur.value === lockDuration.value) {
+                setCurrentScriptLocks(locks);
+            }
 
             // loop through all the token locks within the given script
             // this is to prevent nested array
-            lock.forEach(e => {
+            lockParams.forEach(e => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const currentParam = plasmUtils.structToLockdrop(e as any);
 
                 _lockParams.push(currentParam);
             });
 
-            if (p2shAddress === scriptAddr && dur.value === lockDuration.value) {
-                const _thisLocks = _lockParams.filter(lock => {
-                    return lock.duration.toNumber() === dur.value * (60 * 60 * 24);
-                });
-                setCurrentScriptLocks(_thisLocks);
-            }
             // set lockdrop param data if we're in the final loop
             // we do this because we want to set the values inside the then block
             if (_lockParams.length > allLockParams.length && index === networkLockDur.length - 1) {

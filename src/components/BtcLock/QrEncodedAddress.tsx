@@ -13,11 +13,11 @@ import { qrEncodeUri } from '../../helpers/lockdrop/BitcoinLockdrop';
 import { makeStyles, createStyles, Grid } from '@material-ui/core';
 import LockStatus from './LockStatus';
 import CopyMessageBox from '../CopyMessageBox';
-import { Lockdrop } from 'src/types/LockdropModels';
+import { BlockStreamApi } from 'src/types/BlockStreamTypes';
 
 interface Props {
     address: string;
-    lockData: Lockdrop[];
+    lockData: BlockStreamApi.Transaction[];
 }
 
 const useStyles = makeStyles(theme =>
@@ -89,7 +89,7 @@ const QrEncodedAddress: React.FC<Props> = ({ address, lockData }) => {
                         </Grid>
                         <Grid item xs={12} sm={6} className={classes.chipGrid}>
                             <div className={classes.statusChip}>
-                                <LockStatus lockData={lockData} />
+                                <LockStatus lockData={lockData} scriptAddress={address} />
                             </div>
                         </Grid>
                     </Grid>
