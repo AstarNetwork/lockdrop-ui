@@ -47,8 +47,8 @@ const LockStatus: React.FC<Props> = ({ lockData, onUnlock, scriptAddress }) => {
     //     return days;
     // };
 
-    const handleUnlock = () => {
-        console.log('hey');
+    const handleUnlock = (lock: BlockStreamApi.Transaction) => {
+        if (onUnlock) onUnlock(lock);
     };
 
     const getTotalLockBal = useCallback(
@@ -105,12 +105,7 @@ const LockStatus: React.FC<Props> = ({ lockData, onUnlock, scriptAddress }) => {
                                                 <p>Locked in block no. {e.status.block_height}</p>
                                             </IonLabel>
                                             {onUnlock && (
-                                                <IonButton
-                                                    fill="outline"
-                                                    slot="end"
-                                                    disabled={true}
-                                                    onClick={() => handleUnlock()}
-                                                >
+                                                <IonButton fill="outline" slot="end" onClick={() => handleUnlock(e)}>
                                                     Unlock
                                                 </IonButton>
                                             )}

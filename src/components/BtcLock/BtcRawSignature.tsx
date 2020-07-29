@@ -97,6 +97,11 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
         }
     };
 
+    const unlockScriptTx = (lock: BlockStreamApi.Transaction) => {
+        //todo: implement this to form a unlock transaction
+        console.log(lock);
+    };
+
     const fetchLockdropParams = useCallback(async () => {
         const blockStreamNet = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
         // initialize lockdrop data array
@@ -171,7 +176,9 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
 
     return (
         <div>
-            {p2shAddress ? <QrEncodedAddress address={p2shAddress} lockData={currentScriptLocks} /> : null}
+            {p2shAddress && (
+                <QrEncodedAddress address={p2shAddress} lockData={currentScriptLocks} onUnlock={unlockScriptTx} />
+            )}
             <IonCard>
                 <IonCardHeader>
                     <IonCardSubtitle>
