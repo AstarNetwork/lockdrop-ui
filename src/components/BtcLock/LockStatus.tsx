@@ -66,11 +66,10 @@ const LockStatus: React.FC<Props> = ({ lockData, onUnlock, scriptAddress }) => {
         } else {
             let totalBal = new BigNumber(0);
             lockData.forEach(i => {
-                totalBal = totalBal.plus(
-                    new BigNumber(
-                        i.vout.filter(locked => locked.scriptpubkey_address === scriptAddress)[0].value.toFixed(),
-                    ),
-                );
+                const _lockVout = i.vout.find(locked => locked.scriptpubkey_address === scriptAddress);
+                if (_lockVout) {
+                    totalBal = totalBal.plus(new BigNumber(_lockVout.value.toFixed()));
+                }
             });
 
             setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
@@ -102,7 +101,11 @@ const LockStatus: React.FC<Props> = ({ lockData, onUnlock, scriptAddress }) => {
                                             <IonLabel>
                                                 <h2>Transaction Hash: {e.txid}</h2>
                                                 <h3>Locked Amount: {getTotalLockBal(e)} BTC</h3>
-                                                <p>Locked in block no. {e.status.block_height}</p>
+                                                {e.status.confirmed ? (
+                                                    <p>Locked in block no. {e.status.block_height}</p>
+                                                ) : (
+                                                    <p>Transaction not confirmed</p>
+                                                )}
                                             </IonLabel>
                                             {onUnlock && (
                                                 <IonButton fill="outline" slot="end" onClick={() => handleUnlock(e)}>

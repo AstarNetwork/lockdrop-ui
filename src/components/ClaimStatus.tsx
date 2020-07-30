@@ -282,6 +282,7 @@ const ClaimItem: React.FC<ItemProps> = ({
 
     const submitClaimReq = (param: Lockdrop) => {
         setSendingRequest(true);
+        claimData = undefined;
         const _lock = plasmUtils.createLockParam(
             param.type,
             param.transactionHash.toHex(),
@@ -295,6 +296,10 @@ const ClaimItem: React.FC<ItemProps> = ({
             .sendLockClaimRequest(plasmApi, _lock as any, _nonce)
             .then(res => {
                 console.log('Claim ID: ' + _lock.hash + '\nRequest transaction hash:\n' + res.toHex());
+            })
+            .catch(e => {
+                toast.error(e);
+                console.log(e);
             });
     };
 
