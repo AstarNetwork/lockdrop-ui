@@ -173,6 +173,18 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
     const unlockScriptTx = (lock: BlockStreamApi.Transaction) => {
         //todo: implement this to form a unlock transaction
         console.log(lock);
+
+        const output = bitcoinjs.payments.p2pkh({ pubkey: publicKey });
+        const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
+        const redeem = lockScript.redeem.output.toString(16);
+
+        btc.signP2SHTransaction({
+            inputs: [ [lock, 1, redeem] ],
+            associatedKeysets: [addressPath],
+            outputScriptHex: output.output.toString(16);
+        }).then(result => {
+            console.log('signed tx: ' + result);
+        });
     };
 
     const fetchLockdropParams = useCallback(async () => {
