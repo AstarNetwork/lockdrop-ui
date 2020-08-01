@@ -118,15 +118,19 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
             const daysToEpoch = 60 * 60 * 24 * dur.value;
 
             const lockParams = locks.map(i => {
-                const lockVal = i.vout.filter(locked => locked.scriptpubkey_address === scriptAddr)[0].value;
+                const lockVal = i.vout.find(locked => locked.scriptpubkey_address === scriptAddr);
 
-                return plasmUtils.createLockParam(
-                    LockdropType.Bitcoin,
-                    '0x' + i.txid,
-                    '0x' + publicKey,
-                    daysToEpoch.toString(),
-                    lockVal.toString(),
-                );
+                if (lockVal) {
+                    return plasmUtils.createLockParam(
+                        LockdropType.Bitcoin,
+                        '0x' + i.txid,
+                        '0x' + publicKey,
+                        daysToEpoch.toString(),
+                        lockVal.value.toString(),
+                    );
+                } else {
+                    throw new Error('Could not find the lock value from the UTXO');
+                }
             });
 
             // if the lock data is the one that the user is viewing
@@ -156,16 +160,19 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
         if (publicKey) {
             const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
             setP2sh(lockScript.address!);
-            fetchLockdropParams();
+            fetchLockdropParams().catch(e => {
+                toast.error(e);
+            });
         }
     }, [fetchLockdropParams, lockDuration.value, networkType, publicKey]);
 
     // fetch lock data in the background
     useEffect(() => {
         const interval = setInterval(async () => {
-            if (publicKey) {
-                fetchLockdropParams();
-            }
+            publicKey &&
+                fetchLockdropParams().catch(e => {
+                    toast.error(e);
+                });
         }, 5 * 1000);
 
         // cleanup hook
