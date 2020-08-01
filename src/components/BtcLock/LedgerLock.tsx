@@ -203,15 +203,19 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
             const daysToEpoch = 60 * 60 * 24 * dur.value;
 
             const lockParams = locks.map(i => {
-                const lockVal = i.vout.filter(locked => locked.scriptpubkey_address === scriptAddr);
+                const lockVal = i.vout.find(locked => locked.scriptpubkey_address === scriptAddr);
 
-                return plasmUtils.createLockParam(
-                    LockdropType.Bitcoin,
-                    '0x' + i.txid,
-                    '0x' + publicKey,
-                    daysToEpoch.toString(),
-                    lockVal[0].value.toString(),
-                );
+                if (lockVal) {
+                    return plasmUtils.createLockParam(
+                        LockdropType.Bitcoin,
+                        '0x' + i.txid,
+                        '0x' + publicKey,
+                        daysToEpoch.toString(),
+                        lockVal.value.toString(),
+                    );
+                } else {
+                    throw new Error('Could not find the lock value from the UTXO');
+                }
             });
 
             // if the lock data is the one that the user is viewing
@@ -242,15 +246,19 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
             const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
             setP2sh(lockScript.address!);
         }
-        publicKey && fetchLockdropParams();
+        publicKey &&
+            fetchLockdropParams().catch(e => {
+                toast.error(e);
+            });
     }, [fetchLockdropParams, lockDuration.value, networkType, publicKey, p2shAddress]);
 
     // fetch lock data in the background
     useEffect(() => {
         const interval = setInterval(async () => {
-            if (publicKey) {
-                fetchLockdropParams();
-            }
+            publicKey &&
+                fetchLockdropParams().catch(e => {
+                    toast.error(e);
+                });
         }, 5 * 1000);
 
         // cleanup hook
