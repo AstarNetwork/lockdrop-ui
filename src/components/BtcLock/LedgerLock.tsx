@@ -32,7 +32,7 @@ import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import AppBtc from '@ledgerhq/hw-app-btc';
 import TransportU2F from '@ledgerhq/hw-transport-u2f';
 import { BlockStreamApi } from 'src/types/BlockStreamTypes';
-import LedgerTx from '../../types/LedgerTypes';
+import * as LedgerTx from '../../types/LedgerTypes';
 
 interface Props {
     networkType: bitcoinjs.Network;
@@ -172,27 +172,40 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
     };
 
     const convertApiToLedgerTX = (tx: BlockStreamApi.Transaction) => {
-        const convertInput = (input: BlockStreamApi.TransactionInput) => {
-            prevout: Buffer.from(input.prevout.scriptpubkey, 'hex'),
-            script: Buffer.from(input.scriptsig, 'hex'),
-            sequence: Buffer.from(input.sequence.toString(16), 'hex'),
+        const convertInput = (input: BlockStreamApi.Vin) => {
+            const ledgerTxIn: LedgerTx.TransactionInput = {
+                prevout: Buffer.from(input.prevout.scriptpubkey, 'hex'),
+                script: Buffer.from(input.scriptsig, 'hex'),
+                sequence: Buffer.from(input.sequence.toString(16), 'hex'),
+            };
+            return ledgerTxIn;
         };
-        const convertOutput = (output: BlockStreamApi.TransactionOutput) => {
-            amount: Buffer.from(output.value.toString(16), 'hex'),
-            script: Buffer.from(output.scriptpubkey, 'hex'),
+        const convertOutput = (output: BlockStreamApi.Vout) => {
+            const ledgerTxOut: LedgerTx.TransactionOutput = {
+                amount: Buffer.from(output.value.toString(16), 'hex'),
+                script: Buffer.from(output.scriptpubkey, 'hex'),
+            };
+            return ledgerTxOut;
         };
-        const ledgerTx: LedgerTx = {
+
+        const ledgerTx: LedgerTx.Transaction = {
             version: Buffer.from(tx.version.toString(16), 'hex'),
             inputs: tx.vin.map(convertInput),
             outputs: tx.vout.map(convertOutput),
         };
+
+        return ledgerTx;
     };
 
     const unlockScriptTx = (lock: BlockStreamApi.Transaction) => {
         //todo: implement this to form a unlock transaction
         console.log(lock);
+        const lockSequence = btcLock.daysToBlockSequence(lockDuration.value);
 
-        const output = bitcoinjs.payments.p2pkh({ pubkey: Buffer.from(publicKey, 'hex') });
+        const ledgerTxData = convertApiToLedgerTX(lock);
+
+        //const output = bitcoinjs.payments.p2pkh({ pubkey: Buffer.from(publicKey, 'hex') });
+        const output = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
         const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
         if (typeof lockScript.redeem !== 'undefined') {
             ledgerApiInstance()
@@ -200,7 +213,7 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                     const redeem = lockScript.redeem!.output!.toString('hex');
 
                     btc.signP2SHTransaction({
-                        inputs: [[lock, 1, redeem]],
+                        inputs: [[ledgerTxData, 1, redeem, lockSequence]],
                         associatedKeysets: [addressPath],
                         outputScriptHex: output.output!.toString('hex'),
                     }).then(result => {

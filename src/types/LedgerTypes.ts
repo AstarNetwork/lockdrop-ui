@@ -1,16 +1,16 @@
-interface TransactionInput {
+export interface TransactionInput {
     prevout: Buffer;
     script: Buffer;
     sequence: Buffer;
     tree?: Buffer;
 }
 
-interface TransactionOutput {
+export interface TransactionOutput {
     amount: Buffer;
     script: Buffer;
 }
 
-export default interface Transaction {
+export interface Transaction {
     version: Buffer;
     inputs: TransactionInput[];
     outputs?: TransactionOutput[];

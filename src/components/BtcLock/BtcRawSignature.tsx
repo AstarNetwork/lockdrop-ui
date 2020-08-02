@@ -99,36 +99,36 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
 
     const unlockScriptTx = (lock: BlockStreamApi.Transaction) => {
         console.log(lock);
-        const RELAY_FEE = 200;
-        const value = lock.vout[0].value;
-        const lockScript = btcLock.getLockP2SH(value, publicKey, networkType);
-        // for non segwit inputs, you must pass the full transaction buffer
-        const nonWitnessUtxo = Buffer.from(utx.toHex(), 'hex');
-        const tx = new bitcoinjs.Psbt({ network: networkType })
-            .setVersion(2)
-            .addInput({
-                hash: lock.txid,
-                index: 0,
-                sequence: lock.vin[0].sequence,
-                redeemScript: lockScript.redeem.output,
-                nonWitnessUtxo,
-            })
-            .addOutput({
-                address: addressInput,
-                value: value - RELAY_FEE,
-            });
-        const signer = {
-            /** @param {Buffer} $hash */
-            sign: ($hash) => {
-                // TODO request signature of hash from user
-                return signature;
-            },
-        };
-        psbt.signInput(0, signer);
-        const validated = psbt.validateSignaturesOfInput(0);
-        psbt.finalizeAllInputs();
-        const hex = psbt.extractTransaction().toHex();
-        console.log({ validated, hex });
+        // const RELAY_FEE = 200;
+        // const value = lock.vout[0].value;
+        // const lockScript = btcLock.getLockP2SH(value, publicKey, networkType);
+        // // for non segwit inputs, you must pass the full transaction buffer
+        // const nonWitnessUtxo = Buffer.from(utx.toHex(), 'hex');
+        // const tx = new bitcoinjs.Psbt({ network: networkType })
+        //     .setVersion(2)
+        //     .addInput({
+        //         hash: lock.txid,
+        //         index: 0,
+        //         sequence: lock.vin[0].sequence,
+        //         redeemScript: lockScript.redeem.output,
+        //         nonWitnessUtxo,
+        //     })
+        //     .addOutput({
+        //         address: addressInput,
+        //         value: value - RELAY_FEE,
+        //     });
+        // const signer = {
+        //     /** @param {Buffer} $hash */
+        //     sign: $hash => {
+        //         // TODO request signature of hash from user
+        //         return signature;
+        //     },
+        // };
+        // psbt.signInput(0, signer);
+        // const validated = psbt.validateSignaturesOfInput(0);
+        // psbt.finalizeAllInputs();
+        // const hex = psbt.extractTransaction().toHex();
+        // console.log({ validated, hex });
     };
 
     const fetchLockdropParams = useCallback(async () => {
