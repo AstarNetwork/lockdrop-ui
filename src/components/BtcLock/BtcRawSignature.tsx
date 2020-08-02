@@ -99,36 +99,42 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
 
     const unlockScriptTx = (lock: BlockStreamApi.Transaction) => {
         console.log(lock);
-        // const RELAY_FEE = 200;
-        // const value = lock.vout[0].value;
-        // const lockScript = btcLock.getLockP2SH(value, publicKey, networkType);
-        // // for non segwit inputs, you must pass the full transaction buffer
-        // const nonWitnessUtxo = Buffer.from(utx.toHex(), 'hex');
-        // const tx = new bitcoinjs.Psbt({ network: networkType })
-        //     .setVersion(2)
-        //     .addInput({
-        //         hash: lock.txid,
-        //         index: 0,
-        //         sequence: lock.vin[0].sequence,
-        //         redeemScript: lockScript.redeem.output,
-        //         nonWitnessUtxo,
-        //     })
-        //     .addOutput({
-        //         address: addressInput,
-        //         value: value - RELAY_FEE,
-        //     });
-        // const signer = {
-        //     /** @param {Buffer} $hash */
-        //     sign: $hash => {
-        //         // TODO request signature of hash from user
-        //         return signature;
-        //     },
-        // };
-        // psbt.signInput(0, signer);
-        // const validated = psbt.validateSignaturesOfInput(0);
-        // psbt.finalizeAllInputs();
-        // const hex = psbt.extractTransaction().toHex();
-        // console.log({ validated, hex });
+        const lockVout = lock.vout.find(locked => locked.scriptpubkey_address === p2shAddress)!;
+        const lockScript = btcLock.btcLockScript(
+            publicKey,
+            btcLock.daysToBlockSequence(lockDuration.value),
+            networkType,
+        );
+
+        const RELAY_FEE = 200;
+        const sequence = 0;
+        const output = bitcoinjs.address.toOutputScript(addressInput, networkType);
+
+        const tx = new bitcoinjs.Transaction();
+        tx.version = 2;
+        tx.addInput(Buffer.from(lock.txid, 'hex').reverse(), 0, sequence);
+        tx.addOutput(output, lockVout.value - RELAY_FEE);
+
+        const hashType = bitcoinjs.Transaction.SIGHASH_ALL;
+        const signatureHash = tx.hashForSignature(0, lockScript, hashType);
+
+        // TODO: user output
+        console.log('hash: ' + signatureHash!.toString('hex'));
+        // TODO: user input
+        const rawSignature = Buffer.from('f816733330690bdce1a8093b39c88d21140114037c1b52b10444dd63265199dd7612fc327ec69377d4609218dcefdb37eeb1050d20f8a56130b81626ba3ad2e1', 'hex');
+
+        const signature = bitcoinjs.script.signature.encode(rawSignature, hashType);
+        const redeemScriptSig = bitcoinjs.payments.p2sh({
+            network: networkType,
+            redeem: {
+                network: networkType,
+                output: lockScript,
+                input: bitcoinjs.script.compile([signature]),
+            },
+        }).input;
+        tx.setInputScript(0, redeemScriptSig!);
+
+        console.log(tx);
     };
 
     const fetchLockdropParams = useCallback(async () => {
