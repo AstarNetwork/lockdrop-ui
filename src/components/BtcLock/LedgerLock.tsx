@@ -172,8 +172,19 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
     };
 
     const convertApiToLedgerTX = (tx: BlockStreamApi.Transaction) => {
+        const convertInput = (input: BlockStreamApi.TransactionInput) => {
+            prevout: Buffer.from(input.prevout.scriptpubkey, 'hex'),
+            script: Buffer.from(input.scriptsig, 'hex'),
+            sequence: Buffer.from(input.sequence.toString(16), 'hex'),
+        };
+        const convertOutput = (output: BlockStreamApi.TransactionOutput) => {
+            amount: Buffer.from(output.value.toString(16), 'hex'),
+            script: Buffer.from(output.scriptpubkey, 'hex'),
+        };
         const ledgerTx: LedgerTx = {
             version: Buffer.from(tx.version.toString(16), 'hex'),
+            inputs: tx.vin.map(convertInput),
+            outputs: tx.vout.map(convertOutput),
         };
     };
 
