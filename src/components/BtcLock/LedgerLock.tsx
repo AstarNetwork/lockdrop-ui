@@ -32,6 +32,7 @@ import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import AppBtc from '@ledgerhq/hw-app-btc';
 import TransportU2F from '@ledgerhq/hw-transport-u2f';
 import { BlockStreamApi } from 'src/types/BlockStreamTypes';
+import LedgerTx from '../../types/LedgerTypes';
 
 interface Props {
     networkType: bitcoinjs.Network;
@@ -170,21 +171,42 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
             });
     };
 
+    const convertApiToLedgerTX = (tx: BlockStreamApi.Transaction) => {
+        const ledgerTx: LedgerTx = {
+            version: Buffer.from(tx.version.toString(16), 'hex'),
+        };
+    };
+
     const unlockScriptTx = (lock: BlockStreamApi.Transaction) => {
         //todo: implement this to form a unlock transaction
         console.log(lock);
 
-        const output = bitcoinjs.payments.p2pkh({ pubkey: publicKey });
+        const output = bitcoinjs.payments.p2pkh({ pubkey: Buffer.from(publicKey, 'hex') });
         const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
-        const redeem = lockScript.redeem.output.toString(16);
+        if (typeof lockScript.redeem !== 'undefined') {
+            ledgerApiInstance()
+                .then(btc => {
+                    const redeem = lockScript.redeem!.output!.toString('hex');
 
-        btc.signP2SHTransaction({
-            inputs: [ [lock, 1, redeem] ],
-            associatedKeysets: [addressPath],
-            outputScriptHex: output.output.toString(16);
-        }).then(result => {
-            console.log('signed tx: ' + result);
-        });
+                    btc.signP2SHTransaction({
+                        inputs: [[lock, 1, redeem]],
+                        associatedKeysets: [addressPath],
+                        outputScriptHex: output.output!.toString('hex'),
+                    }).then(result => {
+                        console.log('signed tx: ' + result);
+                    });
+                })
+                .catch(e => {
+                    toast.error(e.message);
+                    console.log(e);
+                })
+                .finally(() => {
+                    setLoading({
+                        loadState: false,
+                        message: '',
+                    });
+                });
+        }
     };
 
     const fetchLockdropParams = useCallback(async () => {
