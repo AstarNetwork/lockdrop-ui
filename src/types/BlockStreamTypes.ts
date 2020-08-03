@@ -14,8 +14,8 @@ export declare namespace BlockStreamApi {
         txid: string;
         vout: number;
         prevout: Prevout;
-        scriptsig: string;
-        scriptsig_asm: string;
+        scriptsig?: string;
+        scriptsig_asm?: string;
         is_coinbase: boolean;
         sequence: number;
     }

@@ -175,7 +175,7 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
         const convertInput = (input: BlockStreamApi.Vin) => {
             const ledgerTxIn: LedgerTx.TransactionInput = {
                 prevout: Buffer.from(input.prevout.scriptpubkey, 'hex'),
-                script: Buffer.from(input.scriptsig, 'hex'),
+                script: input.scriptsig ? Buffer.from(input.scriptsig, 'hex') : new Buffer(''),
                 sequence: Buffer.from(input.sequence.toString(16), 'hex'),
             };
             return ledgerTxIn;
@@ -199,18 +199,18 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
 
     const unlockScriptTx = (lock: BlockStreamApi.Transaction) => {
         //todo: implement this to form a unlock transaction
-        console.log(lock);
+        console.log(JSON.stringify(lock));
         const lockSequence = btcLock.daysToBlockSequence(lockDuration.value);
 
         const ledgerTxData = convertApiToLedgerTX(lock);
 
         //const output = bitcoinjs.payments.p2pkh({ pubkey: Buffer.from(publicKey, 'hex') });
-        const output = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
         const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
         if (typeof lockScript.redeem !== 'undefined') {
             ledgerApiInstance()
                 .then(btc => {
                     const redeem = lockScript.redeem!.output!.toString('hex');
+                    const output = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
 
                     btc.signP2SHTransaction({
                         inputs: [[ledgerTxData, 1, redeem, lockSequence]],
