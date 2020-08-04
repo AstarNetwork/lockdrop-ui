@@ -216,7 +216,10 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                 // get transaction hex
                 const rawTxHex = await btcLock.getTransactionHex(lock.txid, 'BTCTEST');
 
-                const ledgerTxData = btc.splitTransaction(rawTxHex);
+                // SegWit is true if script signature property is empty
+                const isSegWit = !!lock.vin[0].scriptsig === false;
+
+                const ledgerTxData = btc.splitTransaction(rawTxHex, isSegWit);
 
                 const redeem = lockScript.redeem!.output!.toString('hex');
                 const output = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);

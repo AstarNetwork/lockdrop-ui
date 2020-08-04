@@ -58,7 +58,10 @@ describe('Test HID connection with Ledger from node', () => {
         it('checks Ledger transaction splitting from hex', async () => {
             const rawTx = await btcLockdrop.getTransactionHex(lockTx.txid, 'BTCTEST');
 
-            const ledgerTx = btcApi.splitTransaction(rawTx);
+            // SegWit is true if script signature property is empty
+            const isSegWit = !!lockTx.vin[0].scriptsig === false;
+
+            const ledgerTx = btcApi.splitTransaction(rawTx, isSegWit);
             expect(ledgerTx.inputs.length).toEqual(lockTx.vin.length);
         });
     } else {
