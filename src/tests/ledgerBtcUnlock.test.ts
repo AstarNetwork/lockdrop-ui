@@ -25,25 +25,43 @@ const ledgerApiInstance = async () => {
     return btcApi;
 };
 
-describe('API fetch test with lock TX', () => {
-    it("fetched the lock transaction data and checks if it's the same", async () => {
-        const _lockTxId = lockTx.txid;
-        const txInfo = await btcLockdrop.getBtcTxFromTxId(_lockTxId, 'testnet');
-        expect(txInfo.vin[0].txid).toEqual(lockTx.vin[0].txid);
-        expect(txInfo.status.block_height).toEqual(lockTx.status.block_height);
-    });
-});
-
 describe('Test HID connection with Ledger from node', () => {
     beforeAll(async () => {
         btcApi = await ledgerApiInstance();
     });
 
-    it('verifies the signature from address', async () => {
-        const walletData = await btcApi.getWalletPublicKey(ADDRESS_PATH);
-        console.log(walletData);
-        expect(walletData.publicKey).toEqual(
-            '04586ec0f213895f91a2e5dec5afec5d0910be1b5b356c6d53e9fdffbdaaff82e9ec9d48ac045a9cc7b5102893136dacf5a4b2305c6b13494261e6c22d975f7744',
-        );
-    });
+    if (typeof btcApi !== 'undefined') {
+        it('verifies the signature from address', async () => {
+            const walletData = await btcApi.getWalletPublicKey(ADDRESS_PATH);
+            const ledgerPubKey =
+                '04586ec0f213895f91a2e5dec5afec5d0910be1b5b356c6d53e9fdffbdaaff82e9ec9d48ac045a9cc7b5102893136dacf5a4b2305c6b13494261e6c22d975f7744';
+            console.log(walletData);
+            expect(walletData.publicKey).toEqual(ledgerPubKey);
+            expect(walletData.bitcoinAddress).toEqual('tb1q4mdgfm55xnpztxtxh9ffsv3mnz0vfqy4s6d7cc');
+        });
+
+        it('checks Ledger transaction splitting from hex', async () => {
+            const rawTx = await btcLockdrop.getTransactionHex(lockTx.txid, 'BTCTEST');
+
+            const ledgerTx = btcApi.splitTransaction(rawTx);
+            expect(ledgerTx.inputs.length).toEqual(lockTx.vin.length);
+        });
+        it('verifies the signature from address', async () => {
+            const walletData = await btcApi.getWalletPublicKey(ADDRESS_PATH);
+            const ledgerPubKey =
+                '04586ec0f213895f91a2e5dec5afec5d0910be1b5b356c6d53e9fdffbdaaff82e9ec9d48ac045a9cc7b5102893136dacf5a4b2305c6b13494261e6c22d975f7744';
+            console.log(walletData);
+            expect(walletData.publicKey).toEqual(ledgerPubKey);
+            expect(walletData.bitcoinAddress).toEqual('tb1q4mdgfm55xnpztxtxh9ffsv3mnz0vfqy4s6d7cc');
+        });
+
+        it('checks Ledger transaction splitting from hex', async () => {
+            const rawTx = await btcLockdrop.getTransactionHex(lockTx.txid, 'BTCTEST');
+
+            const ledgerTx = btcApi.splitTransaction(rawTx);
+            expect(ledgerTx.inputs.length).toEqual(lockTx.vin.length);
+        });
+    } else {
+        console.log('could not connect to Ledger, skipping Ledger device tests');
+    }
 });
