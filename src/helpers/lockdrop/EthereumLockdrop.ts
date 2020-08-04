@@ -296,7 +296,7 @@ export async function submitLockTx(txInput: LockInput, address: string, contract
     if (txInput.amount <= new BN(0) || txInput.duration <= 0) {
         throw new Error('You are missing an input!');
     }
-    //console.log(formInputVal);
+
     // return a default address if user input is empty
     const introducer = defaultAffiliation(txInput.affiliation).toLowerCase();
     // check user input
@@ -306,9 +306,6 @@ export async function submitLockTx(txInput: LockInput, address: string, contract
     if (introducer && !Web3.utils.isAddress(introducer)) {
         throw new Error('Please input a valid Ethereum address');
     }
-    // if (!isValidIntroducerAddress(introducer)) {
-    //     throw new Error('The given introducer is not registered in the affiliation program!');
-    // }
 
     // convert user input to Wei
     const amountToSend = Web3.utils.toWei(txInput.amount, 'ether');

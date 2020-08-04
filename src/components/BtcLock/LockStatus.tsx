@@ -51,7 +51,7 @@ const LockStatus: React.FC<Props> = ({ lockData, onUnlock, scriptAddress }) => {
         if (onUnlock) onUnlock(lock);
     };
 
-    const getTotalLockBal = useCallback(
+    const getLockBal = useCallback(
         (lock: BlockStreamApi.Transaction) => {
             const _lockVout = lock.vout.find(locked => locked.scriptpubkey_address === scriptAddress);
             if (_lockVout) return btcLockdrop.satoshiToBitcoin(_lockVout.value.toFixed()).toFixed();
@@ -100,7 +100,7 @@ const LockStatus: React.FC<Props> = ({ lockData, onUnlock, scriptAddress }) => {
                                         <IonItem key={e.txid}>
                                             <IonLabel>
                                                 <h2>Transaction Hash: {e.txid}</h2>
-                                                <h3>Locked Amount: {getTotalLockBal(e)} BTC</h3>
+                                                <h3>Locked Amount: {getLockBal(e)} BTC</h3>
                                                 {e.status.confirmed ? (
                                                     <p>Locked in block no. {e.status.block_height}</p>
                                                 ) : (

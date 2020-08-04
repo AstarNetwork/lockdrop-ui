@@ -246,9 +246,8 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
         // get all the possible lock addresses
         networkLockDur.map(async (dur, index) => {
             const scriptAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
-            // make a real-time lockdrop data structure with the current P2SH and duration
-            //const lock = await btcLock.getLockParameter(scriptAddr, dur.value, publicKey, blockStreamNet);
 
+            // make a real-time lockdrop data structure with the current P2SH and duration
             const locks = await btcLock.getBtcTxsFromAddress(scriptAddr, blockStreamNet);
             console.log('fetching data from block stream');
             const daysToEpoch = 60 * 60 * 24 * dur.value;

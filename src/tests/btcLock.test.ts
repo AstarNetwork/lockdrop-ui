@@ -177,8 +177,6 @@ describe('Bitcoin API fetch tests', () => {
             'testnet',
         );
 
-        console.log(allTxFromAddr);
-
         expect(allTxFromAddr.length).toEqual(2);
         expect(allTxFromAddr[0].txid).toEqual('f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449');
 
@@ -198,6 +196,16 @@ describe('Bitcoin API fetch tests', () => {
         expect(txInfo.vout[0].value).toEqual(70320221545);
         expect(txInfoTestnet.status.block_height).toEqual(1770515);
         expect(txInfoTestnet.vout[0].value).toEqual(284780111);
+    });
+
+    it('fetches a transaction hahs from SoChain', async () => {
+        const txId = '01cec976192e2f39ff57fdba5cba5d03094a7cf696f3f5ab89379e389ef77412';
+        const txHex =
+            '0100000000010219c88926f3113a8d5fb1801cd55429bd6269d229c7cbf50ac530233857fa9c3d0000000000ffffffff7fce5cf913125ce5bbb93829d819d56e461e39dcadb02ccc33298710fc6f15b40100000000ffffffff02d29e09000000000017a914d550b302301e25bf8f2c5115a31f8511bdbfdd948722c2050000000000160014aeda84ee9434c2259966b95298323b989ec4809502483045022100f6dbf811dc959f6f626da873ce54193efa5b28d81b14c6c0cf7c9237728993fb02206ff5d41e10b000867d345ec183e1dc9cd50cbdf7cd10efeb5366dd96dc474747012102b845db7300f3208891ea36eebdb1742b846783cefb0978d72d8e5d9b827022be024730440220619094ab5daa0000db9d9905059e9a61951f61764ce6f96ec45026dde2e27f9c02205f63448a55b9587395897430e98452fd5a07a074ad8747501c86f5fda7640010012102b845db7300f3208891ea36eebdb1742b846783cefb0978d72d8e5d9b827022be00000000';
+
+        const res = await btcLockdrop.getTransactionHex(txId, 'BTCTEST');
+
+        expect(res).toEqual(txHex);
     });
 });
 
@@ -345,7 +353,6 @@ describe('BTC lock script tests', () => {
                 vout: 0,
                 value: VALUE,
             });
-            console.log('Transaction hash:\n' + tx.toHex());
         },
         200 * 1000,
     ); // extend jest async resolve timeout

@@ -7,6 +7,7 @@ import { BlockCypherApi } from '../../types/BlockCypherTypes';
 import BigNumber from 'bignumber.js';
 import * as plasmUtils from '../plasmUtils';
 import { BlockStreamApi } from 'src/types/BlockStreamTypes';
+import { SoChainApi } from 'src/types/SoChainTypes';
 
 // https://www.blockchain.com/api/api_websocket
 export const BLOCKCHAIN_WS = 'wss://ws.blockchain.info/inv';
@@ -126,6 +127,24 @@ export async function getAddressBalance(addr: string, network: 'main' | 'test3')
 
     const addressInfo: BlockCypherApi.AddressBalance = JSON.parse(res);
     return addressInfo;
+}
+
+/**
+ * returns a raw transaction in hex strings from SoChain REST API.
+ * @param txId transaction ID or transaction hash
+ * @param network BTC network to choose from
+ */
+export async function getTransactionHex(txId: string, network: 'BTC' | 'BTCTEST') {
+    const api = `https://sochain.com/api/v2/get_tx/${network}/${txId}`;
+
+    const res = await (await fetch(api)).text();
+
+    if (res.includes('fail')) {
+        throw new Error(res);
+    }
+
+    const txHex: SoChainApi.Transaction = JSON.parse(res);
+    return txHex.data.tx_hex;
 }
 
 /**
@@ -509,17 +528,21 @@ export async function getLockParameter(
     }
 
     const locks = await getBtcTxsFromAddress(scriptAddress, network);
-    console.log('fetching data from block stream');
     const daysToEpoch = 60 * 60 * 24 * lockDurationDays;
 
     const lockParams = locks.map(i => {
-        const lockVal = i.vout.filter(locked => locked.scriptpubkey_address === scriptAddress);
+        const lockVal = i.vout.find(locked => locked.scriptpubkey_address === scriptAddress);
+
+        if (typeof lockVal === 'undefined') {
+            throw new Error('Cannot find lock transaction for ' + scriptAddress);
+        }
+
         return plasmUtils.createLockParam(
             LockdropType.Bitcoin,
             '0x' + i.txid,
             '0x' + publicKey,
             daysToEpoch.toString(),
-            lockVal[0].value.toString(),
+            lockVal.value.toString(),
         );
     });
 
