@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Message } from 'bitcore-lib';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import bip68 from 'bip68';
@@ -8,6 +9,7 @@ import BigNumber from 'bignumber.js';
 import * as plasmUtils from '../plasmUtils';
 import { BlockStreamApi } from 'src/types/BlockStreamTypes';
 import { SoChainApi } from 'src/types/SoChainTypes';
+import AppBtc from '@ledgerhq/hw-app-btc';
 
 // https://www.blockchain.com/api/api_websocket
 export const BLOCKCHAIN_WS = 'wss://ws.blockchain.info/inv';
@@ -548,3 +550,115 @@ export async function getLockParameter(
 
     return lockParams;
 }
+
+export const generateSigner = async (
+    ledgerApi: AppBtc,
+    path: string,
+    network: bitcoinjs.Network,
+    lockTxHex: string,
+    lockScript: bitcoinjs.payments.Payment,
+) => {
+    const { publicKey: uncompressedPublicKey } = await ledgerApi.getWalletPublicKey(path);
+    const ledgerTx = ledgerApi.splitTransaction(lockTxHex);
+    const publicKey = compressPubKey(uncompressedPublicKey, network);
+    const SIGHASH_ALL = 1; //temp value
+    const txIndex = 1; //temp value
+    const isSegWig = bitcoinjs.Transaction.fromHex(lockTxHex).hasWitnesses();
+    return {
+        network: network,
+        publicKey: Buffer.from(publicKey, 'hex'),
+
+        sign: async () => {
+            console.log('signing with ledger');
+            const ledgerTxSignatures = await ledgerApi.signP2SHTransaction({
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                inputs: [[ledgerTx, txIndex, lockScript.redeem!.output!.toString('hex'), null]],
+                associatedKeysets: [path],
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                outputScriptHex: lockScript.output!.toString('hex'),
+                segwit: isSegWig,
+                transactionVersion: 2,
+                sigHashType: SIGHASH_ALL,
+            });
+            console.log({ ledgerTxSignatures });
+            const [ledgerSignature] = ledgerTxSignatures;
+            const encodedSignature = (() => {
+                if (isSegWig) {
+                    return Buffer.from(ledgerSignature, 'hex');
+                }
+                return Buffer.concat([
+                    Buffer.from(ledgerSignature, 'hex'),
+                    Buffer.from('01', 'hex'), // SIGHASH_ALL
+                ]);
+            })();
+            const decoded = bitcoinjs.script.signature.decode(encodedSignature);
+            return decoded.signature;
+        },
+    };
+};
+
+export const ledgerSignTransaction = async (
+    ledger: AppBtc,
+    network: bitcoinjs.Network,
+    lockTxHex: string,
+    lockScript: bitcoinjs.payments.Payment,
+    paths: string[],
+    lockSequence: number,
+) => {
+    const [path] = paths;
+    const utxo = bitcoinjs.Transaction.fromHex(lockTxHex);
+
+    const txIndex = 1;
+    // const seed = await bip39.mnemonicToSeed(mnemonics);
+    // const root = bitcoin.bip32.fromSeed(seed, NETWORK);
+    // const child = root.derivePath(path);
+    const fromLedger = await ledger.getWalletPublicKey(path, { format: 'p2sh' });
+    const pubkey = Buffer.from(compressPubKey(fromLedger.publicKey, network), 'hex');
+    const p2wpkh = bitcoinjs.payments.p2wpkh({ pubkey, network: network });
+
+    console.log(`${p2wpkh.name}: ${p2wpkh.output!.toString('hex')}`);
+    const p2pkh = bitcoinjs.payments.p2pkh({ pubkey, network: network });
+
+    console.log(`${p2pkh.name}: ${p2pkh.output!.toString('hex')}`);
+    const p2sh = bitcoinjs.payments.p2sh({ redeem: p2wpkh, network: network });
+
+    console.log(`${p2sh.name}: ${p2sh.output!.toString('hex')}`);
+    const redeemScript = p2sh.redeem!.output;
+    // const redeemScript = bitcoin.payments.p2pkh({ pubkey, network: NETWORK }).output;
+    const fee = 1000; // 1000 satoshi.
+    const amount = utxo.outs[txIndex].value - fee;
+    const version = 2; // doesn't really matter as long as it is consistent between the ledger and the psbt.
+    // ================ building psbt things ============
+    const psbt = new bitcoinjs.Psbt({ network: network });
+    psbt.addInput({
+        hash: utxo.getHash(),
+        index: txIndex,
+        nonWitnessUtxo: utxo.toBuffer(),
+        redeemScript,
+        sequence: lockSequence,
+    });
+    // or alternatively:
+    // psbt.addInput({
+    //   hash: utxo.getHash(),
+    //   index: txIndex,
+    //   redeemScript,
+    //   witnessUtxo: {
+    //     script: p2sh.output,
+    //     value: utxo.outs[txIndex].value,
+    //   },
+    // });
+    psbt.addOutput({
+        address: p2sh.address!,
+        value: amount,
+    });
+    psbt.setVersion(version);
+    psbt.setMaximumFeeRate(100);
+
+    const signer = await generateSigner(ledger, path, network, lockTxHex, lockScript);
+    await psbt.signInputAsync(0, signer);
+    const validate = await psbt.validateSignaturesOfAllInputs();
+    await psbt.finalizeAllInputs();
+    const hex = psbt.extractTransaction().toHex();
+    console.log(`validate: ${validate}`);
+    console.log(`${hex}`);
+};
