@@ -187,7 +187,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
             if (_lockVout) return btcLock.satoshiToBitcoin(_lockVout.value.toFixed()).toFixed();
             else return '0';
         },
-        [lockUtxo],
+        [lockUtxo, p2shAddress],
     );
 
     const fetchLockdropParams = useCallback(async () => {
