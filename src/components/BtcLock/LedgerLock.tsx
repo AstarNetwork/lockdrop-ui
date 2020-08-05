@@ -190,6 +190,8 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                     inputs: [[ledgerTxData, 1, redeem, lockSequence]],
                     associatedKeysets: [addressPath],
                     outputScriptHex: lockScript.output!.toString('hex'),
+                    transactionVersion: 2,
+                    segwit: btcJsTransaction.hasWitnesses(),
                 });
 
                 console.log(res);

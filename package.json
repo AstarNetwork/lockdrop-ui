@@ -9,6 +9,7 @@
         "@ionic/react": "^4.11.0",
         "@ionic/react-router": "^4.11.0",
         "@ledgerhq/hw-app-btc": "^5.20.0",
+        "@ledgerhq/hw-transport-mocker": "^5.21.0",
         "@ledgerhq/hw-transport-node-hid": "^5.21.0",
         "@ledgerhq/hw-transport-u2f": "^5.19.1",
         "@ledgerhq/hw-transport-web-ble": "^5.19.1",
