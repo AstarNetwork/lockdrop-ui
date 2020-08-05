@@ -121,7 +121,10 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
         // TODO: user output
         console.log('hash: ' + signatureHash!.toString('hex'));
         // TODO: user input
-        const rawSignature = Buffer.from('f816733330690bdce1a8093b39c88d21140114037c1b52b10444dd63265199dd7612fc327ec69377d4609218dcefdb37eeb1050d20f8a56130b81626ba3ad2e1', 'hex');
+        const rawSignature = Buffer.from(
+            'f816733330690bdce1a8093b39c88d21140114037c1b52b10444dd63265199dd7612fc327ec69377d4609218dcefdb37eeb1050d20f8a56130b81626ba3ad2e1',
+            'hex',
+        );
 
         const signature = bitcoinjs.script.signature.encode(rawSignature, hashType);
         const redeemScriptSig = bitcoinjs.payments.p2sh({

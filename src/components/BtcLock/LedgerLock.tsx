@@ -32,7 +32,6 @@ import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import AppBtc from '@ledgerhq/hw-app-btc';
 import TransportU2F from '@ledgerhq/hw-transport-u2f';
 import { BlockStreamApi } from 'src/types/BlockStreamTypes';
-import * as LedgerTx from '../../types/LedgerTypes';
 
 interface Props {
     networkType: bitcoinjs.Network;
@@ -114,30 +113,28 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
         }
     };
 
-    const viewClaims = () => {
+    const viewClaims = async () => {
         if (!publicKey) {
             setLoading({ loadState: true, message: 'Waiting for Ledger' });
 
-            ledgerApiInstance()
-                .then(btc => {
-                    btc.getWalletPublicKey(addressPath).then(wallet => {
-                        setPublicKey(wallet.publicKey);
-                    });
-                })
-                .catch(e => {
-                    toast.error(e.message);
-                    console.log(e);
-                })
-                .finally(() => {
-                    setLoading({
-                        loadState: false,
-                        message: '',
-                    });
+            try {
+                const btc = await ledgerApiInstance();
+                btc.getWalletPublicKey(addressPath, { format: 'p2sh' }).then(wallet => {
+                    setPublicKey(wallet.publicKey);
                 });
+            } catch (err) {
+                toast.error(err.message);
+                console.log(err);
+            } finally {
+                setLoading({
+                    loadState: false,
+                    message: '',
+                });
+            }
         }
     };
 
-    const createLockAddress = () => {
+    const createLockAddress = async () => {
         if (!inputValidation().valid) {
             toast.error(inputValidation().message);
             return;
@@ -145,91 +142,110 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
 
         setLoading({ loadState: true, message: 'Waiting for Ledger' });
 
-        ledgerApiInstance()
-            .then(btc => {
-                btc.getWalletPublicKey(addressPath).then(wallet => {
-                    try {
-                        const lockScript = btcLock.getLockP2SH(lockDuration.value, wallet.publicKey, networkType);
-                        setPublicKey(wallet.publicKey);
-                        setP2sh(lockScript.address!);
-                        toast.success('Successfully created lock script');
-                    } catch (err) {
-                        toast.error(err);
-                        console.log(err);
-                    }
-                });
-            })
-            .catch(e => {
-                toast.error(e.message);
-                console.log(e);
-            })
-            .finally(() => {
+        try {
+            const btc = await ledgerApiInstance();
+
+            const wallet = await btc.getWalletPublicKey(addressPath, { format: 'p2sh' });
+            const lockScript = btcLock.getLockP2SH(lockDuration.value, wallet.publicKey, networkType);
+            console.log(wallet.publicKey);
+            setPublicKey(wallet.publicKey);
+            setP2sh(lockScript.address!);
+            toast.success('Successfully created lock script');
+        } catch (err) {
+            toast.error(err.message);
+            console.log(err);
+        } finally {
+            setLoading({
+                loadState: false,
+                message: '',
+            });
+        }
+    };
+
+    const unlockScriptTx = async (lock: BlockStreamApi.Transaction) => {
+        setLoading({ loadState: true, message: 'Singing unlock script' });
+
+        const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
+        if (typeof lockScript.redeem !== 'undefined') {
+            try {
+                // get ledger API
+                const btc = await ledgerApiInstance();
+                // get transaction hex
+                const rawTxHex = await btcLock.getTransactionHex(lock.txid, 'BTCTEST');
+
+                // const hasWitnesses = bitcoinjs.Transaction.fromHex(rawTxHex).hasWitnesses();
+                // const ledgerTxData = btc.splitTransaction(rawTxHex, hasWitnesses);
+
+                // const redeem = lockScript.redeem!.output!.toString('hex');
+
+                // // get transaction index
+                // const txIndex = lock.vout.findIndex(i => {
+                //     return i.scriptpubkey_address === lockScript.address!;
+                // });
+
+                // console.log({
+                //     inputs: [[ledgerTxData, txIndex, redeem, null]],
+                //     associatedKeysets: [addressPath],
+                //     outputScriptHex: lockScript.output!.toString('hex'),
+                //     transactionVersion: 2, // CSV P2SH needs v2
+                //     segwit: hasWitnesses,
+                // });
+
+                // const res = await btc.signP2SHTransaction({
+                //     inputs: [[ledgerTxData, txIndex, redeem, null]],
+                //     associatedKeysets: [addressPath],
+                //     outputScriptHex: lockScript.output!.toString('hex'),
+                //     transactionVersion: 2, // CSV P2SH needs v2
+                //     segwit: hasWitnesses,
+                // });
+
+                const ledgerSigner = await btcLock.generateSigner(
+                    btc,
+                    addressPath,
+                    networkType,
+                    rawTxHex,
+                    lockScript,
+                    publicKey,
+                );
+
+                // this is used for the random output address
+                const randomPublicKey = bitcoinjs.ECPair.makeRandom({ network: networkType, compressed: true })
+                    .publicKey;
+                const randomAddress = bitcoinjs.payments.p2pkh({ pubkey: randomPublicKey, network: networkType })
+                    .address;
+
+                const FEE = 1000;
+
+                // create the redeem UTXO
+                const tx = await btcLock.btcUnlockTx(
+                    ledgerSigner,
+                    networkType,
+                    bitcoinjs.Transaction.fromHex(rawTxHex),
+                    lockScript.redeem!.output!,
+                    btcLock.daysToBlockSequence(lockDuration.value),
+                    randomAddress!,
+                    FEE,
+                );
+
+                // const res = await btcLock.ledgerSignUnlockTransaction(
+                //     btc,
+                //     networkType,
+                //     rawTxHex,
+                //     [addressPath],
+                //     lockDuration.value,
+                //     publicKey,
+                // );
+
+                console.log(tx.toHex());
+            } catch (err) {
+                toast.error(err.message);
+                console.log(err);
+            } finally {
                 setLoading({
                     loadState: false,
                     message: '',
                 });
-            });
-    };
-
-    const convertApiToLedgerTX = (tx: BlockStreamApi.Transaction) => {
-        const convertInput = (input: BlockStreamApi.Vin) => {
-            const ledgerTxIn: LedgerTx.TransactionInput = {
-                prevout: Buffer.from(input.prevout.scriptpubkey, 'hex'),
-                script: input.scriptsig ? Buffer.from(input.scriptsig, 'hex') : new Buffer(''),
-                sequence: Buffer.from(input.sequence.toString(16), 'hex'),
-            };
-            return ledgerTxIn;
-        };
-        const convertOutput = (output: BlockStreamApi.Vout) => {
-            const ledgerTxOut: LedgerTx.TransactionOutput = {
-                amount: Buffer.from(output.value.toString(16), 'hex'),
-                script: Buffer.from(output.scriptpubkey, 'hex'),
-            };
-            return ledgerTxOut;
-        };
-
-        const ledgerTx: LedgerTx.Transaction = {
-            version: Buffer.from(tx.version.toString(16), 'hex'),
-            inputs: tx.vin.map(convertInput),
-            outputs: tx.vout.map(convertOutput),
-        };
-
-        return ledgerTx;
-    };
-
-    const unlockScriptTx = (lock: BlockStreamApi.Transaction) => {
-        //todo: implement this to form a unlock transaction
-        console.log(JSON.stringify(lock));
-        const lockSequence = btcLock.daysToBlockSequence(lockDuration.value);
-
-        const ledgerTxData = convertApiToLedgerTX(lock);
-
-        //const output = bitcoinjs.payments.p2pkh({ pubkey: Buffer.from(publicKey, 'hex') });
-        const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
-        if (typeof lockScript.redeem !== 'undefined') {
-            ledgerApiInstance()
-                .then(btc => {
-                    const redeem = lockScript.redeem!.output!.toString('hex');
-                    const output = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
-
-                    btc.signP2SHTransaction({
-                        inputs: [[ledgerTxData, 1, redeem, lockSequence]],
-                        associatedKeysets: [addressPath],
-                        outputScriptHex: output.output!.toString('hex'),
-                    }).then(result => {
-                        console.log('signed tx: ' + result);
-                    });
-                })
-                .catch(e => {
-                    toast.error(e.message);
-                    console.log(e);
-                })
-                .finally(() => {
-                    setLoading({
-                        loadState: false,
-                        message: '',
-                    });
-                });
+            }
         }
     };
 
@@ -241,9 +257,8 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
         // get all the possible lock addresses
         networkLockDur.map(async (dur, index) => {
             const scriptAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
-            // make a real-time lockdrop data structure with the current P2SH and duration
-            //const lock = await btcLock.getLockParameter(scriptAddr, dur.value, publicKey, blockStreamNet);
 
+            // make a real-time lockdrop data structure with the current P2SH and duration
             const locks = await btcLock.getBtcTxsFromAddress(scriptAddr, blockStreamNet);
             console.log('fetching data from block stream');
             const daysToEpoch = 60 * 60 * 24 * dur.value;
