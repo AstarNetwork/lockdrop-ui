@@ -8,6 +8,23 @@ import { IonToast } from '@ionic/react';
 interface Props {
     header: string;
     message: string;
+    isCode?: boolean;
+    componentType?:
+        | 'inherit'
+        | 'button'
+        | 'overline'
+        | 'caption'
+        | 'h1'
+        | 'h2'
+        | 'h3'
+        | 'h4'
+        | 'h5'
+        | 'h6'
+        | 'subtitle1'
+        | 'subtitle2'
+        | 'body1'
+        | 'body2'
+        | 'srOnly';
 }
 
 const useStyles = makeStyles(theme =>
@@ -31,7 +48,7 @@ const useStyles = makeStyles(theme =>
     }),
 );
 
-const CopyMessageBox: React.FC<Props> = ({ header, message }) => {
+const CopyMessageBox: React.FC<Props> = ({ header, message, componentType, isCode }) => {
     const classes = useStyles();
     const [showCopyToast, setCopyToast] = useState(false);
 
@@ -52,9 +69,18 @@ const CopyMessageBox: React.FC<Props> = ({ header, message }) => {
                     {header}:
                 </Typography>
                 <div className={classes.signMessage}>
-                    <Typography component="h1" variant="h2" className={classes.message}>
-                        {message}
-                    </Typography>
+                    {isCode ? (
+                        <code className={classes.message}>{message}</code>
+                    ) : (
+                        <Typography
+                            component="h1"
+                            variant={componentType ? componentType : 'h2'}
+                            className={classes.message}
+                        >
+                            {message}
+                        </Typography>
+                    )}
+
                     <div className={classes.copyIcon}>
                         <Tooltip title="Copy Message" aria-label="copy">
                             <IconButton color="inherit" component="span" onClick={() => clickCopyMessage()}>

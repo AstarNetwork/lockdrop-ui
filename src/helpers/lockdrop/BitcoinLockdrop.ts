@@ -530,7 +530,7 @@ export const generateSigner = async (
                 outputScriptHex: lockScript.output!.toString('hex'),
                 segwit: isSegWig,
                 transactionVersion: 2,
-                //sigHashType: SIGHASH_ALL,
+                sigHashType: bitcoinjs.Transaction.SIGHASH_ALL,
             });
             console.log({ ledgerTxSignatures });
             console.log(hash.toString('hex') + lowR);
