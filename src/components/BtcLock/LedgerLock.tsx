@@ -113,30 +113,28 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
         }
     };
 
-    const viewClaims = () => {
+    const viewClaims = async () => {
         if (!publicKey) {
             setLoading({ loadState: true, message: 'Waiting for Ledger' });
 
-            ledgerApiInstance()
-                .then(btc => {
-                    btc.getWalletPublicKey(addressPath).then(wallet => {
-                        setPublicKey(wallet.publicKey);
-                    });
-                })
-                .catch(e => {
-                    toast.error(e.message);
-                    console.log(e);
-                })
-                .finally(() => {
-                    setLoading({
-                        loadState: false,
-                        message: '',
-                    });
+            try {
+                const btc = await ledgerApiInstance();
+                btc.getWalletPublicKey(addressPath).then(wallet => {
+                    setPublicKey(wallet.publicKey);
                 });
+            } catch (err) {
+                toast.error(err.message);
+                console.log(err);
+            } finally {
+                setLoading({
+                    loadState: false,
+                    message: '',
+                });
+            }
         }
     };
 
-    const createLockAddress = () => {
+    const createLockAddress = async () => {
         if (!inputValidation().valid) {
             toast.error(inputValidation().message);
             return;
@@ -144,65 +142,27 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
 
         setLoading({ loadState: true, message: 'Waiting for Ledger' });
 
-        ledgerApiInstance()
-            .then(btc => {
-                btc.getWalletPublicKey(addressPath).then(wallet => {
-                    try {
-                        const lockScript = btcLock.getLockP2SH(lockDuration.value, wallet.publicKey, networkType);
-                        console.log(wallet.publicKey);
-                        setPublicKey(wallet.publicKey);
-                        setP2sh(lockScript.address!);
-                        toast.success('Successfully created lock script');
-                    } catch (err) {
-                        toast.error(err);
-                        console.log(err);
-                    }
-                });
-            })
-            .catch(e => {
-                toast.error(e.message);
-                console.log(e);
-            })
-            .finally(() => {
-                setLoading({
-                    loadState: false,
-                    message: '',
-                });
+        try {
+            const btc = await ledgerApiInstance();
+
+            const wallet = await btc.getWalletPublicKey(addressPath);
+            const lockScript = btcLock.getLockP2SH(lockDuration.value, wallet.publicKey, networkType);
+            console.log(wallet.publicKey);
+            setPublicKey(wallet.publicKey);
+            setP2sh(lockScript.address!);
+            toast.success('Successfully created lock script');
+        } catch (err) {
+            toast.error(err.message);
+            console.log(err);
+        } finally {
+            setLoading({
+                loadState: false,
+                message: '',
             });
+        }
     };
 
-    // const convertApiToLedgerTX = (tx: BlockStreamApi.Transaction) => {
-    //     const convertInput = (input: BlockStreamApi.Vin) => {
-    //         console.log(input);
-    //         const ledgerTxIn: LedgerTx.TransactionInput = {
-    //             prevout: Buffer.from(input.prevout.scriptpubkey, 'hex'),
-    //             script: input.scriptsig
-    //                 ? Buffer.from(input.scriptsig, 'hex')
-    //                 : btcLock.getLockP2SH(lockDuration.value, publicKey, networkType).hash!,
-    //             sequence: Buffer.from(input.sequence.toString(16), 'hex'),
-    //         };
-    //         return ledgerTxIn;
-    //     };
-    //     const convertOutput = (output: BlockStreamApi.Vout) => {
-    //         const ledgerTxOut: LedgerTx.TransactionOutput = {
-    //             amount: Buffer.from(output.value.toString(16), 'hex'),
-    //             script: Buffer.from(output.scriptpubkey, 'hex'),
-    //         };
-    //         return ledgerTxOut;
-    //     };
-
-    //     const ledgerTx: LedgerTx.Transaction = {
-    //         version: Buffer.from(tx.version.toString(16), 'hex'),
-    //         inputs: tx.vin.map(convertInput),
-    //         outputs: tx.vout.map(convertOutput),
-    //     };
-
-    //     return ledgerTx;
-    // };
-
     const unlockScriptTx = async (lock: BlockStreamApi.Transaction) => {
-        //todo: implement this to form a unlock transaction
-
         setLoading({ loadState: true, message: 'Singing unlock script' });
 
         const lockSequence = btcLock.daysToBlockSequence(lockDuration.value);
@@ -216,19 +176,20 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                 // get transaction hex
                 const rawTxHex = await btcLock.getTransactionHex(lock.txid, 'BTCTEST');
 
-                // SegWit is true if script signature property is empty
-                const isSegWit = !!lock.vin[0].scriptsig === false;
+                const btcJsTransaction = bitcoinjs.Transaction.fromHex(rawTxHex);
 
-                const ledgerTxData = btc.splitTransaction(rawTxHex, isSegWit);
+                // SegWit is true if script signature property is empty
+                //const isSegWit = !!lock.vin[0].scriptsig === false;
+
+                const ledgerTxData = btc.splitTransaction(rawTxHex, btcJsTransaction.hasWitnesses());
 
                 const redeem = lockScript.redeem!.output!.toString('hex');
-                const output = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
                 console.log(ledgerTxData);
 
                 const res = await btc.signP2SHTransaction({
                     inputs: [[ledgerTxData, 1, redeem, lockSequence]],
                     associatedKeysets: [addressPath],
-                    outputScriptHex: output.output!.toString('hex'),
+                    outputScriptHex: lockScript.output!.toString('hex'),
                 });
 
                 console.log(res);
