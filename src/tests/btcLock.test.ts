@@ -7,7 +7,6 @@ import * as bitcoin from 'bitcoinjs-lib';
 import * as assert from 'assert';
 import { regtestUtils } from './_regtest';
 import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
-import { UnspentTx } from '../types/LockdropModels';
 import bip68 from 'bip68';
 import * as plasmUtils from '../helpers/plasmUtils';
 
@@ -314,13 +313,14 @@ describe('BTC lock script tests', () => {
             });
 
             // fund the P2SH(CSV) address (this will lock the token with VALUE + FEE)
-            const unspent = (await regtestUtils.faucet(p2sh.address!, VALUE + FEE)) as UnspentTx;
+            const unspent = await regtestUtils.faucet(p2sh.address!, VALUE + FEE);
+            const lockTx = (await regtestUtils.fetch(unspent.txId)).txHex;
 
             // create the redeem UTXO
-            const tx = btcLockdrop.btcUnlockTx(
+            const tx = await btcLockdrop.btcUnlockTx(
                 alice,
                 regtest,
-                unspent,
+                bitcoin.Transaction.fromHex(lockTx),
                 p2sh.redeem!.output!,
                 bip68.encode({ blocks: DURATION }),
                 regtestUtils.RANDOM_ADDRESS,
@@ -378,13 +378,14 @@ describe('BTC lock script tests', () => {
             });
 
             // fund the P2SH(CSV) address (this will lock the token with VALUE + FEE)
-            const unspent = (await regtestUtils.faucet(p2sh.address!, VALUE + FEE)) as UnspentTx;
+            const unspent = await regtestUtils.faucet(p2sh.address!, VALUE + FEE);
+            const lockTx = (await regtestUtils.fetch(unspent.txId)).txHex;
 
             // create the redeem UTXO
-            const tx = btcLockdrop.btcUnlockTx(
+            const tx = await btcLockdrop.btcUnlockTx(
                 bob,
                 regtest,
-                unspent,
+                bitcoin.Transaction.fromHex(lockTx),
                 p2sh.redeem!.output!,
                 bip68.encode({ blocks: DURATION }),
                 regtestUtils.RANDOM_ADDRESS,

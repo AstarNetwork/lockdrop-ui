@@ -173,31 +173,59 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                 // get transaction hex
                 const rawTxHex = await btcLock.getTransactionHex(lock.txid, 'BTCTEST');
 
-                const hasWitnesses = bitcoinjs.Transaction.fromHex(rawTxHex).hasWitnesses();
-                const ledgerTxData = btc.splitTransaction(rawTxHex, hasWitnesses);
+                // const hasWitnesses = bitcoinjs.Transaction.fromHex(rawTxHex).hasWitnesses();
+                // const ledgerTxData = btc.splitTransaction(rawTxHex, hasWitnesses);
 
-                const redeem = lockScript.redeem!.output!.toString('hex');
+                // const redeem = lockScript.redeem!.output!.toString('hex');
 
-                // get transaction index
-                const txIndex = lock.vout.findIndex(i => {
-                    return i.scriptpubkey_address === lockScript.address!;
-                });
+                // // get transaction index
+                // const txIndex = lock.vout.findIndex(i => {
+                //     return i.scriptpubkey_address === lockScript.address!;
+                // });
 
-                console.log({
-                    inputs: [[ledgerTxData, txIndex, redeem, null]],
-                    associatedKeysets: [addressPath],
-                    outputScriptHex: lockScript.output!.toString('hex'),
-                    transactionVersion: 2, // CSV P2SH needs v2
-                    segwit: hasWitnesses,
-                });
+                // console.log({
+                //     inputs: [[ledgerTxData, txIndex, redeem, null]],
+                //     associatedKeysets: [addressPath],
+                //     outputScriptHex: lockScript.output!.toString('hex'),
+                //     transactionVersion: 2, // CSV P2SH needs v2
+                //     segwit: hasWitnesses,
+                // });
 
-                const res = await btc.signP2SHTransaction({
-                    inputs: [[ledgerTxData, txIndex, redeem, null]],
-                    associatedKeysets: [addressPath],
-                    outputScriptHex: lockScript.output!.toString('hex'),
-                    transactionVersion: 2, // CSV P2SH needs v2
-                    segwit: hasWitnesses,
-                });
+                // const res = await btc.signP2SHTransaction({
+                //     inputs: [[ledgerTxData, txIndex, redeem, null]],
+                //     associatedKeysets: [addressPath],
+                //     outputScriptHex: lockScript.output!.toString('hex'),
+                //     transactionVersion: 2, // CSV P2SH needs v2
+                //     segwit: hasWitnesses,
+                // });
+
+                const ledgerSigner = await btcLock.generateSigner(
+                    btc,
+                    addressPath,
+                    networkType,
+                    rawTxHex,
+                    lockScript,
+                    publicKey,
+                );
+
+                // this is used for the random output address
+                const randomPublicKey = bitcoinjs.ECPair.makeRandom({ network: networkType, compressed: true })
+                    .publicKey;
+                const randomAddress = bitcoinjs.payments.p2pkh({ pubkey: randomPublicKey, network: networkType })
+                    .address;
+
+                const FEE = 1000;
+
+                // create the redeem UTXO
+                const tx = await btcLock.btcUnlockTx(
+                    ledgerSigner,
+                    networkType,
+                    bitcoinjs.Transaction.fromHex(rawTxHex),
+                    lockScript.redeem!.output!,
+                    btcLock.daysToBlockSequence(lockDuration.value),
+                    randomAddress!,
+                    FEE,
+                );
 
                 // const res = await btcLock.ledgerSignUnlockTransaction(
                 //     btc,
@@ -208,7 +236,7 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                 //     publicKey,
                 // );
 
-                console.log(res);
+                console.log(tx.toHex());
             } catch (err) {
                 toast.error(err.message);
                 console.log(err);
