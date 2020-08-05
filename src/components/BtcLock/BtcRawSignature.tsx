@@ -149,6 +149,9 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
     const getUnlockUtxo = () => {
         if (unlockTxBuilder) {
             try {
+                if (userUnlockSig === '') {
+                    throw new Error('Please paste the unlock signature');
+                }
                 const lockScript = btcLock.btcLockScript(
                     publicKey,
                     btcLock.daysToBlockSequence(lockDuration.value),
@@ -181,14 +184,13 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
         }
     };
 
-    const getLockBal = useCallback(
-        (lock: BlockStreamApi.Transaction) => {
-            const _lockVout = lock.vout.find(locked => locked.scriptpubkey_address === p2shAddress);
+    const getLockBal = useCallback(() => {
+        if (lockUtxo) {
+            const _lockVout = lockUtxo.vout.find(locked => locked.scriptpubkey_address === p2shAddress);
             if (_lockVout) return btcLock.satoshiToBitcoin(_lockVout.value.toFixed()).toFixed();
-            else return '0';
-        },
-        [lockUtxo, p2shAddress],
-    );
+        }
+        return '0';
+    }, [lockUtxo, p2shAddress]);
 
     const fetchLockdropParams = useCallback(async () => {
         const blockStreamNet = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
@@ -296,7 +298,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                             <>
                                 <IonLabel>
                                     <p>Lock ID: {lockUtxo.txid}</p>
-                                    <p>Lock Value: {getLockBal(lockUtxo)} BTC</p>
+                                    <p>Lock Value: {getLockBal()} BTC</p>
                                 </IonLabel>
                                 {unlockUtxoHex ? (
                                     <CopyMessageBox header="signed unlock transaction" message={unlockUtxoHex} isCode />
