@@ -119,7 +119,7 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
 
             try {
                 const btc = await ledgerApiInstance();
-                btc.getWalletPublicKey(addressPath).then(wallet => {
+                btc.getWalletPublicKey(addressPath, { format: 'p2sh' }).then(wallet => {
                     setPublicKey(wallet.publicKey);
                 });
             } catch (err) {
@@ -145,7 +145,7 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
         try {
             const btc = await ledgerApiInstance();
 
-            const wallet = await btc.getWalletPublicKey(addressPath);
+            const wallet = await btc.getWalletPublicKey(addressPath, { format: 'p2sh' });
             const lockScript = btcLock.getLockP2SH(lockDuration.value, wallet.publicKey, networkType);
             console.log(wallet.publicKey);
             setPublicKey(wallet.publicKey);
@@ -165,9 +165,6 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
     const unlockScriptTx = async (lock: BlockStreamApi.Transaction) => {
         setLoading({ loadState: true, message: 'Singing unlock script' });
 
-        const lockSequence = btcLock.daysToBlockSequence(lockDuration.value);
-
-        //const output = bitcoinjs.payments.p2pkh({ pubkey: Buffer.from(publicKey, 'hex') });
         const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
         if (typeof lockScript.redeem !== 'undefined') {
             try {
@@ -176,23 +173,40 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                 // get transaction hex
                 const rawTxHex = await btcLock.getTransactionHex(lock.txid, 'BTCTEST');
 
-                const btcJsTransaction = bitcoinjs.Transaction.fromHex(rawTxHex);
-
-                // SegWit is true if script signature property is empty
-                //const isSegWit = !!lock.vin[0].scriptsig === false;
-
-                const ledgerTxData = btc.splitTransaction(rawTxHex, btcJsTransaction.hasWitnesses());
+                const hasWitnesses = bitcoinjs.Transaction.fromHex(rawTxHex).hasWitnesses();
+                const ledgerTxData = btc.splitTransaction(rawTxHex, hasWitnesses);
 
                 const redeem = lockScript.redeem!.output!.toString('hex');
-                console.log(ledgerTxData);
 
-                const res = await btc.signP2SHTransaction({
-                    inputs: [[ledgerTxData, 1, redeem, lockSequence]],
+                // get transaction index
+                const txIndex = lock.vout.findIndex(i => {
+                    return i.scriptpubkey_address === lockScript.address!;
+                });
+
+                console.log({
+                    inputs: [[ledgerTxData, txIndex, redeem, null]],
                     associatedKeysets: [addressPath],
                     outputScriptHex: lockScript.output!.toString('hex'),
-                    transactionVersion: 2,
-                    segwit: btcJsTransaction.hasWitnesses(),
+                    transactionVersion: 2, // CSV P2SH needs v2
+                    segwit: hasWitnesses,
                 });
+
+                const res = await btc.signP2SHTransaction({
+                    inputs: [[ledgerTxData, txIndex, redeem, null]],
+                    associatedKeysets: [addressPath],
+                    outputScriptHex: lockScript.output!.toString('hex'),
+                    transactionVersion: 2, // CSV P2SH needs v2
+                    segwit: hasWitnesses,
+                });
+
+                // const res = await btcLock.ledgerSignUnlockTransaction(
+                //     btc,
+                //     networkType,
+                //     rawTxHex,
+                //     [addressPath],
+                //     lockDuration.value,
+                //     publicKey,
+                // );
 
                 console.log(res);
             } catch (err) {
