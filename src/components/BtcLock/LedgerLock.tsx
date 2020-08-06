@@ -170,9 +170,10 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
             try {
                 // get ledger API
                 const btc = await ledgerApiInstance();
+
+                //const ledgerWalletInfo = await btc.getWalletPublicKey(addressPath);
                 // get transaction hex
                 const rawTxHex = await btcLock.getTransactionHex(lock.txid, 'BTCTEST');
-
                 const ledgerSigner = await btcLock.generateSigner(
                     btc,
                     addressPath,
@@ -181,17 +182,14 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                     lockScript,
                     publicKey,
                 );
-
                 // this is used for the random output address
                 const randomPublicKey = bitcoinjs.ECPair.makeRandom({ network: networkType, compressed: true })
                     .publicKey;
                 const randomAddress = bitcoinjs.payments.p2pkh({ pubkey: randomPublicKey, network: networkType })
                     .address;
-
                 const FEE = 1000;
-
                 // create the redeem UTXO
-                const tx = await btcLock.btcUnlockTx(
+                const unlockTx = await btcLock.btcUnlockTx(
                     ledgerSigner,
                     networkType,
                     bitcoinjs.Transaction.fromHex(rawTxHex),
@@ -201,7 +199,8 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                     FEE,
                 );
 
-                console.log(tx.toHex());
+                const signedTxHex = unlockTx.toHex();
+                console.log(signedTxHex);
             } catch (err) {
                 toast.error(err.message);
                 console.log(err);

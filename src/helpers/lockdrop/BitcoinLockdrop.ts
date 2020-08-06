@@ -447,6 +447,45 @@ export async function btcUnlockTx(
 }
 
 /**
+ * create a unsigned unlock transaction. This function will return a signature hash for the transaction that the user will sign,
+ * the unsigned transaction instance and the lock P2SH payment instance that this will be unlocking for.
+ * @param lockTransaction the lock UTXO that is already in the blockchain
+ * @param publicKey public key of the user in string hex (compression is done within the function)
+ * @param lockDuration script token locking duration in days (converted to relative block sequence within the function)
+ * @param network the bitcoin network the transaction is for
+ */
+export function unsignedUnlockTx(
+    lockTransaction: BlockStreamApi.Transaction,
+    publicKey: string,
+    lockDuration: number,
+    network: bitcoinjs.Network,
+) {
+    const lockP2sh = getLockP2SH(lockDuration, publicKey, network);
+    const { address } = bitcoinjs.payments.p2pkh({ pubkey: Buffer.from(publicKey, 'hex'), network });
+
+    const lockVout = lockTransaction.vout.find(locked => locked.scriptpubkey_address === lockP2sh.address!)!;
+    const lockScript = btcLockScript(publicKey, daysToBlockSequence(lockDuration), network);
+
+    const RELAY_FEE = 200;
+    const sequence = 0;
+    const output = bitcoinjs.address.toOutputScript(address!, network);
+
+    const tx = new bitcoinjs.Transaction();
+    tx.version = 2;
+    tx.addInput(Buffer.from(lockTransaction.txid, 'hex').reverse(), 0, sequence);
+    tx.addOutput(output, lockVout.value - RELAY_FEE);
+
+    const hashType = bitcoinjs.Transaction.SIGHASH_ALL;
+    const signatureHash = tx.hashForSignature(0, lockScript, hashType)!.toString('hex');
+
+    return {
+        signatureHash,
+        unsignedUnlockTx: tx,
+        lockP2sh,
+    };
+}
+
+/**
  * Signs the given transaction and returns it as a raw transaction hex that is ready for being broadcasted.
  * The signature should be provided by the user.
  * @param unsignedTx transaction instance that isn't signed
@@ -547,17 +586,17 @@ export const generateSigner = async (
     lockScript: bitcoinjs.payments.Payment,
     publicKey: string,
 ) => {
-    const ledgerTx = ledgerApi.splitTransaction(lockTxHex);
-    //console.log(ledgerTx.outputs![1].script.toString('hex'));
-    //const SIGHASH_ALL = 1; //temp value
-    const txIndex = 0; //temp value
     const isSegWig = bitcoinjs.Transaction.fromHex(lockTxHex).hasWitnesses();
+    const ledgerTx = ledgerApi.splitTransaction(lockTxHex, isSegWig);
+    const txIndex = 0; //temp value
+
     return {
         network: network,
         publicKey: Buffer.from(publicKey, 'hex'),
 
         sign: async (hash: Buffer, lowR?: boolean) => {
-            console.log('signing with ledger');
+            console.log('signing with ledger\n' + hash.toString('hex'));
+
             const ledgerTxSignatures = await ledgerApi.signP2SHTransaction({
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 inputs: [[ledgerTx, txIndex, lockScript.redeem!.output!.toString('hex'), null]],
@@ -568,7 +607,8 @@ export const generateSigner = async (
                 transactionVersion: 2,
                 sigHashType: bitcoinjs.Transaction.SIGHASH_ALL,
             });
-            console.log({ ledgerTxSignatures });
+
+            console.log(ledgerTxSignatures);
             console.log(hash.toString('hex') + lowR);
             const [ledgerSignature] = ledgerTxSignatures;
             const encodedSignature = (() => {

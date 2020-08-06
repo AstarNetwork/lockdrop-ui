@@ -111,41 +111,24 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
         }
     };
 
+    // show unsigned transaction hahs
     const unlockScriptTx = (lock: BlockStreamApi.Transaction) => {
         try {
-            console.log(lock);
-
-            const lockVout = lock.vout.find(locked => locked.scriptpubkey_address === p2shAddress)!;
-            const lockScript = btcLock.btcLockScript(
-                publicKey,
-                btcLock.daysToBlockSequence(lockDuration.value),
-                networkType,
-            );
-
-            const RELAY_FEE = 200;
-            const sequence = 0;
-            const output = bitcoinjs.address.toOutputScript(addressInput, networkType);
-
-            const tx = new bitcoinjs.Transaction();
-            tx.version = 2;
-            tx.addInput(Buffer.from(lock.txid, 'hex').reverse(), 0, sequence);
-            tx.addOutput(output, lockVout.value - RELAY_FEE);
-
-            const hashType = bitcoinjs.Transaction.SIGHASH_ALL;
-            const signatureHash = tx.hashForSignature(0, lockScript, hashType)!.toString('hex');
+            const unsigned = btcLock.unsignedUnlockTx(lock, publicKey, lockDuration.value, networkType);
 
             // TODO: user output
-            console.log('hash: ' + signatureHash);
-            setSigHash(signatureHash);
+            console.log('hash: ' + unsigned.signatureHash);
+            setSigHash(unsigned.signatureHash);
             setLockUtxo(lock);
             setShowModal(true);
-            setUnlockTxBuilder(tx);
+            setUnlockTxBuilder(unsigned.unsignedUnlockTx);
         } catch (e) {
             toast.error(e.message);
             console.log(e);
         }
     };
 
+    // use the obtained transaction signature to create full signed transaction in hex
     const getUnlockUtxo = () => {
         if (unlockTxBuilder) {
             try {
