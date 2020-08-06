@@ -132,11 +132,11 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
             tx.addOutput(output, lockVout.value - RELAY_FEE);
 
             const hashType = bitcoinjs.Transaction.SIGHASH_ALL;
-            const signatureHash = tx.hashForSignature(0, lockScript, hashType);
+            const signatureHash = tx.hashForSignature(0, lockScript, hashType)!.toString('hex');
 
             // TODO: user output
-            console.log('hash: ' + signatureHash!.toString('hex'));
-            setSigHash(signatureHash!.toString('hex'));
+            console.log('hash: ' + signatureHash);
+            setSigHash(signatureHash);
             setLockUtxo(lock);
             setShowModal(true);
             setUnlockTxBuilder(tx);
@@ -158,23 +158,14 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                     networkType,
                 );
 
-                // TODO: user input
-                const rawSignature = Buffer.from(userUnlockSig, 'hex');
+                const signedUnlockUtxo = btcLock.signTransactionRaw(
+                    unlockTxBuilder,
+                    userUnlockSig,
+                    lockScript,
+                    networkType,
+                );
 
-                const signature = bitcoinjs.script.signature.encode(rawSignature, bitcoinjs.Transaction.SIGHASH_ALL);
-                const redeemScriptSig = bitcoinjs.payments.p2sh({
-                    network: networkType,
-                    redeem: {
-                        network: networkType,
-                        output: lockScript,
-                        input: bitcoinjs.script.compile([signature]),
-                    },
-                }).input;
-                unlockTxBuilder.setInputScript(0, redeemScriptSig!);
-
-                const signedUnlockUtxo = unlockTxBuilder.toHex();
-
-                console.log(signedUnlockUtxo);
+                console.log('Signed unlock UTXO:\n' + signedUnlockUtxo);
 
                 setUnlockUtxoHex(signedUnlockUtxo);
             } catch (e) {
@@ -182,6 +173,16 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                 console.log(e);
             }
         }
+    };
+
+    // clean all unlock UTXO signature state when closing the modal
+    const cleanUnlockTxState = () => {
+        setLockUtxo(undefined);
+        setUnlockTxBuilder(undefined);
+        setUserUnlockSig('');
+        setSigHash('');
+        setUnlockUtxoHex('');
+        setShowModal(false);
     };
 
     const getLockBal = useCallback(() => {
@@ -204,7 +205,6 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
             //const lock = await btcLock.getLockParameter(scriptAddr, dur.value, publicKey, blockStreamNet);
 
             const locks = await btcLock.getBtcTxsFromAddress(scriptAddr, blockStreamNet);
-            console.log('fetching data from block stream');
             const daysToEpoch = 60 * 60 * 24 * dur.value;
 
             const lockParams = locks.map(i => {
@@ -277,12 +277,12 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                 <QrEncodedAddress address={p2shAddress} lockData={currentScriptLocks} onUnlock={unlockScriptTx} />
             )}
 
-            <IonModal isOpen={showModal} onDidDismiss={() => setShowModal(false)}>
+            <IonModal isOpen={showModal} onDidDismiss={() => cleanUnlockTxState()}>
                 <IonHeader>
                     <IonToolbar>
                         <IonTitle>Unlock BTC Transaction</IonTitle>
                         <IonButtons slot="end">
-                            <IonButton onClick={() => setShowModal(false)}>Close</IonButton>
+                            <IonButton onClick={() => cleanUnlockTxState()}>Close</IonButton>
                         </IonButtons>
                     </IonToolbar>
                 </IonHeader>

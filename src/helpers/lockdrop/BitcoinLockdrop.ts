@@ -447,6 +447,42 @@ export async function btcUnlockTx(
 }
 
 /**
+ * Signs the given transaction and returns it as a raw transaction hex that is ready for being broadcasted.
+ * The signature should be provided by the user.
+ * @param unsignedTx transaction instance that isn't signed
+ * @param userUnlockSig signature for the transaction signed by the sender's wallet
+ * @param lockScript the lock script used for the lock transaction
+ * @param network bitcoin network the transaction will be propagating for
+ */
+export function signTransactionRaw(
+    unsignedTx: bitcoinjs.Transaction,
+    userUnlockSig: string,
+    lockScript: Buffer,
+    network: bitcoinjs.Network,
+) {
+    if (userUnlockSig === '') {
+        throw new Error('Please paste the unlock signature');
+    }
+    const rawSignature = Buffer.from(userUnlockSig, 'hex');
+
+    const signature = bitcoinjs.script.signature.encode(rawSignature, bitcoinjs.Transaction.SIGHASH_ALL);
+    const redeemScriptSig = bitcoinjs.payments.p2sh({
+        network: network,
+        redeem: {
+            network: network,
+            output: lockScript,
+            input: bitcoinjs.script.compile([signature]),
+        },
+    }).input;
+
+    unsignedTx.setInputScript(0, redeemScriptSig!);
+
+    const signedTxHex = unsignedTx.toHex();
+
+    return signedTxHex;
+}
+
+/**
  * creates a lockdrop parameter from the given lock script address and values
  * by fetching all transactions in the lock script address from block stream
  * @param scriptAddress the P2SH lock address

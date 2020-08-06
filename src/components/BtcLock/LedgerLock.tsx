@@ -173,32 +173,6 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                 // get transaction hex
                 const rawTxHex = await btcLock.getTransactionHex(lock.txid, 'BTCTEST');
 
-                // const hasWitnesses = bitcoinjs.Transaction.fromHex(rawTxHex).hasWitnesses();
-                // const ledgerTxData = btc.splitTransaction(rawTxHex, hasWitnesses);
-
-                // const redeem = lockScript.redeem!.output!.toString('hex');
-
-                // // get transaction index
-                // const txIndex = lock.vout.findIndex(i => {
-                //     return i.scriptpubkey_address === lockScript.address!;
-                // });
-
-                // console.log({
-                //     inputs: [[ledgerTxData, txIndex, redeem, null]],
-                //     associatedKeysets: [addressPath],
-                //     outputScriptHex: lockScript.output!.toString('hex'),
-                //     transactionVersion: 2, // CSV P2SH needs v2
-                //     segwit: hasWitnesses,
-                // });
-
-                // const res = await btc.signP2SHTransaction({
-                //     inputs: [[ledgerTxData, txIndex, redeem, null]],
-                //     associatedKeysets: [addressPath],
-                //     outputScriptHex: lockScript.output!.toString('hex'),
-                //     transactionVersion: 2, // CSV P2SH needs v2
-                //     segwit: hasWitnesses,
-                // });
-
                 const ledgerSigner = await btcLock.generateSigner(
                     btc,
                     addressPath,
@@ -226,15 +200,6 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                     randomAddress!,
                     FEE,
                 );
-
-                // const res = await btcLock.ledgerSignUnlockTransaction(
-                //     btc,
-                //     networkType,
-                //     rawTxHex,
-                //     [addressPath],
-                //     lockDuration.value,
-                //     publicKey,
-                // );
 
                 console.log(tx.toHex());
             } catch (err) {
