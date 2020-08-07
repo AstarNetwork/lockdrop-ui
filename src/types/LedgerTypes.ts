@@ -1,23 +1,35 @@
-export interface TransactionInput {
-    prevout: Buffer;
-    script: Buffer;
-    sequence: Buffer;
-    tree?: Buffer;
+export interface Block {
+    hash: string;
+    height: number;
+    time: Date;
 }
 
-export interface TransactionOutput {
-    amount: Buffer;
-    script: Buffer;
+export interface Input {
+    input_index: number;
+    output_hash: string;
+    output_index: number;
+    value: number;
+    address: string;
+    script_signature: string;
+    sequence: number;
+    txinwitness: string[];
+}
+
+export interface Output {
+    output_index: number;
+    value: number;
+    address: string;
+    script_hex: string;
 }
 
 export interface Transaction {
-    version: Buffer;
-    inputs: TransactionInput[];
-    outputs?: TransactionOutput[];
-    locktime?: Buffer;
-    witness?: Buffer;
-    timestamp?: Buffer;
-    nVersionGroupId?: Buffer;
-    nExpiryHeight?: Buffer;
-    extraData?: Buffer;
+    hash: string;
+    received_at: Date;
+    lock_time: number;
+    block: Block;
+    inputs: Input[];
+    outputs: Output[];
+    fees: number;
+    amount: number;
+    confirmations: number;
 }

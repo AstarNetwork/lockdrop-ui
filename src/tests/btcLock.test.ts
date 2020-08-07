@@ -143,32 +143,6 @@ describe('Bitcoin lockdrop helper tests', () => {
 });
 
 describe('Bitcoin API fetch tests', () => {
-    it('fetches address data from block cypher', async () => {
-        const addressInfo = await btcLockdrop.getAddressEndpoint('13XXaBufpMvqRqLkyDty1AXqueZHVe6iyy', 'main');
-        expect(addressInfo.total_received).toEqual(293710000);
-        expect(addressInfo.txs[0].hash).toEqual('f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449');
-
-        const addressInfoTestnet = await btcLockdrop.getAddressEndpoint('2Mubm96PDzLyzcXJvfqX8kdyn2WHa7ssJ67', 'test3');
-        expect(addressInfoTestnet.total_received).toEqual(284780111);
-        expect(addressInfoTestnet.txs[0].hash).toEqual(
-            'f02a3881823238cd4290a8e18bf45db5dd7d9f23a6a8e3d64e307f68085e0929',
-        );
-    });
-
-    it('fetches transaction hash data from block cypher', async () => {
-        const txInfo = await btcLockdrop.getTransactionEndpoint(
-            'f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449',
-            'main',
-        );
-        expect(txInfo.total).toEqual(70320221545);
-
-        const txInfoTestnet = await btcLockdrop.getTransactionEndpoint(
-            '2336a60b02f69a892b797b21aedafa128779338e9f69650fc87373a4f8036611',
-            'test3',
-        );
-        expect(txInfoTestnet.total).toEqual(284852111);
-    });
-
     it('fetches transaction data from BlockStream', async () => {
         const allTxFromAddr = await btcLockdrop.getBtcTxsFromAddress('13XXaBufpMvqRqLkyDty1AXqueZHVe6iyy', 'mainnet');
         const allTxFromAddrTest = await btcLockdrop.getBtcTxsFromAddress(

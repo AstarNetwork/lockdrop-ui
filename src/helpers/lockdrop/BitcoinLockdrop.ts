@@ -4,12 +4,12 @@ import * as bitcoinjs from 'bitcoinjs-lib';
 import bip68 from 'bip68';
 import { LockdropType, HwSigner } from '../../types/LockdropModels';
 import { Network } from 'bitcoinjs-lib';
-import { BlockCypherApi } from '../../types/BlockCypherTypes';
 import BigNumber from 'bignumber.js';
 import * as plasmUtils from '../plasmUtils';
 import { BlockStreamApi } from 'src/types/BlockStreamTypes';
 import { SoChainApi } from 'src/types/SoChainTypes';
 import AppBtc from '@ledgerhq/hw-app-btc';
+import * as LedgerTypes from '../../types/LedgerTypes';
 
 // https://www.blockchain.com/api/api_websocket
 export const BLOCKCHAIN_WS = 'wss://ws.blockchain.info/inv';
@@ -68,20 +68,13 @@ export async function getBtcTxFromTxId(txid: string, network: 'mainnet' | 'testn
 }
 
 /**
- * returns the detailed information of the given address via blockcypher API calls.
- * such information includes transaction references, account balances, and more
- * @param address bitcoin address
- * @param network network type
- * @param limit filters the number of transaction references
+ * returns the transaction information including the inputs and outputs from ledger node API.
+ * @param txId bitcoin transaction hash
+ * @param isTestnet check if looking for BTC testnet
  */
-export async function getAddressEndpoint(
-    address: string,
-    network: 'main' | 'test3',
-    limit = 50,
-    unspentOnly?: boolean,
-    includeScript?: boolean,
-) {
-    const api = `https://api.blockcypher.com/v1/btc/${network}/addrs/${address}/full?unspentOnly=${unspentOnly}&includeScript=${includeScript}?limit=${limit}`;
+export async function getTransactionEndpoint(txId: string, isTestnet?: boolean) {
+    const network = isTestnet ? 'btc_testnet' : 'btc';
+    const api = `https://api.ledgerwallet.com/blockchain/v2/${network}/transactions/${txId}`;
 
     const res = await (await fetch(api)).text();
 
@@ -89,46 +82,8 @@ export async function getAddressEndpoint(
         throw new Error(res);
     }
 
-    const addressEndpoint: BlockCypherApi.BtcAddress = JSON.parse(res);
-    return addressEndpoint;
-}
-
-/**
- * returns the detailed information of the given transaction hash via blockcypher API calls.
- * such information includes transaction input, output, addresses, and more
- * @param txHash bitcoin transaction hash
- * @param network network type
- * @param limit filters the number of TX inputs and outputs
- */
-export async function getTransactionEndpoint(txHash: string, network: 'main' | 'test3', limit = 20) {
-    const api = `https://api.blockcypher.com/v1/btc/${network}/txs/${txHash}?limit=${limit}`;
-
-    const res = await (await fetch(api)).text();
-
-    if (res.includes('error')) {
-        throw new Error(res);
-    }
-
-    const hashEndpoint: BlockCypherApi.BtcTxHash = JSON.parse(res);
+    const hashEndpoint: LedgerTypes.Transaction = JSON.parse(res);
     return hashEndpoint;
-}
-
-/**
- * returns a high-level information about the given address such as total received, spent, final bal, etc.
- * @param addr bitcoin address to look for
- * @param network network type
- */
-export async function getAddressBalance(addr: string, network: 'main' | 'test3') {
-    const api = `https://api.blockcypher.com/v1/btc/${network}/addrs/${addr}/balance`;
-
-    const res = await (await fetch(api)).text();
-
-    if (res.includes('error')) {
-        throw new Error(res);
-    }
-
-    const addressInfo: BlockCypherApi.AddressBalance = JSON.parse(res);
-    return addressInfo;
 }
 
 /**
