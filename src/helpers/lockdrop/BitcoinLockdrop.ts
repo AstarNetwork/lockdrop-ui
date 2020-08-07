@@ -541,12 +541,12 @@ export const generateSigner = async (
     lockScript: bitcoinjs.payments.Payment,
     publicKey: string,
 ) => {
-    const isSegWig = bitcoinjs.Transaction.fromHex(lockTxHex).hasWitnesses();
-    const ledgerTx = ledgerApi.splitTransaction(lockTxHex, isSegWig);
+    const isSegWit = bitcoinjs.Transaction.fromHex(lockTxHex).hasWitnesses();
+    const ledgerTx = ledgerApi.splitTransaction(lockTxHex, isSegWit);
     const txIndex = 0; //temp value
 
     return {
-        network: network,
+        network,
         publicKey: Buffer.from(publicKey, 'hex'),
 
         sign: async (hash: Buffer, lowR?: boolean) => {
@@ -558,7 +558,7 @@ export const generateSigner = async (
                 associatedKeysets: [path],
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 outputScriptHex: lockScript.output!.toString('hex'),
-                segwit: isSegWig,
+                segwit: isSegWit,
                 transactionVersion: 2,
                 sigHashType: bitcoinjs.Transaction.SIGHASH_ALL,
             });
@@ -567,7 +567,7 @@ export const generateSigner = async (
             console.log(hash.toString('hex') + lowR);
             const [ledgerSignature] = ledgerTxSignatures;
             const encodedSignature = (() => {
-                if (isSegWig) {
+                if (isSegWit) {
                     return Buffer.from(ledgerSignature, 'hex');
                 }
                 return Buffer.concat([
@@ -578,5 +578,5 @@ export const generateSigner = async (
             const decoded = bitcoinjs.script.signature.decode(encodedSignature);
             return decoded.signature;
         },
-    };
+    } as HwSigner;
 };

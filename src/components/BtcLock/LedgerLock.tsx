@@ -173,51 +173,55 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
 
                 // get transaction hex, we fetch it online because BlockStream does not provide one
                 const rawTxHex = await btcLock.getTransactionHex(lock.txid, 'BTCTEST');
-                const isSegWig = bitcoinjs.Transaction.fromHex(rawTxHex).hasWitnesses();
-                const txIndex = 0; //temp value
 
-                // transaction that locks the tokens
-                const utxo = btc.splitTransaction(rawTxHex);
+                // const isSegWit = bitcoinjs.Transaction.fromHex(rawTxHex).hasWitnesses();
+                // const txIndex = 0; //temp value
 
-                const newTx = await btc.createPaymentTransactionNew({
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    inputs: [[utxo, txIndex, lockScript.redeem!.output!.toString('hex'), null]],
-                    associatedKeysets: [addressPath],
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    outputScriptHex: lockScript.output!.toString('hex'),
-                    segwit: isSegWig,
-                    sigHashType: bitcoinjs.Transaction.SIGHASH_ALL,
-                    lockTime: 0,
-                    useTrustedInputForSegwit: true,
-                });
+                // // transaction that locks the tokens
+                // const utxo = btc.splitTransaction(rawTxHex);
 
-                // const ledgerSigner = await btcLock.generateSigner(
-                //     btc,
-                //     addressPath,
-                //     networkType,
-                //     rawTxHex,
-                //     lockScript,
-                //     publicKey,
-                // );
-                // // this is used for the random output address
-                // const randomPublicKey = bitcoinjs.ECPair.makeRandom({ network: networkType, compressed: true })
-                //     .publicKey;
-                // const randomAddress = bitcoinjs.payments.p2pkh({ pubkey: randomPublicKey, network: networkType })
-                //     .address;
-                // const FEE = 1000;
-                // // create the redeem UTXO
-                // const unlockTx = await btcLock.btcUnlockTx(
-                //     ledgerSigner,
-                //     networkType,
-                //     bitcoinjs.Transaction.fromHex(rawTxHex),
-                //     lockScript.redeem!.output!,
-                //     btcLock.daysToBlockSequence(lockDuration.value),
-                //     randomAddress!,
-                //     FEE,
-                // );
+                // const newTx = await btc.createPaymentTransactionNew({
+                //     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                //     inputs: [[utxo, txIndex, lockScript.redeem!.output!.toString('hex'), null]],
+                //     associatedKeysets: [addressPath],
+                //     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                //     outputScriptHex: lockScript.output!.toString('hex'),
+                //     segwit: isSegWit,
+                //     sigHashType: bitcoinjs.Transaction.SIGHASH_ALL,
+                //     lockTime: 0,
+                //     useTrustedInputForSegwit: isSegWit,
+                // });
 
-                // const signedTxHex = unlockTx.toHex();
-                console.log(newTx);
+                // console.log(newTx);
+
+                const ledgerSigner = await btcLock.generateSigner(
+                    btc,
+                    addressPath,
+                    networkType,
+                    rawTxHex,
+                    lockScript,
+                    publicKey,
+                );
+
+                // this is used for the random output address
+                const randomPublicKey = bitcoinjs.ECPair.makeRandom({ network: networkType, compressed: true })
+                    .publicKey;
+                const randomAddress = bitcoinjs.payments.p2pkh({ pubkey: randomPublicKey, network: networkType })
+                    .address;
+                const FEE = 1000;
+                // create the redeem UTXO
+                const unlockTx = await btcLock.btcUnlockTx(
+                    ledgerSigner,
+                    networkType,
+                    bitcoinjs.Transaction.fromHex(rawTxHex),
+                    lockScript.redeem!.output!,
+                    btcLock.daysToBlockSequence(lockDuration.value),
+                    randomAddress!,
+                    FEE,
+                );
+
+                const signedTxHex = unlockTx.toHex();
+                console.log(signedTxHex);
             } catch (err) {
                 toast.error(err.message);
                 console.log(err);
