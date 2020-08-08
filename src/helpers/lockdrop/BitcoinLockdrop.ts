@@ -418,12 +418,21 @@ export function unsignedUnlockTx(
     const lockP2sh = getLockP2SH(lockDuration, publicKey, network);
     const { address } = bitcoinjs.payments.p2pkh({ pubkey: Buffer.from(publicKey, 'hex'), network });
 
-    const lockVout = lockTransaction.vout.find(locked => locked.scriptpubkey_address === lockP2sh.address!)!;
+    if (typeof address === 'undefined') {
+        throw new Error('could not get P2PKH address from the given public key');
+    }
+
+    const lockVout = lockTransaction.vout.find(locked => locked.scriptpubkey_address === lockP2sh.address!);
+
+    if (typeof lockVout === 'undefined') {
+        throw new Error('Invalid public key provided');
+    }
+
     const lockScript = btcLockScript(publicKey, daysToBlockSequence(lockDuration), network);
 
     const RELAY_FEE = 200;
     const sequence = 0;
-    const output = bitcoinjs.address.toOutputScript(address!, network);
+    const output = bitcoinjs.address.toOutputScript(address, network);
 
     const tx = new bitcoinjs.Transaction();
     tx.version = 2;
@@ -431,7 +440,7 @@ export function unsignedUnlockTx(
     tx.addOutput(output, lockVout.value - RELAY_FEE);
 
     const hashType = bitcoinjs.Transaction.SIGHASH_ALL;
-    const signatureHash = tx.hashForSignature(0, lockScript, hashType)!.toString('hex');
+    const signatureHash = tx.hashForSignature(0, lockScript, hashType).toString('hex');
 
     return {
         signatureHash,
@@ -457,7 +466,7 @@ export function signTransactionRaw(
     if (userUnlockSig === '') {
         throw new Error('Please paste the unlock signature');
     }
-    const rawSignature = Buffer.from(userUnlockSig, 'hex');
+    const rawSignature = Buffer.from(userUnlockSig.replace(' ', ''), 'hex');
 
     const signature = bitcoinjs.script.signature.encode(rawSignature, bitcoinjs.Transaction.SIGHASH_ALL);
     const redeemScriptSig = bitcoinjs.payments.p2sh({
@@ -533,6 +542,16 @@ export async function getLockParameter(
     return lockParams;
 }
 
+/**
+ * Creates a signer instance for signing transactions made with bitcoinjs-lib
+ * from Ledger BTC App.
+ * @param ledgerApi
+ * @param path HD address path
+ * @param network bitcoin network the transaction will belong
+ * @param lockTxHex raw lock UTXO in hex string
+ * @param lockScript lock script used to generate the P2SH
+ * @param publicKey compressed public key in string format
+ */
 export const generateSigner = async (
     ledgerApi: AppBtc,
     path: string,

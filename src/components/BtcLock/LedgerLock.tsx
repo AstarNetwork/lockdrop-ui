@@ -174,26 +174,28 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                 // get transaction hex, we fetch it online because BlockStream does not provide one
                 const rawTxHex = await btcLock.getTransactionHex(lock.txid, 'BTCTEST');
 
-                // const isSegWit = bitcoinjs.Transaction.fromHex(rawTxHex).hasWitnesses();
-                // const txIndex = 0; //temp value
+                /// method 1 ==============================
+                const isSegWit = bitcoinjs.Transaction.fromHex(rawTxHex).hasWitnesses();
+                const txIndex = 0; //temp value
 
-                // // transaction that locks the tokens
-                // const utxo = btc.splitTransaction(rawTxHex);
+                // transaction that locks the tokens
+                const utxo = btc.splitTransaction(rawTxHex);
 
-                // const newTx = await btc.createPaymentTransactionNew({
-                //     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                //     inputs: [[utxo, txIndex, lockScript.redeem!.output!.toString('hex'), null]],
-                //     associatedKeysets: [addressPath],
-                //     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                //     outputScriptHex: lockScript.output!.toString('hex'),
-                //     segwit: isSegWit,
-                //     sigHashType: bitcoinjs.Transaction.SIGHASH_ALL,
-                //     lockTime: 0,
-                //     useTrustedInputForSegwit: isSegWit,
-                // });
+                const newTx = await btc.createPaymentTransactionNew({
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    inputs: [[utxo, txIndex, lockScript.redeem!.output!.toString('hex'), null]],
+                    associatedKeysets: [addressPath],
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    outputScriptHex: lockScript.output!.toString('hex'),
+                    segwit: isSegWit,
+                    sigHashType: bitcoinjs.Transaction.SIGHASH_ALL,
+                    lockTime: 0,
+                    useTrustedInputForSegwit: isSegWit,
+                });
 
-                // console.log(newTx);
+                console.log(newTx);
 
+                // method 2 ==============================
                 const ledgerSigner = await btcLock.generateSigner(
                     btc,
                     addressPath,
