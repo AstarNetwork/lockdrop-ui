@@ -19,6 +19,7 @@ import {
     IonButtons,
     IonTitle,
     IonText,
+    IonLoading,
 } from '@ionic/react';
 import { makeStyles, createStyles, Container, Typography } from '@material-ui/core';
 import * as btcLock from '../../helpers/lockdrop/BitcoinLockdrop';
@@ -75,6 +76,10 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
     const [publicKey, setPublicKey] = useState('');
     const [allLockParams, setAllLockParams] = useState<Lockdrop[]>([]);
     const [currentScriptLocks, setCurrentScriptLocks] = useState<BlockStreamApi.Transaction[]>([]);
+    const [isLoading, setLoading] = useState<{ loadState: boolean; message: string }>({
+        loadState: false,
+        message: '',
+    });
 
     // current lock unlock signature data set
     // everything below here are used for raw unlock signature
@@ -155,12 +160,14 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
     };
 
     // use the obtained transaction signature to create full signed transaction in hex
-    const getUnlockUtxo = () => {
+    // this function will broad cast the transaction as well
+    const getUnlockUtxo = async () => {
         if (unlockTxBuilder) {
             try {
                 if (userUnlockSig === '') {
                     throw new Error('Please paste the unlock signature');
                 }
+                setLoading({ loadState: true, message: 'broadcasting unlock transaction...' });
                 const lockScript = btcLock.btcLockScript(
                     publicKey,
                     btcLock.daysToBlockSequence(lockDuration.value),
@@ -174,12 +181,19 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                     networkType,
                 );
 
-                console.log('Signed unlock UTXO:\n' + signedUnlockUtxo);
+                console.log('Signed unlock UTXO hex:\n' + signedUnlockUtxo);
 
                 setUnlockUtxoHex(signedUnlockUtxo);
+
+                const _net = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
+                const unlockTxId = await btcLock.broadcastTransaction(signedUnlockUtxo, _net);
+                console.log('Broadcasted: ' + unlockTxId);
+                toast.success('Successfully broadcasted ' + unlockTxId);
             } catch (e) {
                 toast.error(e.message);
                 console.log(e);
+            } finally {
+                setLoading({ loadState: false, message: '' });
             }
         }
     };
@@ -291,6 +305,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                 />
             )}
 
+            <IonLoading isOpen={isLoading.loadState} message={isLoading.message} />
             <IonModal isOpen={showModal} onDidDismiss={() => cleanUnlockTxState()}>
                 <IonHeader>
                     <IonToolbar>

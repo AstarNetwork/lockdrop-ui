@@ -317,7 +317,7 @@ describe('BTC lock script tests', () => {
             });
 
             // mine the number of blocks needed for unlocking
-            await regtestUtils.mine(5);
+            await regtestUtils.mine(10);
             // Try to redeem at unlocking time
             await regtestUtils.broadcast(tx.toHex());
             // this method should work without throwing an error
@@ -370,9 +370,10 @@ describe('BTC lock script tests', () => {
             await regtestUtils.mine(DURATION * 2);
 
             // Try to redeem at unlocking time
-            await expect(regtestUtils.broadcast(tx.toHex())).rejects.toThrowError(
-                'mandatory-script-verify-flag-failed (Signature must be zero for failed CHECK(MULTI)SIG operation) (code 16)',
-            );
+            // note: sometimes this throws "mandatory-script-verify-flag-failed (Signature must be zero for failed CHECK(MULTI)SIG operation) (code 16)"
+            // or "mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element) (code 16)"
+            // so instead of checking the exact error message, we just check if it throws or not
+            await expect(regtestUtils.broadcast(tx.toHex())).rejects.toThrowError();
         },
         200 * 1000, // extend jest async resolve timeout
     );

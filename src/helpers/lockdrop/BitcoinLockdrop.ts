@@ -105,6 +105,30 @@ export async function getTransactionHex(txId: string, network: 'BTC' | 'BTCTEST'
 }
 
 /**
+ * Broadcasts the given transaction hex through BlockStream REST API
+ * @param txHex raw transaction in hex string
+ * @param network bitcoin network to broadcast for
+ */
+export async function broadcastTransaction(txHex: string, network: 'mainnet' | 'testnet') {
+    const api = `https://blockstream.info/${network === 'mainnet' ? '' : 'testnet/'}api/tx`;
+    const res = await fetch(api, {
+        method: 'POST',
+        body: txHex,
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        },
+    });
+    const responseText = await res.text();
+    if (!res.ok || responseText.includes('error')) {
+        throw new Error('Failed to broadcast the transaction:\n' + responseText);
+    }
+
+    console.log(responseText);
+    // returns a tx ID if everything went well
+    return responseText;
+}
+
+/**
  * Validates the given BTC address by checking if it's in the correct format.
  * The default network is set to mainnet, byt anything else will require you to explicitly
  * pass it as the parameter.
