@@ -60,43 +60,37 @@ export async function getPubKey(web3: Web3, message?: string) {
 export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<LockEvent[]> {
     // todo: set this value as the block number of where the contract was deployed for each network
     const mainnetStartBlock = 0;
-    try {
-        const ev = await instance.getPastEvents('Locked', {
-            fromBlock: mainnetStartBlock,
-        });
+    const ev = await instance.getPastEvents('Locked', {
+        fromBlock: mainnetStartBlock,
+    });
 
-        const eventHashes = await Promise.all(
-            ev.map(async e => {
-                return Promise.all([Promise.resolve(e.returnValues), web3.eth.getTransaction(e.transactionHash)]);
-            }),
-        );
+    const eventHashes = await Promise.all(
+        ev.map(async e => {
+            return Promise.all([Promise.resolve(e.returnValues), web3.eth.getTransaction(e.transactionHash)]);
+        }),
+    );
 
-        return Promise.all(
-            eventHashes.map(async e => {
-                // e[0] is lock event and e[1] is block hash
-                const blockHash = e[1];
-                const lockEvent = e[0];
+    return Promise.all(
+        eventHashes.map(async e => {
+            // e[0] is lock event and e[1] is block hash
+            const blockHash = e[1];
+            const lockEvent = e[0];
 
-                const transactionString = await Promise.resolve(web3.eth.getBlock(blockHash.blockNumber as number));
-                const time = transactionString.timestamp.toString();
-                return {
-                    eth: lockEvent.eth as BN,
-                    duration: lockEvent.duration as number,
-                    lock: lockEvent.lock as string,
-                    introducer: lockEvent.introducer as string,
-                    blockNo: blockHash.blockNumber,
-                    timestamp: time,
-                    lockOwner: blockHash.from,
-                    blockHash: blockHash.blockHash,
-                    transactionHash: blockHash.hash,
-                } as LockEvent;
-            }),
-        );
-    } catch (error) {
-        console.log(error);
-        // return an empty array when failed
-        return [] as LockEvent[];
-    }
+            const transactionString = await Promise.resolve(web3.eth.getBlock(blockHash.blockNumber as number));
+            const time = transactionString.timestamp.toString();
+            return {
+                eth: lockEvent.eth as BN,
+                duration: lockEvent.duration as number,
+                lock: lockEvent.lock as string,
+                introducer: lockEvent.introducer as string,
+                blockNo: blockHash.blockNumber,
+                timestamp: time,
+                lockOwner: blockHash.from,
+                blockHash: blockHash.blockHash,
+                transactionHash: blockHash.hash,
+            } as LockEvent;
+        }),
+    );
 }
 
 /**
@@ -244,44 +238,34 @@ export function getTotalLockVal(locks: LockEvent[]): string {
  * @param lockSeason lockdrop season to indicate which lockdrop contract it should look for
  */
 export async function connectWeb3(lockSeason: 'firstLock' | 'secondLock' | 'thirdLock') {
-    try {
-        // Get network provider and web3 instance.
-        const web3 = await getWeb3();
-        //const web3 = getEthInst();
+    // Get network provider and web3 instance.
+    const web3 = await getWeb3();
+    //const web3 = getEthInst();
 
-        if (web3 instanceof Web3) {
-            // Use web3 to get the user's accounts.
-            const accounts = await web3.eth.getAccounts();
-            const lockdropAbi = Lockdrop.abi as Web3Utils.AbiItem[];
+    if (web3 instanceof Web3) {
+        // Use web3 to get the user's accounts.
+        const accounts = await web3.eth.getAccounts();
+        const lockdropAbi = Lockdrop.abi as Web3Utils.AbiItem[];
 
-            // Get the contract instance.
-            //const networkId = await web3.eth.net.getId();
+        // Get the contract instance.
+        //const networkId = await web3.eth.net.getId();
 
-            //const deployedNetwork = (Lockdrop.networks as any)[networkId];
+        //const deployedNetwork = (Lockdrop.networks as any)[networkId];
 
-            const networkType = await web3.eth.net.getNetworkType();
-            const contractAddress = (lockInfo.lockdropContracts[lockSeason] as any)[networkType];
+        const networkType = await web3.eth.net.getNetworkType();
+        const contractAddress = (lockInfo.lockdropContracts[lockSeason] as any)[networkType];
 
-            // create an empty contract instance first
-            const instance = new web3.eth.Contract(lockdropAbi, contractAddress !== '0x' && contractAddress);
+        // create an empty contract instance first
+        const instance = new web3.eth.Contract(lockdropAbi, contractAddress !== '0x' && contractAddress);
 
-            return {
-                web3: web3,
-                accounts: accounts,
-                contract: instance,
-            };
-        }
-    } catch (error) {
-        // Catch any errors for any of the above operations.
-        alert('Failed to load web3, accounts, or contract. Check console for details.');
-        console.error(error);
+        return {
+            web3: web3,
+            accounts: accounts,
+            contract: instance,
+        };
+    } else {
+        throw new Error('Cannot get Web3 instance from the client');
     }
-    // return an empty value
-    return {
-        web3: {} as Web3,
-        accounts: [''],
-        contract: {} as Contract,
-    };
 }
 
 /**
@@ -296,7 +280,7 @@ export async function submitLockTx(txInput: LockInput, address: string, contract
     if (txInput.amount <= new BN(0) || txInput.duration <= 0) {
         throw new Error('You are missing an input!');
     }
-    //console.log(formInputVal);
+
     // return a default address if user input is empty
     const introducer = defaultAffiliation(txInput.affiliation).toLowerCase();
     // check user input
@@ -306,9 +290,6 @@ export async function submitLockTx(txInput: LockInput, address: string, contract
     if (introducer && !Web3.utils.isAddress(introducer)) {
         throw new Error('Please input a valid Ethereum address');
     }
-    // if (!isValidIntroducerAddress(introducer)) {
-    //     throw new Error('The given introducer is not registered in the affiliation program!');
-    // }
 
     // convert user input to Wei
     const amountToSend = Web3.utils.toWei(txInput.amount, 'ether');

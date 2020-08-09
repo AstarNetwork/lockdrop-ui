@@ -106,3 +106,11 @@ export interface Claim {
     amount: u128; // u128
     complete: boolean;
 }
+
+export interface HwSigner {
+    publicKey: Buffer;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    network?: any;
+    sign(hash: Buffer, lowR?: boolean): Buffer | Promise<Buffer>;
+    getPublicKey?(): Buffer;
+}

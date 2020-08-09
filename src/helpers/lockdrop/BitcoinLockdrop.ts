@@ -1,12 +1,15 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Message } from 'bitcore-lib';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import bip68 from 'bip68';
-import { UnspentTx, LockdropType } from '../../types/LockdropModels';
-import { Transaction, Signer, Network } from 'bitcoinjs-lib';
-import { BlockCypherApi } from '../../types/BlockCypherTypes';
+import { LockdropType, HwSigner } from '../../types/LockdropModels';
+import { Network } from 'bitcoinjs-lib';
 import BigNumber from 'bignumber.js';
 import * as plasmUtils from '../plasmUtils';
 import { BlockStreamApi } from 'src/types/BlockStreamTypes';
+import { SoChainApi } from 'src/types/SoChainTypes';
+import AppBtc from '@ledgerhq/hw-app-btc';
+import * as LedgerTypes from '../../types/LedgerTypes';
 
 // https://www.blockchain.com/api/api_websocket
 export const BLOCKCHAIN_WS = 'wss://ws.blockchain.info/inv';
@@ -65,20 +68,13 @@ export async function getBtcTxFromTxId(txid: string, network: 'mainnet' | 'testn
 }
 
 /**
- * returns the detailed information of the given address via blockcypher API calls.
- * such information includes transaction references, account balances, and more
- * @param address bitcoin address
- * @param network network type
- * @param limit filters the number of transaction references
+ * returns the transaction information including the inputs and outputs from ledger node API.
+ * @param txId bitcoin transaction hash
+ * @param isTestnet check if looking for BTC testnet
  */
-export async function getAddressEndpoint(
-    address: string,
-    network: 'main' | 'test3',
-    limit = 50,
-    unspentOnly?: boolean,
-    includeScript?: boolean,
-) {
-    const api = `https://api.blockcypher.com/v1/btc/${network}/addrs/${address}/full?unspentOnly=${unspentOnly}&includeScript=${includeScript}?limit=${limit}`;
+export async function getTransactionEndpoint(txId: string, isTestnet?: boolean) {
+    const network = isTestnet ? 'btc_testnet' : 'btc';
+    const api = `https://api.ledgerwallet.com/blockchain/v2/${network}/transactions/${txId}`;
 
     const res = await (await fetch(api)).text();
 
@@ -86,46 +82,50 @@ export async function getAddressEndpoint(
         throw new Error(res);
     }
 
-    const addressEndpoint: BlockCypherApi.BtcAddress = JSON.parse(res);
-    return addressEndpoint;
-}
-
-/**
- * returns the detailed information of the given transaction hash via blockcypher API calls.
- * such information includes transaction input, output, addresses, and more
- * @param txHash bitcoin transaction hash
- * @param network network type
- * @param limit filters the number of TX inputs and outputs
- */
-export async function getTransactionEndpoint(txHash: string, network: 'main' | 'test3', limit = 20) {
-    const api = `https://api.blockcypher.com/v1/btc/${network}/txs/${txHash}?limit=${limit}`;
-
-    const res = await (await fetch(api)).text();
-
-    if (res.includes('error')) {
-        throw new Error(res);
-    }
-
-    const hashEndpoint: BlockCypherApi.BtcTxHash = JSON.parse(res);
+    const hashEndpoint: LedgerTypes.Transaction = JSON.parse(res);
     return hashEndpoint;
 }
 
 /**
- * returns a high-level information about the given address such as total received, spent, final bal, etc.
- * @param addr bitcoin address to look for
- * @param network network type
+ * returns a raw transaction in hex strings from SoChain REST API.
+ * @param txId transaction ID or transaction hash
+ * @param network BTC network to choose from
  */
-export async function getAddressBalance(addr: string, network: 'main' | 'test3') {
-    const api = `https://api.blockcypher.com/v1/btc/${network}/addrs/${addr}/balance`;
+export async function getTransactionHex(txId: string, network: 'BTC' | 'BTCTEST') {
+    const api = `https://sochain.com/api/v2/get_tx/${network}/${txId}`;
 
     const res = await (await fetch(api)).text();
 
-    if (res.includes('error')) {
+    if (res.includes('fail')) {
         throw new Error(res);
     }
 
-    const addressInfo: BlockCypherApi.AddressBalance = JSON.parse(res);
-    return addressInfo;
+    const txHex: SoChainApi.Transaction = JSON.parse(res);
+    return txHex.data.tx_hex;
+}
+
+/**
+ * Broadcasts the given transaction hex through BlockStream REST API
+ * @param txHex raw transaction in hex string
+ * @param network bitcoin network to broadcast for
+ */
+export async function broadcastTransaction(txHex: string, network: 'mainnet' | 'testnet') {
+    const api = `https://blockstream.info/${network === 'mainnet' ? '' : 'testnet/'}api/tx`;
+    const res = await fetch(api, {
+        method: 'POST',
+        body: txHex,
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        },
+    });
+    const responseText = await res.text();
+    if (!res.ok || responseText.includes('error')) {
+        throw new Error('Failed to broadcast the transaction:\n' + responseText);
+    }
+
+    console.log(responseText);
+    // returns a tx ID if everything went well
+    return responseText;
 }
 
 /**
@@ -201,14 +201,19 @@ export function getNetworkFromAddress(address: string) {
  */
 export function satoshiToBitcoin(satoshi: BigNumber | number | string) {
     // 1 bitcoin = 100,000,000 satoshi
-
     const denominator = new BigNumber(10).pow(new BigNumber(8));
 
-    // if the parameter is a number, convert it to BN
-    if (typeof satoshi === 'number' || typeof satoshi == 'string') {
-        return new BigNumber(satoshi).div(denominator);
+    if (typeof satoshi === 'string' || typeof satoshi === 'number') {
+        const _satNum = typeof satoshi === 'string' ? parseInt(satoshi) : satoshi;
+        if (isNaN(_satNum)) {
+            throw new Error('Provided value is not a number');
+        }
+        if (_satNum < 0) {
+            throw new Error('Provided value cannot be negative');
+        }
     }
-    return satoshi.div(denominator);
+
+    return new BigNumber(satoshi).div(denominator);
 }
 
 /**
@@ -219,10 +224,17 @@ export function bitcoinToSatoshi(bitcoin: BigNumber | number | string) {
     // 1 bitcoin = 100,000,000 satoshis
     const denominator = new BigNumber('100000000');
 
-    if (typeof bitcoin === 'number' || typeof bitcoin == 'string') {
-        return new BigNumber(bitcoin).multipliedBy(denominator);
+    if (typeof bitcoin === 'number' || typeof bitcoin === 'string') {
+        const _btcNum = typeof bitcoin === 'string' ? parseFloat(bitcoin) : bitcoin;
+        if (isNaN(_btcNum)) {
+            throw new Error('Provided value is not a number');
+        }
+        if (_btcNum < 0) {
+            throw new Error('Provided value cannot be negative');
+        }
     }
-    return bitcoin.multipliedBy(denominator);
+
+    return new BigNumber(bitcoin).multipliedBy(denominator).integerValue();
 }
 
 /**
@@ -366,15 +378,15 @@ export function getLockP2SH(lockDays: number, publicKey: string, network: bitcoi
  * @param recipient recipient for the transaction output
  * @param fee transaction fee for the lock transaction
  */
-export function btcUnlockTx(
-    signer: Signer,
+export async function btcUnlockTx(
+    signer: HwSigner,
     network: Network,
-    lockTx: UnspentTx,
+    lockTx: bitcoinjs.Transaction,
     lockScript: Buffer,
     blockSequence: number,
     recipientAddress: string,
     fee: number, // satoshis
-): Transaction {
+) {
     function idToHash(txid: string): Buffer {
         return Buffer.from(txid, 'hex').reverse();
     }
@@ -388,23 +400,26 @@ export function btcUnlockTx(
     if (fee < 0) {
         throw new Error('Transaction fee cannot be less than zero');
     }
-
     if (!Number.isInteger(blockSequence) || !Number.isFinite(blockSequence)) {
         throw new Error('Block sequence must be a valid integer, but received: ' + blockSequence);
     }
     if (!Number.isInteger(fee) || !Number.isFinite(fee)) {
         throw new Error('Fee must be a valid integer, but received: ' + fee);
     }
+    const txIndex = 0;
+    if (lockTx.outs[txIndex].value - fee < 0) {
+        throw new Error(`Transaction fee cannot be larger than ${lockTx.outs[txIndex].value} Satoshi`);
+    }
 
     //const sequence = bip68.encode({ blocks: lockBlocks });
     const tx = new bitcoinjs.Transaction();
     tx.version = 2;
-    tx.addInput(idToHash(lockTx.txId), lockTx.vout, blockSequence);
-    tx.addOutput(toOutputScript(recipientAddress), lockTx.value - fee);
+    tx.addInput(idToHash(lockTx.getId()), txIndex, blockSequence);
+    tx.addOutput(toOutputScript(recipientAddress), lockTx.outs[txIndex].value - fee);
 
     const hashType = bitcoinjs.Transaction.SIGHASH_ALL;
     const signatureHash = tx.hashForSignature(0, lockScript, hashType);
-    const signature = bitcoinjs.script.signature.encode(signer.sign(signatureHash), hashType);
+    const signature = bitcoinjs.script.signature.encode(await signer.sign(signatureHash), hashType);
 
     const redeemScriptSig = bitcoinjs.payments.p2sh({
         network,
@@ -424,51 +439,94 @@ export function btcUnlockTx(
 }
 
 /**
- * Creates a unsigned lockdrop redeem transaction in PSBT
- * @param utx Unspent transaction of locker
- * @param network bitcoin network the script is for
- * @param lockTx lockdrop lock transaction (P2SH)
- * @param lockP2SH lock P2SH instance
- * @param lockSequence block sequence used in the lock script
- * @param fee the transaction fee that occurred for the lock TX
+ * create a unsigned unlock transaction. This function will return a signature hash for the transaction that the user will sign,
+ * the unsigned transaction instance and the lock P2SH payment instance that this will be unlocking for.
+ * @param lockTransaction the lock UTXO that is already in the blockchain
+ * @param publicKey public key of the user in string hex (compression is done within the function)
+ * @param lockDuration script token locking duration in days (converted to relative block sequence within the function)
+ * @param network the bitcoin network the transaction is for
+ * @param txFee the transaction fee for the UTXO in Satoshi
  */
-export function btcUnlockIoTx(
-    utx: Transaction,
-    network: Network,
-    lockTx: UnspentTx,
-    lockP2SH: bitcoinjs.payments.Payment,
-    lockSequence: number,
-    fee: number,
+export function unsignedUnlockTx(
+    lockTransaction: BlockStreamApi.Transaction,
+    publicKey: string,
+    lockDuration: number,
+    network: bitcoinjs.Network,
+    txFee: number,
 ) {
-    if (lockSequence < 0) {
-        throw new Error('Block sequence cannot be less than zeo');
+    const lockP2sh = getLockP2SH(lockDuration, publicKey, network);
+    const { address } = bitcoinjs.payments.p2pkh({ pubkey: Buffer.from(publicKey, 'hex'), network });
+
+    if (typeof address === 'undefined') {
+        throw new Error('could not get P2PKH address from the given public key');
     }
 
-    // for non segwit inputs, you must pass the full transaction buffer
-    const nonWitnessUtxo = Buffer.from(utx.toHex(), 'hex');
+    const lockVout = lockTransaction.vout.find(locked => locked.scriptpubkey_address === lockP2sh.address!);
 
-    // this is used for the random output address
-    const randomPublicKey = bitcoinjs.ECPair.makeRandom({ network: network, compressed: true }).publicKey;
-    const randomAddress = bitcoinjs.payments.p2pkh({ pubkey: randomPublicKey, network: network }).address;
-    // This is an example of using the finalizeInput second parameter to
-    // define how you finalize the inputs, allowing for any type of script.
-    const tx = new bitcoinjs.Psbt({ network: network })
-        .setVersion(2)
-        .addInput({
-            hash: lockTx.txId,
-            index: lockTx.vout,
-            sequence: lockSequence,
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            redeemScript: lockP2SH.redeem!.output!,
-            nonWitnessUtxo,
-        })
-        .addOutput({
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            address: randomAddress!,
-            value: lockTx.value - fee,
-        });
-    // this is a unsigned transaction
-    return tx;
+    if (typeof lockVout === 'undefined') {
+        throw new Error('Invalid public key provided');
+    }
+
+    if (lockVout.value - txFee < 0) {
+        throw new Error(`Transaction fee cannot be larger than ${lockVout.value} Satoshi`);
+    }
+    if (txFee <= 0) {
+        throw new Error('Transaction fee cannot be 0 or less');
+    }
+
+    const lockScript = btcLockScript(publicKey, daysToBlockSequence(lockDuration), network);
+    const sequence = 0;
+    const output = bitcoinjs.address.toOutputScript(address, network);
+
+    const tx = new bitcoinjs.Transaction();
+    tx.version = 2;
+    tx.addInput(Buffer.from(lockTransaction.txid, 'hex').reverse(), 0, sequence);
+    tx.addOutput(output, lockVout.value - txFee);
+
+    const hashType = bitcoinjs.Transaction.SIGHASH_ALL;
+    const signatureHash = tx.hashForSignature(0, lockScript, hashType).toString('hex');
+
+    return {
+        signatureHash,
+        unsignedUnlockTx: tx,
+        lockP2sh,
+    };
+}
+
+/**
+ * Signs the given transaction and returns it as a raw transaction hex that is ready for being broadcasted.
+ * The signature should be provided by the user.
+ * @param unsignedTx transaction instance that isn't signed
+ * @param userUnlockSig signature for the transaction signed by the sender's wallet
+ * @param lockScript the lock script used for the lock transaction
+ * @param network bitcoin network the transaction will be propagating for
+ */
+export function signTransactionRaw(
+    unsignedTx: bitcoinjs.Transaction,
+    userUnlockSig: string,
+    lockScript: Buffer,
+    network: bitcoinjs.Network,
+) {
+    if (userUnlockSig === '') {
+        throw new Error('Please paste the unlock signature');
+    }
+    const rawSignature = Buffer.from(userUnlockSig.replace(' ', ''), 'hex');
+
+    const signature = bitcoinjs.script.signature.encode(rawSignature, bitcoinjs.Transaction.SIGHASH_ALL);
+    const redeemScriptSig = bitcoinjs.payments.p2sh({
+        network: network,
+        redeem: {
+            network: network,
+            output: lockScript,
+            input: bitcoinjs.script.compile([signature]),
+        },
+    }).input;
+
+    unsignedTx.setInputScript(0, redeemScriptSig!);
+
+    const signedTxHex = unsignedTx.toHex();
+
+    return signedTxHex;
 }
 
 /**
@@ -509,18 +567,79 @@ export async function getLockParameter(
     const locks = await getBtcTxsFromAddress(scriptAddress, network);
     const daysToEpoch = 60 * 60 * 24 * lockDurationDays;
 
-    //todo: properly calculate total locked value
-
     const lockParams = locks.map(i => {
-        const lockVal = i.vout.filter(locked => locked.scriptpubkey_address === scriptAddress);
+        const lockVal = i.vout.find(locked => locked.scriptpubkey_address === scriptAddress);
+
+        if (typeof lockVal === 'undefined') {
+            throw new Error('Cannot find lock transaction for ' + scriptAddress);
+        }
+
         return plasmUtils.createLockParam(
             LockdropType.Bitcoin,
             '0x' + i.txid,
             '0x' + publicKey,
             daysToEpoch.toString(),
-            lockVal[0].value.toString(),
+            lockVal.value.toString(),
         );
     });
 
     return lockParams;
 }
+
+/**
+ * Creates a signer instance for signing transactions made with bitcoinjs-lib
+ * from Ledger BTC App.
+ * @param ledgerApi
+ * @param path HD address path
+ * @param network bitcoin network the transaction will belong
+ * @param lockTxHex raw lock UTXO in hex string
+ * @param lockScript lock script used to generate the P2SH
+ * @param publicKey compressed public key in string format
+ */
+export const generateSigner = async (
+    ledgerApi: AppBtc,
+    path: string,
+    network: bitcoinjs.Network,
+    lockTxHex: string,
+    lockScript: bitcoinjs.payments.Payment,
+    publicKey: string,
+) => {
+    const isSegWit = bitcoinjs.Transaction.fromHex(lockTxHex).hasWitnesses();
+    const ledgerTx = ledgerApi.splitTransaction(lockTxHex, isSegWit);
+    const txIndex = 0; //temp value
+
+    return {
+        network,
+        publicKey: Buffer.from(publicKey, 'hex'),
+
+        sign: async (hash: Buffer, lowR?: boolean) => {
+            console.log('signing with ledger\n' + hash.toString('hex'));
+
+            const ledgerTxSignatures = await ledgerApi.signP2SHTransaction({
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                inputs: [[ledgerTx, txIndex, lockScript.redeem!.output!.toString('hex'), null]],
+                associatedKeysets: [path],
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                outputScriptHex: lockScript.output!.toString('hex'),
+                segwit: isSegWit,
+                transactionVersion: 2,
+                sigHashType: bitcoinjs.Transaction.SIGHASH_ALL,
+            });
+
+            console.log(ledgerTxSignatures);
+            console.log(hash.toString('hex') + lowR);
+            const [ledgerSignature] = ledgerTxSignatures;
+            const encodedSignature = (() => {
+                if (isSegWit) {
+                    return Buffer.from(ledgerSignature, 'hex');
+                }
+                return Buffer.concat([
+                    Buffer.from(ledgerSignature, 'hex'),
+                    Buffer.from('01', 'hex'), // SIGHASH_ALL
+                ]);
+            })();
+            const decoded = bitcoinjs.script.signature.decode(encodedSignature);
+            return decoded.signature;
+        },
+    } as HwSigner;
+};

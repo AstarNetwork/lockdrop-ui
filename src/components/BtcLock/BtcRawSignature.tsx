@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     IonCard,
     IonCardHeader,
@@ -13,6 +13,12 @@ import {
     IonTextarea,
     IonButton,
     IonChip,
+    IonModal,
+    IonHeader,
+    IonToolbar,
+    IonButtons,
+    IonTitle,
+    IonText,
     IonLoading,
 } from '@ionic/react';
 import { makeStyles, createStyles, Container, Typography } from '@material-ui/core';
@@ -25,13 +31,16 @@ import { Message } from 'bitcore-lib';
 import QrEncodedAddress from './QrEncodedAddress';
 import CopyMessageBox from '../CopyMessageBox';
 import * as bitcoinjs from 'bitcoinjs-lib';
-import { OptionItem, Lockdrop } from 'src/types/LockdropModels';
+import { OptionItem, Lockdrop, LockdropType } from 'src/types/LockdropModels';
 import SectionCard from '../SectionCard';
 import ClaimStatus from '../ClaimStatus';
 import * as plasmUtils from '../../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
+import { BlockStreamApi } from 'src/types/BlockStreamTypes';
+
 interface Props {
     networkType: bitcoinjs.Network;
+    plasmApi: ApiPromise;
 }
 
 const useStyles = makeStyles(() =>
@@ -55,7 +64,7 @@ toast.configure({
  * Obtains lockdrop participant's public key by receiving raw signatures and BTC address
  * @param networkType Bitcoin network to use
  */
-const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
+const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
     const classes = useStyles();
     // switch lock duration depending on the chain network
     const networkLockDur = networkType === bitcoinjs.networks.bitcoin ? btcDurations : btcDustyDurations;
@@ -65,12 +74,55 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
     const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
     const [p2shAddress, setP2sh] = useState('');
     const [publicKey, setPublicKey] = useState('');
-    const [plasmApi, setPlasmApi] = useState<ApiPromise>({} as ApiPromise);
-    const [lockParams, setLockParams] = useState<Lockdrop[]>([]);
+    const [allLockParams, setAllLockParams] = useState<Lockdrop[]>([]);
+    const [currentScriptLocks, setCurrentScriptLocks] = useState<BlockStreamApi.Transaction[]>([]);
     const [isLoading, setLoading] = useState<{ loadState: boolean; message: string }>({
         loadState: false,
         message: '',
     });
+
+    // current lock unlock signature data set
+    // everything below here are used for raw unlock signature
+    const [lockUtxo, setLockUtxo] = useState<BlockStreamApi.Transaction>();
+    const [unlockTxBuilder, setUnlockTxBuilder] = useState<bitcoinjs.Transaction>();
+    const [userUnlockSig, setUserUnlockSig] = useState('');
+    const [unlockUtxoHex, setUnlockUtxoHex] = useState('');
+    const [showModal, setShowModal] = useState(false);
+    // in BTC
+    const [unlockFee, setUnlockFee] = useState('0');
+
+    const isValidFee = useCallback(
+        (fee: string, lockTx: BlockStreamApi.Transaction) => {
+            if (typeof lockTx !== 'undefined' && !isNaN(parseFloat(fee))) {
+                const lockP2sh = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
+                const _fee = btcLock.bitcoinToSatoshi(fee).toNumber();
+                const lockVout = lockTx.vout.find(locked => locked.scriptpubkey_address === lockP2sh.address!);
+                if (typeof lockVout === 'undefined') {
+                    return false;
+                }
+                return lockVout.value - _fee > 0 && _fee !== 0;
+            } else {
+                return false;
+            }
+        },
+        [publicKey, lockDuration.value, networkType],
+    );
+
+    const sigHash = useMemo(() => {
+        try {
+            if (typeof lockUtxo !== 'undefined' && !isNaN(parseFloat(unlockFee)) && isValidFee(unlockFee, lockUtxo)) {
+                const _fee = btcLock.bitcoinToSatoshi(unlockFee).toNumber();
+                const unsigned = btcLock.unsignedUnlockTx(lockUtxo, publicKey, lockDuration.value, networkType, _fee);
+                setShowModal(true);
+                setUnlockTxBuilder(unsigned.unsignedUnlockTx);
+                return unsigned.signatureHash;
+            }
+        } catch (err) {
+            console.log(err);
+            toast.error(err.message);
+        }
+        return 'N/A';
+    }, [unlockFee, publicKey, lockDuration.value, networkType, lockUtxo, isValidFee]);
 
     const onSubmit = () => {
         try {
@@ -88,11 +140,11 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                 if (typeof p2sh.address === 'string') {
                     setP2sh(p2sh.address);
                 } else {
-                    toast.error('cannot create P2SH address!');
+                    throw new Error('Cannot create P2SH address!');
                 }
                 toast.success('Successfully created lock script');
             } else {
-                toast.error('cannot verify signature!');
+                throw new Error('Cannot verify signature!');
             }
         } catch (e) {
             console.log(e);
@@ -100,75 +152,224 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
         }
     };
 
-    // connect to plasm node on mount
-    useEffect(() => {
-        setLoading({
-            loadState: true,
-            message: 'Connecting to Plasm Network',
-        });
-        const netType =
-            networkType === bitcoinjs.networks.bitcoin ? plasmUtils.PlasmNetwork.Main : plasmUtils.PlasmNetwork.Dusty;
+    // show unsigned transaction hahs
+    const unlockScriptTx = (lock: BlockStreamApi.Transaction) => {
+        // set default transaction fee
+        setUnlockFee(btcLock.satoshiToBitcoin(lock.fee * 0.1).toFixed());
+        setLockUtxo(lock);
+    };
 
-        plasmUtils
-            .createPlasmInstance(netType)
-            .then(e => {
-                setPlasmApi(e);
-                setLoading({
-                    loadState: false,
-                    message: '',
-                });
-                console.log('connected to Plasm network');
-            })
-            .catch(err => {
-                toast.error(err);
-                console.log(err);
+    // use the obtained transaction signature to create full signed transaction in hex
+    // this function will broad cast the transaction as well
+    const getUnlockUtxo = async () => {
+        if (unlockTxBuilder) {
+            try {
+                if (userUnlockSig === '') {
+                    throw new Error('Please paste the unlock signature');
+                }
+                setLoading({ loadState: true, message: 'broadcasting unlock transaction...' });
+                const lockScript = btcLock.btcLockScript(
+                    publicKey,
+                    btcLock.daysToBlockSequence(lockDuration.value),
+                    networkType,
+                );
+
+                const signedUnlockUtxo = btcLock.signTransactionRaw(
+                    unlockTxBuilder,
+                    userUnlockSig,
+                    lockScript,
+                    networkType,
+                );
+
+                console.log('Signed unlock UTXO hex:\n' + signedUnlockUtxo);
+
+                setUnlockUtxoHex(signedUnlockUtxo);
+
+                const _net = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
+                const unlockTxId = await btcLock.broadcastTransaction(signedUnlockUtxo, _net);
+                console.log('Broadcasted: ' + unlockTxId);
+                toast.success('Successfully broadcasted ' + unlockTxId);
+            } catch (e) {
+                toast.error(e.message);
+                console.log(e);
+            } finally {
+                setLoading({ loadState: false, message: '' });
+            }
+        }
+    };
+
+    // clean all unlock UTXO signature state when closing the modal
+    const cleanUnlockTxState = () => {
+        setLockUtxo(undefined);
+        setUnlockTxBuilder(undefined);
+        setUserUnlockSig('');
+        setUnlockFee('0.00241');
+        setUnlockUtxoHex('');
+        setShowModal(false);
+    };
+
+    const getLockBal = useCallback(() => {
+        if (lockUtxo) {
+            const _lockVout = lockUtxo.vout.find(locked => locked.scriptpubkey_address === p2shAddress);
+            if (_lockVout) return btcLock.satoshiToBitcoin(_lockVout.value.toFixed()).toFixed();
+        }
+        return '0';
+    }, [lockUtxo, p2shAddress]);
+
+    const fetchLockdropParams = useCallback(async () => {
+        const blockStreamNet = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
+        // initialize lockdrop data array
+        const _lockParams: Lockdrop[] = [];
+
+        // get all the possible lock addresses
+        networkLockDur.map(async (dur, index) => {
+            const scriptAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
+            // make a real-time lockdrop data structure with the current P2SH and duration
+            //const lock = await btcLock.getLockParameter(scriptAddr, dur.value, publicKey, blockStreamNet);
+
+            const locks = await btcLock.getBtcTxsFromAddress(scriptAddr, blockStreamNet);
+            const daysToEpoch = 60 * 60 * 24 * dur.value;
+
+            const lockParams = locks.map(i => {
+                const lockVal = i.vout.find(locked => locked.scriptpubkey_address === scriptAddr);
+
+                if (lockVal) {
+                    return plasmUtils.createLockParam(
+                        LockdropType.Bitcoin,
+                        '0x' + i.txid,
+                        '0x' + publicKey,
+                        daysToEpoch.toString(),
+                        lockVal.value.toString(),
+                    );
+                } else {
+                    throw new Error('Could not find the lock value from the UTXO');
+                }
             });
-    }, [networkType]);
+
+            // if the lock data is the one that the user is viewing
+            if (p2shAddress === scriptAddr && dur.value === lockDuration.value) {
+                setCurrentScriptLocks(locks);
+            }
+
+            // loop through all the token locks within the given script
+            // this is to prevent nested array
+            lockParams.forEach(e => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const currentParam = plasmUtils.structToLockdrop(e as any);
+
+                _lockParams.push(currentParam);
+            });
+
+            // set lockdrop param data if we're in the final loop
+            // we do this because we want to set the values inside the then block
+            if (_lockParams.length > allLockParams.length && index === networkLockDur.length - 1) {
+                setAllLockParams(_lockParams);
+            }
+        });
+    }, [publicKey, networkType, p2shAddress, networkLockDur, allLockParams, lockDuration.value]);
 
     useEffect(() => {
         // change P2SH if the user changed the lock duration
-        if (publicKey && p2shAddress) {
-            const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
-
-            setP2sh(lockScript.address!);
-        }
-        // fetch user lock param data
         if (publicKey) {
-            const blockCypherNetwork = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
-            // const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
-            // setP2sh(lockScript.address!);
-
-            // initialize lockdrop data array
-            const _lockParams: Lockdrop[] = [];
-
-            // get all the possible lock addresses
-            // eslint-disable-next-line
-            networkLockDur.map((dur, index) => {
-                const p2shAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
-
-                // make a real-time lockdrop data structure with the current P2SH and duration
-                btcLock.getLockParameter(p2shAddr, dur.value, publicKey, blockCypherNetwork).then(lock => {
-                    // loop through all the token locks within the given script
-                    // this is to prevent nested array
-                    // eslint-disable-next-line
-                    lock.map(e => {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        _lockParams.push(plasmUtils.structToLockdrop(e as any));
-                    });
-                    // set lockdrop param data if we're in the final loop
-                    // we do this because we want to set the values inside the then block
-                    if (_lockParams.length > lockParams.length && index === networkLockDur.length - 1) {
-                        setLockParams(_lockParams);
-                    }
-                });
+            const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
+            setP2sh(lockScript.address!);
+            fetchLockdropParams().catch(e => {
+                toast.error(e);
             });
         }
-    }, [lockDuration, publicKey, networkType, p2shAddress, networkLockDur, lockParams]);
+    }, [fetchLockdropParams, lockDuration.value, networkType, publicKey]);
+
+    // fetch lock data in the background
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            publicKey &&
+                fetchLockdropParams().catch(e => {
+                    toast.error(e);
+                });
+        }, 5 * 1000);
+
+        // cleanup hook
+        return () => {
+            clearInterval(interval);
+        };
+    });
 
     return (
         <div>
-            {p2shAddress ? <QrEncodedAddress address={p2shAddress} /> : null}
+            {p2shAddress && (
+                <QrEncodedAddress
+                    address={p2shAddress}
+                    lockData={currentScriptLocks}
+                    onUnlock={unlockScriptTx}
+                    lockDurationDay={lockDuration.value}
+                />
+            )}
+
             <IonLoading isOpen={isLoading.loadState} message={isLoading.message} />
+            <IonModal isOpen={showModal} onDidDismiss={() => cleanUnlockTxState()}>
+                <IonHeader>
+                    <IonToolbar>
+                        <IonTitle>Unlock BTC Transaction</IonTitle>
+                        <IonButtons slot="end">
+                            <IonButton onClick={() => cleanUnlockTxState()}>Close</IonButton>
+                        </IonButtons>
+                    </IonToolbar>
+                </IonHeader>
+                <IonCard>
+                    <IonCardHeader>
+                        <IonCardSubtitle>
+                            Provide the signature for your unlock script. This will unlock your tokens
+                        </IonCardSubtitle>
+                        <IonCardTitle>Unlock UTXO</IonCardTitle>
+                    </IonCardHeader>
+                    <IonCardContent>
+                        {lockUtxo && (
+                            <>
+                                <IonLabel>
+                                    <p>Lock ID: {lockUtxo.txid}</p>
+                                    <p>Lock Value: {getLockBal()} BTC</p>
+                                </IonLabel>
+                                {unlockUtxoHex ? (
+                                    <CopyMessageBox header="signed unlock transaction" message={unlockUtxoHex} isCode />
+                                ) : (
+                                    <>
+                                        <CopyMessageBox header="unsigned" message={sigHash} isCode />
+                                        <IonItem>
+                                            <IonLabel position="stacked">
+                                                Paste your signature here<IonText color="danger">*</IonText>
+                                            </IonLabel>
+                                            <IonTextarea
+                                                placeholder="f816733330690bdce1..."
+                                                value={userUnlockSig}
+                                                onIonChange={e => setUserUnlockSig(e.detail.value!)}
+                                            ></IonTextarea>
+                                        </IonItem>
+                                        <IonItem>
+                                            <IonLabel position="floating">Transaction fee</IonLabel>
+                                            <IonInput
+                                                placeholder={btcLock.satoshiToBitcoin(lockUtxo.fee).toFixed() + ' BTC'}
+                                                onIonInput={e => {
+                                                    const _inputFee = (e.target as HTMLInputElement).value;
+                                                    setUnlockFee(_inputFee);
+                                                }}
+                                                color={isValidFee(unlockFee, lockUtxo) ? 'primary' : 'danger'}
+                                            ></IonInput>
+                                        </IonItem>
+                                    </>
+                                )}
+
+                                <IonButton
+                                    disabled={!!unlockUtxoHex || !isValidFee(unlockFee, lockUtxo)}
+                                    onClick={() => getUnlockUtxo()}
+                                >
+                                    Generate unlock UTXO
+                                </IonButton>
+                            </>
+                        )}
+                    </IonCardContent>
+                </IonCard>
+            </IonModal>
+
             <IonCard>
                 <IonCardHeader>
                     <IonCardSubtitle>
@@ -218,7 +419,9 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                         </IonChip>
                     </IonItem>
                     <div className={classes.button}>
-                        <IonButton onClick={onSubmit}>Generate Lock Script</IonButton>
+                        <IonButton onClick={onSubmit} disabled={!!publicKey}>
+                            Generate Lock Script
+                        </IonButton>
                     </div>
                 </IonCardContent>
             </IonCard>
@@ -228,7 +431,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                 </Typography>
                 {publicKey ? (
                     <ClaimStatus
-                        claimParams={lockParams}
+                        claimParams={allLockParams}
                         plasmApi={plasmApi}
                         networkType="BTC"
                         plasmNetwork="Dusty"
@@ -237,7 +440,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
                 ) : (
                     <>
                         <Container>
-                            <Typography variant="h4" component="h2" align="center">
+                            <Typography variant="h5" component="h2" align="center">
                                 Provide signature to view
                             </Typography>
                         </Container>

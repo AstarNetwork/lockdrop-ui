@@ -7,7 +7,6 @@ import * as bitcoin from 'bitcoinjs-lib';
 import * as assert from 'assert';
 import { regtestUtils } from './_regtest';
 import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
-import { UnspentTx } from '../types/LockdropModels';
 import bip68 from 'bip68';
 import * as plasmUtils from '../helpers/plasmUtils';
 
@@ -144,40 +143,12 @@ describe('Bitcoin lockdrop helper tests', () => {
 });
 
 describe('Bitcoin API fetch tests', () => {
-    it('fetches address data from block cypher', async () => {
-        const addressInfo = await btcLockdrop.getAddressEndpoint('13XXaBufpMvqRqLkyDty1AXqueZHVe6iyy', 'main');
-        expect(addressInfo.total_received).toEqual(293710000);
-        expect(addressInfo.txs[0].hash).toEqual('f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449');
-
-        const addressInfoTestnet = await btcLockdrop.getAddressEndpoint('2Mubm96PDzLyzcXJvfqX8kdyn2WHa7ssJ67', 'test3');
-        expect(addressInfoTestnet.total_received).toEqual(284780111);
-        expect(addressInfoTestnet.txs[0].hash).toEqual(
-            'f02a3881823238cd4290a8e18bf45db5dd7d9f23a6a8e3d64e307f68085e0929',
-        );
-    });
-
-    it('fetches transaction hash data from block cypher', async () => {
-        const txInfo = await btcLockdrop.getTransactionEndpoint(
-            'f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449',
-            'main',
-        );
-        expect(txInfo.total).toEqual(70320221545);
-
-        const txInfoTestnet = await btcLockdrop.getTransactionEndpoint(
-            '2336a60b02f69a892b797b21aedafa128779338e9f69650fc87373a4f8036611',
-            'test3',
-        );
-        expect(txInfoTestnet.total).toEqual(284852111);
-    });
-
     it('fetches transaction data from BlockStream', async () => {
         const allTxFromAddr = await btcLockdrop.getBtcTxsFromAddress('13XXaBufpMvqRqLkyDty1AXqueZHVe6iyy', 'mainnet');
         const allTxFromAddrTest = await btcLockdrop.getBtcTxsFromAddress(
             '2Mubm96PDzLyzcXJvfqX8kdyn2WHa7ssJ67',
             'testnet',
         );
-
-        console.log(allTxFromAddr);
 
         expect(allTxFromAddr.length).toEqual(2);
         expect(allTxFromAddr[0].txid).toEqual('f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449');
@@ -198,6 +169,16 @@ describe('Bitcoin API fetch tests', () => {
         expect(txInfo.vout[0].value).toEqual(70320221545);
         expect(txInfoTestnet.status.block_height).toEqual(1770515);
         expect(txInfoTestnet.vout[0].value).toEqual(284780111);
+    });
+
+    it('fetches a transaction hahs from SoChain', async () => {
+        const txId = '01cec976192e2f39ff57fdba5cba5d03094a7cf696f3f5ab89379e389ef77412';
+        const txHex =
+            '0100000000010219c88926f3113a8d5fb1801cd55429bd6269d229c7cbf50ac530233857fa9c3d0000000000ffffffff7fce5cf913125ce5bbb93829d819d56e461e39dcadb02ccc33298710fc6f15b40100000000ffffffff02d29e09000000000017a914d550b302301e25bf8f2c5115a31f8511bdbfdd948722c2050000000000160014aeda84ee9434c2259966b95298323b989ec4809502483045022100f6dbf811dc959f6f626da873ce54193efa5b28d81b14c6c0cf7c9237728993fb02206ff5d41e10b000867d345ec183e1dc9cd50cbdf7cd10efeb5366dd96dc474747012102b845db7300f3208891ea36eebdb1742b846783cefb0978d72d8e5d9b827022be024730440220619094ab5daa0000db9d9905059e9a61951f61764ce6f96ec45026dde2e27f9c02205f63448a55b9587395897430e98452fd5a07a074ad8747501c86f5fda7640010012102b845db7300f3208891ea36eebdb1742b846783cefb0978d72d8e5d9b827022be00000000';
+
+        const res = await btcLockdrop.getTransactionHex(txId, 'BTCTEST');
+
+        expect(res).toEqual(txHex);
     });
 });
 
@@ -306,13 +287,14 @@ describe('BTC lock script tests', () => {
             });
 
             // fund the P2SH(CSV) address (this will lock the token with VALUE + FEE)
-            const unspent = (await regtestUtils.faucet(p2sh.address!, VALUE + FEE)) as UnspentTx;
+            const unspent = await regtestUtils.faucet(p2sh.address!, VALUE + FEE);
+            const lockTx = (await regtestUtils.fetch(unspent.txId)).txHex;
 
             // create the redeem UTXO
-            const tx = btcLockdrop.btcUnlockTx(
+            const tx = await btcLockdrop.btcUnlockTx(
                 alice,
                 regtest,
-                unspent,
+                bitcoin.Transaction.fromHex(lockTx),
                 p2sh.redeem!.output!,
                 bip68.encode({ blocks: DURATION }),
                 regtestUtils.RANDOM_ADDRESS,
@@ -335,7 +317,7 @@ describe('BTC lock script tests', () => {
             });
 
             // mine the number of blocks needed for unlocking
-            await regtestUtils.mine(5);
+            await regtestUtils.mine(10);
             // Try to redeem at unlocking time
             await regtestUtils.broadcast(tx.toHex());
             // this method should work without throwing an error
@@ -345,7 +327,6 @@ describe('BTC lock script tests', () => {
                 vout: 0,
                 value: VALUE,
             });
-            console.log('Transaction hash:\n' + tx.toHex());
         },
         200 * 1000,
     ); // extend jest async resolve timeout
@@ -371,13 +352,14 @@ describe('BTC lock script tests', () => {
             });
 
             // fund the P2SH(CSV) address (this will lock the token with VALUE + FEE)
-            const unspent = (await regtestUtils.faucet(p2sh.address!, VALUE + FEE)) as UnspentTx;
+            const unspent = await regtestUtils.faucet(p2sh.address!, VALUE + FEE);
+            const lockTx = (await regtestUtils.fetch(unspent.txId)).txHex;
 
             // create the redeem UTXO
-            const tx = btcLockdrop.btcUnlockTx(
+            const tx = await btcLockdrop.btcUnlockTx(
                 bob,
                 regtest,
-                unspent,
+                bitcoin.Transaction.fromHex(lockTx),
                 p2sh.redeem!.output!,
                 bip68.encode({ blocks: DURATION }),
                 regtestUtils.RANDOM_ADDRESS,
@@ -388,9 +370,10 @@ describe('BTC lock script tests', () => {
             await regtestUtils.mine(DURATION * 2);
 
             // Try to redeem at unlocking time
-            await expect(regtestUtils.broadcast(tx.toHex())).rejects.toThrowError(
-                'mandatory-script-verify-flag-failed (Signature must be zero for failed CHECK(MULTI)SIG operation) (code 16)',
-            );
+            // note: sometimes this throws "mandatory-script-verify-flag-failed (Signature must be zero for failed CHECK(MULTI)SIG operation) (code 16)"
+            // or "mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element) (code 16)"
+            // so instead of checking the exact error message, we just check if it throws or not
+            await expect(regtestUtils.broadcast(tx.toHex())).rejects.toThrowError();
         },
         200 * 1000, // extend jest async resolve timeout
     );

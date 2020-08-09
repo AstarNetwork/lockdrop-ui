@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 //import { makeStyles, createStyles } from '@material-ui/core';
 import * as btcLockdrop from '../../helpers/lockdrop/BitcoinLockdrop';
 import {
@@ -21,94 +21,58 @@ import {
     IonList,
     IonItem,
     IonSpinner,
-    IonSkeletonText,
 } from '@ionic/react';
 import { lock, time } from 'ionicons/icons';
-import * as bitcoinjs from 'bitcoinjs-lib';
 import { Tooltip } from '@material-ui/core';
-import { BlockCypherApi } from 'src/types/BlockCypherTypes';
 import BigNumber from 'bignumber.js';
+import { BlockStreamApi } from 'src/types/BlockStreamTypes';
+import CountdownTimer from '../CountdownTimer';
+import moment from 'moment';
 
 interface Props {
     scriptAddress: string;
+    lockData: BlockStreamApi.Transaction[];
+    lockDurationDay: number;
+    onUnlock?: Function;
 }
 
 /**
- * Shows the number of BTC locked in the given P2SH address. Information is fetched from block cypher.
+ * Shows the number of BTC locked in the given P2SH address. Information is fetched from block stream
  * @param param0 P2SH address to look for
  */
-const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
-    // check what network this address belongs to
-    const networkToken =
-        btcLockdrop.getNetworkFromAddress(scriptAddress) === bitcoinjs.networks.bitcoin ? 'main' : 'test3';
+const LockStatus: React.FC<Props> = ({ lockData, onUnlock, scriptAddress, lockDurationDay }) => {
     const [lockedValue, setLockedValue] = useState('');
-    const [scriptLocks, setScriptLocks] = useState<BlockCypherApi.Tx[]>([]); // initialize value
     const [showModal, setShowModal] = useState(false);
-    const [isLoading, setLoading] = useState(false);
+    const [canUnlock, setCanUnlock] = useState(false);
 
-    // initial fetch
+    const handleUnlock = (lock: BlockStreamApi.Transaction) => {
+        if (onUnlock) onUnlock(lock);
+    };
+
+    const getLockBal = useCallback(
+        (lock: BlockStreamApi.Transaction) => {
+            const _lockVout = lock.vout.find(locked => locked.scriptpubkey_address === scriptAddress);
+            if (_lockVout) return btcLockdrop.satoshiToBitcoin(_lockVout.value.toFixed()).toFixed();
+            else return '0';
+        },
+        [scriptAddress],
+    );
+
     useEffect(() => {
-        // we need this to display the correct value when the user changes param
-        setScriptLocks([]);
-        setLockedValue('');
-
-        btcLockdrop.getBtcTxsFromAddress(scriptAddress, networkToken === 'main' ? 'mainnet' : 'testnet').then(tx => {
+        if (lockData.length === 0) {
+            setLockedValue('');
+        } else {
             let totalBal = new BigNumber(0);
-            tx.map(i => {
-                const lockTx = i.vout.filter(e => e.scriptpubkey_address === scriptAddress)[0];
-                totalBal = totalBal.plus(new BigNumber(lockTx.value));
-                console.log(lockTx.value);
-                return null;
-            });
-            if (totalBal.isGreaterThan(new BigNumber(0))) {
-                setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
-            }
-            console.log(totalBal.toFixed());
-        });
-    }, [scriptAddress, networkToken]);
-
-    // fetch lock data in the background
-    useEffect(() => {
-        const interval = setInterval(() => {
-            btcLockdrop
-                .getBtcTxsFromAddress(scriptAddress, networkToken === 'main' ? 'mainnet' : 'testnet')
-                .then(tx => {
-                    let totalBal = new BigNumber(0);
-                    tx.map(i => {
-                        const lockTx = i.vout.filter(e => e.scriptpubkey_address === scriptAddress)[0];
-                        totalBal = totalBal.plus(new BigNumber(lockTx.value));
-                        console.log(lockTx.value);
-                        return null;
-                    });
-                    if (totalBal.isGreaterThan(new BigNumber(0))) {
-                        setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
-                    }
-                    console.log(totalBal.toFixed());
-                });
-        }, 20 * 1000); // fetch every 20 seconds
-
-        // cleanup hook
-        return () => {
-            clearInterval(interval);
-        };
-    });
-
-    // fetch modal content
-    useEffect(() => {
-        // only fetch if the user opens the modal
-        if (showModal && scriptLocks.length === 0) {
-            setLoading(true);
-            btcLockdrop.getAddressEndpoint(scriptAddress, networkToken, 50, false, true).then(lockTxData => {
-                if (lockTxData.total_received > 0) {
-                    setScriptLocks(lockTxData.txs);
-                } else {
-                    // we need this to display the correct value when the user changes param
-                    setScriptLocks([]);
+            lockData.forEach(i => {
+                const _lockVout = i.vout.find(locked => locked.scriptpubkey_address === scriptAddress);
+                if (_lockVout) {
+                    totalBal = totalBal.plus(new BigNumber(_lockVout.value.toFixed()));
                 }
-                setLoading(false);
             });
+
+            setLockedValue(btcLockdrop.satoshiToBitcoin(totalBal).toFixed());
         }
-    }, [showModal, scriptAddress, networkToken, scriptLocks]);
+    }, [lockData, lockedValue, scriptAddress]);
 
     return (
         <>
@@ -126,58 +90,55 @@ const LockStatus: React.FC<Props> = ({ scriptAddress }) => {
                         <IonCardSubtitle>General information about your lock</IonCardSubtitle>
                         <IonCardTitle>Lock Overview</IonCardTitle>
                     </IonCardHeader>
-                    {isLoading ? (
-                        <IonCardContent>
-                            <IonList>
-                                {[0, 1, 2].map(e => (
-                                    <IonItem key={e}>
-                                        <IonLabel>
-                                            <h2>
-                                                <IonSkeletonText animated style={{ width: '80%' }} />
-                                            </h2>
-                                            <h3>
-                                                <IonSkeletonText animated style={{ width: '50%' }} />
-                                            </h3>
-                                            <p>
-                                                <IonSkeletonText animated style={{ width: '50%' }} />
-                                            </p>
-                                        </IonLabel>
-                                    </IonItem>
-                                ))}
-                            </IonList>
-                        </IonCardContent>
-                    ) : (
-                        <>
-                            {scriptLocks.length > 0 ? (
-                                <IonCardContent>
-                                    <IonList>
-                                        {scriptLocks.map(e => (
-                                            <IonItem key={e.hash}>
-                                                <IonLabel>
-                                                    <h2>Transaction Hash: {e.hash}</h2>
-                                                    <h3>
-                                                        Locked Amount:{' '}
-                                                        {e.outputs[0] &&
-                                                            btcLockdrop
-                                                                .satoshiToBitcoin(
-                                                                    e.outputs.filter(
-                                                                        e => e.addresses[0] === scriptAddress,
-                                                                    )[0].value,
-                                                                )
-                                                                .toFixed()}{' '}
-                                                        BTC
-                                                    </h3>
-                                                    <p>Locked in block no. {e.block_height}</p>
-                                                </IonLabel>
-                                            </IonItem>
-                                        ))}
-                                    </IonList>
-                                </IonCardContent>
-                            ) : (
-                                <IonLabel>No locks found yet! (Please wait for it to be confirmed)</IonLabel>
-                            )}
-                        </>
-                    )}
+                    <>
+                        {lockData.length > 0 && lockedValue ? (
+                            <IonCardContent>
+                                <IonList>
+                                    {lockData.map(e => (
+                                        <IonItem key={e.txid}>
+                                            <IonLabel>
+                                                <h2>Transaction Hash: {e.txid}</h2>
+                                                <h3>Locked Amount: {getLockBal(e)} BTC</h3>
+                                                {e.status.confirmed ? (
+                                                    <>
+                                                        <p>Locked in block no. {e.status.block_height}</p>
+                                                        {canUnlock ? (
+                                                            <p>Tokens can be unlocked</p>
+                                                        ) : (
+                                                            <>
+                                                                <CountdownTimer
+                                                                    startTime={moment.unix(e.status.block_time)}
+                                                                    endTime={moment
+                                                                        .unix(e.status.block_time)
+                                                                        .add(lockDurationDay, 'days')}
+                                                                    onFinish={(u: boolean) => setCanUnlock(u)}
+                                                                />
+                                                                <p> Till unlock</p>
+                                                            </>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <p>Transaction not confirmed</p>
+                                                )}
+                                            </IonLabel>
+                                            {onUnlock && (
+                                                <IonButton
+                                                    fill="outline"
+                                                    slot="end"
+                                                    onClick={() => handleUnlock(e)}
+                                                    disabled={!canUnlock}
+                                                >
+                                                    Unlock
+                                                </IonButton>
+                                            )}
+                                        </IonItem>
+                                    ))}
+                                </IonList>
+                            </IonCardContent>
+                        ) : (
+                            <IonLabel>No locks found yet! (Please wait for it to be confirmed)</IonLabel>
+                        )}
+                    </>
                 </IonCard>
             </IonModal>
 

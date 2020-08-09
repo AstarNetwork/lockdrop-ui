@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/camelcase */
 /* eslint-disable react/prop-types */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     IonCard,
     IonCardHeader,
@@ -23,7 +23,7 @@ import { toast } from 'react-toastify';
 import { makeStyles, createStyles, Typography, Container } from '@material-ui/core';
 import QrEncodedAddress from './QrEncodedAddress';
 import * as bitcoinjs from 'bitcoinjs-lib';
-import { OptionItem, Lockdrop } from 'src/types/LockdropModels';
+import { OptionItem, Lockdrop, LockdropType } from 'src/types/LockdropModels';
 import SectionCard from '../SectionCard';
 import ClaimStatus from '../ClaimStatus';
 import { ApiPromise } from '@polkadot/api';
@@ -31,9 +31,11 @@ import * as plasmUtils from '../../helpers/plasmUtils';
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import AppBtc from '@ledgerhq/hw-app-btc';
 import TransportU2F from '@ledgerhq/hw-transport-u2f';
+import { BlockStreamApi } from 'src/types/BlockStreamTypes';
 
 interface Props {
     networkType: bitcoinjs.Network;
+    plasmApi: ApiPromise;
 }
 
 toast.configure({
@@ -53,7 +55,7 @@ const useStyles = makeStyles(() =>
     }),
 );
 
-const LedgerLock: React.FC<Props> = ({ networkType }) => {
+const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
     const classes = useStyles();
 
     const defaultPath = networkType === bitcoinjs.networks.bitcoin ? "m/44'/0'/0'" : "m/44'/1'/0'";
@@ -62,9 +64,8 @@ const LedgerLock: React.FC<Props> = ({ networkType }) => {
 
     const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
     const [p2shAddress, setP2sh] = useState('');
-    const [plasmApi, setPlasmApi] = useState<ApiPromise>({} as ApiPromise);
-    const [lockParams, setLockParams] = useState<Lockdrop[]>([]);
-
+    const [allLockParams, setAllLockParams] = useState<Lockdrop[]>([]);
+    const [currentScriptLocks, setCurrentScriptLocks] = useState<BlockStreamApi.Transaction[]>([]);
     const [btcApi, setBtcApi] = useState<AppBtc>();
 
     // changing the path to n/49'/x'/x' will return a signature error
@@ -112,30 +113,28 @@ const LedgerLock: React.FC<Props> = ({ networkType }) => {
         }
     };
 
-    const signLockdropClaims = () => {
+    const viewClaims = async () => {
         if (!publicKey) {
             setLoading({ loadState: true, message: 'Waiting for Ledger' });
 
-            ledgerApiInstance()
-                .then(btc => {
-                    btc.getWalletPublicKey(addressPath).then(wallet => {
-                        setPublicKey(wallet.publicKey);
-                    });
-                })
-                .catch(e => {
-                    toast.error(e.message);
-                    console.log(e);
-                })
-                .finally(() => {
-                    setLoading({
-                        loadState: false,
-                        message: '',
-                    });
+            try {
+                const btc = await ledgerApiInstance();
+                btc.getWalletPublicKey(addressPath, { format: 'p2sh' }).then(wallet => {
+                    setPublicKey(wallet.publicKey);
                 });
+            } catch (err) {
+                toast.error(err.message);
+                console.log(err);
+            } finally {
+                setLoading({
+                    loadState: false,
+                    message: '',
+                });
+            }
         }
     };
 
-    const createLockAddress = () => {
+    const createLockAddress = async () => {
         if (!inputValidation().valid) {
             toast.error(inputValidation().message);
             return;
@@ -143,96 +142,200 @@ const LedgerLock: React.FC<Props> = ({ networkType }) => {
 
         setLoading({ loadState: true, message: 'Waiting for Ledger' });
 
-        ledgerApiInstance()
-            .then(btc => {
-                btc.getWalletPublicKey(addressPath).then(wallet => {
-                    setPublicKey(wallet.publicKey);
-                    toast.success('Successfully created lock script');
-                });
-            })
-            .catch(e => {
-                toast.error(e.message);
-                console.log(e);
-            })
-            .finally(() => {
-                setLoading({
-                    loadState: false,
-                    message: '',
-                });
-            });
-    };
+        try {
+            const btc = await ledgerApiInstance();
 
-    // establish a connection with plasm node
-    useEffect(() => {
-        setLoading({
-            loadState: true,
-            message: 'Connecting to Plasm Network',
-        });
-        const netType =
-            networkType === bitcoinjs.networks.bitcoin ? plasmUtils.PlasmNetwork.Main : plasmUtils.PlasmNetwork.Dusty;
-
-        plasmUtils
-            .createPlasmInstance(netType)
-            .then(e => {
-                setPlasmApi(e);
-                setLoading({
-                    loadState: false,
-                    message: '',
-                });
-                console.log('connected to Plasm network');
-            })
-            .catch(err => {
-                toast.error(err);
-                console.log(err);
-            });
-    }, [networkType]);
-
-    useEffect(() => {
-        if (publicKey) {
-            // set P2SH
-            const p2shAddr = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType).address!;
-            setP2sh(p2shAddr);
-
-            // fetch lockdrop param data
-            const blockCypherNetwork = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
-
-            // initialize lockdrop data array
-            const _lockParams: Lockdrop[] = [];
-
-            // get all the possible lock addresses
-            // eslint-disable-next-line
-            networkLockDur.map((dur, index) => {
-                const p2shAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
-
-                // make a real-time lockdrop data structure with the current P2SH and duration
-                btcLock.getLockParameter(p2shAddr, dur.value, publicKey, blockCypherNetwork).then(lock => {
-                    // loop through all the token locks within the given script
-                    // this is to prevent nested array
-                    // eslint-disable-next-line
-                    lock.map(e => {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        _lockParams.push(plasmUtils.structToLockdrop(e as any));
-                    });
-                });
-                // set lockdrop param data if we're in the final loop
-                // we do this because we want to set the values inside the then block
-                if (_lockParams.length > lockParams.length && index === networkLockDur.length - 1) {
-                    setLockParams(_lockParams);
-                }
+            const wallet = await btc.getWalletPublicKey(addressPath, { format: 'p2sh' });
+            const lockScript = btcLock.getLockP2SH(lockDuration.value, wallet.publicKey, networkType);
+            console.log(wallet.publicKey);
+            setPublicKey(wallet.publicKey);
+            setP2sh(lockScript.address!);
+            toast.success('Successfully created lock script');
+        } catch (err) {
+            toast.error(err.message);
+            console.log(err);
+        } finally {
+            setLoading({
+                loadState: false,
+                message: '',
             });
         }
-    }, [lockDuration, networkType, publicKey, networkLockDur, lockParams.length]);
+    };
+
+    const unlockScriptTx = async (lock: BlockStreamApi.Transaction) => {
+        setLoading({ loadState: true, message: 'Singing unlock script' });
+
+        const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
+        if (typeof lockScript.redeem !== 'undefined') {
+            try {
+                // get ledger API
+                const btc = await ledgerApiInstance();
+
+                // get transaction hex, we fetch it online because BlockStream does not provide one
+                const rawTxHex = await btcLock.getTransactionHex(lock.txid, 'BTCTEST');
+
+                /// method 1 ==============================
+                const isSegWit = bitcoinjs.Transaction.fromHex(rawTxHex).hasWitnesses();
+                const txIndex = 0; //temp value
+
+                // transaction that locks the tokens
+                const utxo = btc.splitTransaction(rawTxHex);
+
+                const newTx = await btc.createPaymentTransactionNew({
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    inputs: [[utxo, txIndex, lockScript.redeem!.output!.toString('hex'), null]],
+                    associatedKeysets: [addressPath],
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    outputScriptHex: lockScript.output!.toString('hex'),
+                    segwit: isSegWit,
+                    sigHashType: bitcoinjs.Transaction.SIGHASH_ALL,
+                    lockTime: 0,
+                    useTrustedInputForSegwit: isSegWit,
+                });
+
+                console.log(newTx);
+
+                // method 2 ==============================
+                const ledgerSigner = await btcLock.generateSigner(
+                    btc,
+                    addressPath,
+                    networkType,
+                    rawTxHex,
+                    lockScript,
+                    publicKey,
+                );
+
+                // this is used for the random output address
+                const randomPublicKey = bitcoinjs.ECPair.makeRandom({ network: networkType, compressed: true })
+                    .publicKey;
+                const randomAddress = bitcoinjs.payments.p2pkh({ pubkey: randomPublicKey, network: networkType })
+                    .address;
+                const FEE = 1000;
+                // create the redeem UTXO
+                const unlockTx = await btcLock.btcUnlockTx(
+                    ledgerSigner,
+                    networkType,
+                    bitcoinjs.Transaction.fromHex(rawTxHex),
+                    lockScript.redeem!.output!,
+                    btcLock.daysToBlockSequence(lockDuration.value),
+                    randomAddress!,
+                    FEE,
+                );
+
+                const signedTxHex = unlockTx.toHex();
+                console.log(signedTxHex);
+            } catch (err) {
+                toast.error(err.message);
+                console.log(err);
+            } finally {
+                setLoading({
+                    loadState: false,
+                    message: '',
+                });
+            }
+        }
+    };
+
+    const fetchLockdropParams = useCallback(async () => {
+        const blockStreamNet = networkType === bitcoinjs.networks.bitcoin ? 'mainnet' : 'testnet';
+        // initialize lockdrop data array
+        const _lockParams: Lockdrop[] = [];
+
+        // get all the possible lock addresses
+        networkLockDur.map(async (dur, index) => {
+            const scriptAddr = btcLock.getLockP2SH(dur.value, publicKey, networkType).address!;
+
+            // make a real-time lockdrop data structure with the current P2SH and duration
+            const locks = await btcLock.getBtcTxsFromAddress(scriptAddr, blockStreamNet);
+            console.log('fetching data from block stream');
+            const daysToEpoch = 60 * 60 * 24 * dur.value;
+
+            const lockParams = locks.map(i => {
+                const lockVal = i.vout.find(locked => locked.scriptpubkey_address === scriptAddr);
+
+                if (lockVal) {
+                    return plasmUtils.createLockParam(
+                        LockdropType.Bitcoin,
+                        '0x' + i.txid,
+                        '0x' + publicKey,
+                        daysToEpoch.toString(),
+                        lockVal.value.toString(),
+                    );
+                } else {
+                    throw new Error('Could not find the lock value from the UTXO');
+                }
+            });
+
+            // if the lock data is the one that the user is viewing
+            if (p2shAddress === scriptAddr && dur.value === lockDuration.value) {
+                setCurrentScriptLocks(locks);
+            }
+
+            // loop through all the token locks within the given script
+            // this is to prevent nested array
+            lockParams.forEach(e => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const currentParam = plasmUtils.structToLockdrop(e as any);
+
+                _lockParams.push(currentParam);
+            });
+
+            // set lockdrop param data if we're in the final loop
+            // we do this because we want to set the values inside the then block
+            if (_lockParams.length > allLockParams.length && index === networkLockDur.length - 1) {
+                setAllLockParams(_lockParams);
+            }
+        });
+    }, [publicKey, networkType, p2shAddress, networkLockDur, allLockParams, lockDuration.value]);
+
+    useEffect(() => {
+        // change P2SH if the user changed the lock duration
+        if (publicKey && p2shAddress) {
+            const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
+            setP2sh(lockScript.address!);
+        }
+        publicKey &&
+            fetchLockdropParams().catch(e => {
+                toast.error(e);
+            });
+    }, [fetchLockdropParams, lockDuration.value, networkType, publicKey, p2shAddress]);
+
+    // fetch lock data in the background
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            publicKey &&
+                fetchLockdropParams().catch(e => {
+                    toast.error(e);
+                });
+        }, 5 * 1000);
+
+        // cleanup hook
+        return () => {
+            clearInterval(interval);
+        };
+    });
 
     return (
         <div>
-            {p2shAddress ? <QrEncodedAddress address={p2shAddress} /> : null}
+            {p2shAddress && (
+                <QrEncodedAddress
+                    address={p2shAddress}
+                    lockData={currentScriptLocks}
+                    onUnlock={unlockScriptTx}
+                    lockDurationDay={lockDuration.value}
+                />
+            )}
             <IonLoading isOpen={isLoading.loadState} message={isLoading.message} />
             <IonCard>
                 <IonCardHeader>
                     <IonCardSubtitle>
                         Please fill in the following form with the correct information. Your address path will default
                         to <code>{defaultPath}</code> if none is given. For more information, please check{' '}
-                        <a href="https://wiki.trezor.io/Address_path_(BIP32)" rel="noopener noreferrer" target="_blank">
+                        <a
+                            href="https://www.ledger.com/academy/crypto/what-are-hierarchical-deterministic-hd-wallets"
+                            rel="noopener noreferrer"
+                            target="_blank"
+                        >
                             this page
                         </a>
                         . Regarding the audit by Quantstamp, click{' '}
@@ -290,7 +393,7 @@ const LedgerLock: React.FC<Props> = ({ networkType }) => {
                 </Typography>
                 {publicKey ? (
                     <ClaimStatus
-                        claimParams={lockParams}
+                        claimParams={allLockParams}
                         plasmApi={plasmApi}
                         networkType="BTC"
                         plasmNetwork="Dusty"
@@ -299,7 +402,7 @@ const LedgerLock: React.FC<Props> = ({ networkType }) => {
                 ) : (
                     <>
                         <Container>
-                            <IonButton expand="block" onClick={() => signLockdropClaims()}>
+                            <IonButton expand="block" onClick={() => viewClaims()}>
                                 Click to view lock claims
                             </IonButton>
                         </Container>

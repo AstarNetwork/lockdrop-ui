@@ -157,12 +157,12 @@ describe('Plasm lockdrop RPC tests', () => {
     it(
         'lock/claim BTC testnet3 transactions',
         async () => {
-            const nonce = plasmUtils.claimPowNonce(btcTestnet3Lock.hash);
-            console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
-            console.log('claim ID: ' + ropstenLock.hash.toString());
+            // const nonce = plasmUtils.claimPowNonce(btcTestnet3Lock.hash);
+            // console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
+            // console.log('claim ID: ' + ropstenLock.hash.toString());
 
-            const claimRequestTx = api.tx.plasmLockdrop.request(btcTestnet3Lock.toU8a(), nonce);
-            await claimRequestTx.send();
+            // const claimRequestTx = api.tx.plasmLockdrop.request(btcTestnet3Lock.toU8a(), nonce);
+            // await claimRequestTx.send();
 
             //const claimData = await api.query.plasmLockdrop.claims(btcTestnet3Lock.hash);
             const claimData = await plasmUtils.getClaimStatus(api, btcTestnet3Lock.hash);
