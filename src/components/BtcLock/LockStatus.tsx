@@ -26,10 +26,13 @@ import { lock, time } from 'ionicons/icons';
 import { Tooltip } from '@material-ui/core';
 import BigNumber from 'bignumber.js';
 import { BlockStreamApi } from 'src/types/BlockStreamTypes';
+import CountdownTimer from '../CountdownTimer';
+import moment from 'moment';
 
 interface Props {
     scriptAddress: string;
     lockData: BlockStreamApi.Transaction[];
+    lockDurationDay: number;
     onUnlock?: Function;
 }
 
@@ -37,15 +40,10 @@ interface Props {
  * Shows the number of BTC locked in the given P2SH address. Information is fetched from block stream
  * @param param0 P2SH address to look for
  */
-const LockStatus: React.FC<Props> = ({ lockData, onUnlock, scriptAddress }) => {
+const LockStatus: React.FC<Props> = ({ lockData, onUnlock, scriptAddress, lockDurationDay }) => {
     const [lockedValue, setLockedValue] = useState('');
     const [showModal, setShowModal] = useState(false);
-
-    // const epochToDays = (epoch: string) => {
-    //     const epochDay = 60 * 60 * 24;
-    //     const days = new BigNumber(epoch).dividedBy(epochDay).toFixed();
-    //     return days;
-    // };
+    const [canUnlock, setCanUnlock] = useState(false);
 
     const handleUnlock = (lock: BlockStreamApi.Transaction) => {
         if (onUnlock) onUnlock(lock);
@@ -102,13 +100,34 @@ const LockStatus: React.FC<Props> = ({ lockData, onUnlock, scriptAddress }) => {
                                                 <h2>Transaction Hash: {e.txid}</h2>
                                                 <h3>Locked Amount: {getLockBal(e)} BTC</h3>
                                                 {e.status.confirmed ? (
-                                                    <p>Locked in block no. {e.status.block_height}</p>
+                                                    <>
+                                                        <p>Locked in block no. {e.status.block_height}</p>
+                                                        {canUnlock ? (
+                                                            <p>Tokens can be unlocked</p>
+                                                        ) : (
+                                                            <>
+                                                                <CountdownTimer
+                                                                    startTime={moment.unix(e.status.block_time)}
+                                                                    endTime={moment
+                                                                        .unix(e.status.block_time)
+                                                                        .add(lockDurationDay, 'days')}
+                                                                    onFinish={(u: boolean) => setCanUnlock(u)}
+                                                                />
+                                                                <p> Till unlock</p>
+                                                            </>
+                                                        )}
+                                                    </>
                                                 ) : (
                                                     <p>Transaction not confirmed</p>
                                                 )}
                                             </IonLabel>
                                             {onUnlock && (
-                                                <IonButton fill="outline" slot="end" onClick={() => handleUnlock(e)}>
+                                                <IonButton
+                                                    fill="outline"
+                                                    slot="end"
+                                                    onClick={() => handleUnlock(e)}
+                                                    disabled={!canUnlock}
+                                                >
                                                     Unlock
                                                 </IonButton>
                                             )}

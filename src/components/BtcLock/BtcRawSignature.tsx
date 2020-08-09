@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     IonCard,
     IonCardHeader,
@@ -18,6 +18,7 @@ import {
     IonToolbar,
     IonButtons,
     IonTitle,
+    IonText,
 } from '@ionic/react';
 import { makeStyles, createStyles, Container, Typography } from '@material-ui/core';
 import * as btcLock from '../../helpers/lockdrop/BitcoinLockdrop';
@@ -35,6 +36,7 @@ import ClaimStatus from '../ClaimStatus';
 import * as plasmUtils from '../../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
 import { BlockStreamApi } from 'src/types/BlockStreamTypes';
+
 interface Props {
     networkType: bitcoinjs.Network;
     plasmApi: ApiPromise;
@@ -79,9 +81,43 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
     const [lockUtxo, setLockUtxo] = useState<BlockStreamApi.Transaction>();
     const [unlockTxBuilder, setUnlockTxBuilder] = useState<bitcoinjs.Transaction>();
     const [userUnlockSig, setUserUnlockSig] = useState('');
-    const [sigHash, setSigHash] = useState('');
     const [unlockUtxoHex, setUnlockUtxoHex] = useState('');
     const [showModal, setShowModal] = useState(false);
+    // in BTC
+    const [unlockFee, setUnlockFee] = useState('0');
+
+    const isValidFee = useCallback(
+        (fee: string, lockTx: BlockStreamApi.Transaction) => {
+            if (typeof lockTx !== 'undefined' && !isNaN(parseFloat(fee))) {
+                const lockP2sh = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
+                const _fee = btcLock.bitcoinToSatoshi(fee).toNumber();
+                const lockVout = lockTx.vout.find(locked => locked.scriptpubkey_address === lockP2sh.address!);
+                if (typeof lockVout === 'undefined') {
+                    return false;
+                }
+                return lockVout.value - _fee > 0 && _fee !== 0;
+            } else {
+                return false;
+            }
+        },
+        [publicKey, lockDuration.value, networkType],
+    );
+
+    const sigHash = useMemo(() => {
+        try {
+            if (typeof lockUtxo !== 'undefined' && !isNaN(parseFloat(unlockFee)) && isValidFee(unlockFee, lockUtxo)) {
+                const _fee = btcLock.bitcoinToSatoshi(unlockFee).toNumber();
+                const unsigned = btcLock.unsignedUnlockTx(lockUtxo, publicKey, lockDuration.value, networkType, _fee);
+                setShowModal(true);
+                setUnlockTxBuilder(unsigned.unsignedUnlockTx);
+                return unsigned.signatureHash;
+            }
+        } catch (err) {
+            console.log(err);
+            toast.error(err.message);
+        }
+        return 'N/A';
+    }, [unlockFee, publicKey, lockDuration.value, networkType, lockUtxo, isValidFee]);
 
     const onSubmit = () => {
         try {
@@ -113,19 +149,9 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
 
     // show unsigned transaction hahs
     const unlockScriptTx = (lock: BlockStreamApi.Transaction) => {
-        try {
-            const unsigned = btcLock.unsignedUnlockTx(lock, publicKey, lockDuration.value, networkType);
-
-            // TODO: user output
-            console.log('hash: ' + unsigned.signatureHash);
-            setSigHash(unsigned.signatureHash);
-            setLockUtxo(lock);
-            setShowModal(true);
-            setUnlockTxBuilder(unsigned.unsignedUnlockTx);
-        } catch (e) {
-            toast.error(e.message);
-            console.log(e);
-        }
+        // set default transaction fee
+        setUnlockFee(btcLock.satoshiToBitcoin(lock.fee * 0.1).toFixed());
+        setLockUtxo(lock);
     };
 
     // use the obtained transaction signature to create full signed transaction in hex
@@ -163,7 +189,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
         setLockUtxo(undefined);
         setUnlockTxBuilder(undefined);
         setUserUnlockSig('');
-        setSigHash('');
+        setUnlockFee('0.00241');
         setUnlockUtxoHex('');
         setShowModal(false);
     };
@@ -257,7 +283,12 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
     return (
         <div>
             {p2shAddress && (
-                <QrEncodedAddress address={p2shAddress} lockData={currentScriptLocks} onUnlock={unlockScriptTx} />
+                <QrEncodedAddress
+                    address={p2shAddress}
+                    lockData={currentScriptLocks}
+                    onUnlock={unlockScriptTx}
+                    lockDurationDay={lockDuration.value}
+                />
             )}
 
             <IonModal isOpen={showModal} onDidDismiss={() => cleanUnlockTxState()}>
@@ -277,7 +308,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                         <IonCardTitle>Unlock UTXO</IonCardTitle>
                     </IonCardHeader>
                     <IonCardContent>
-                        {lockUtxo && sigHash && (
+                        {lockUtxo && (
                             <>
                                 <IonLabel>
                                     <p>Lock ID: {lockUtxo.txid}</p>
@@ -288,18 +319,34 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                                 ) : (
                                     <>
                                         <CopyMessageBox header="unsigned" message={sigHash} isCode />
-                                        <IonLabel position="stacked">Paste your signature here</IonLabel>
                                         <IonItem>
+                                            <IonLabel position="stacked">
+                                                Paste your signature here<IonText color="danger">*</IonText>
+                                            </IonLabel>
                                             <IonTextarea
                                                 placeholder="f816733330690bdce1..."
                                                 value={userUnlockSig}
                                                 onIonChange={e => setUserUnlockSig(e.detail.value!)}
                                             ></IonTextarea>
                                         </IonItem>
+                                        <IonItem>
+                                            <IonLabel position="floating">Transaction fee</IonLabel>
+                                            <IonInput
+                                                placeholder={btcLock.satoshiToBitcoin(lockUtxo.fee).toFixed() + ' BTC'}
+                                                onIonInput={e => {
+                                                    const _inputFee = (e.target as HTMLInputElement).value;
+                                                    setUnlockFee(_inputFee);
+                                                }}
+                                                color={isValidFee(unlockFee, lockUtxo) ? 'primary' : 'danger'}
+                                            ></IonInput>
+                                        </IonItem>
                                     </>
                                 )}
 
-                                <IonButton disabled={!!unlockUtxoHex} onClick={() => getUnlockUtxo()}>
+                                <IonButton
+                                    disabled={!!unlockUtxoHex || !isValidFee(unlockFee, lockUtxo)}
+                                    onClick={() => getUnlockUtxo()}
+                                >
                                     Generate unlock UTXO
                                 </IonButton>
                             </>

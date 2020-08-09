@@ -258,7 +258,12 @@ const TrezorLock: React.FC<Props> = ({ networkType, plasmApi }) => {
     return (
         <div>
             {p2shAddress && (
-                <QrEncodedAddress address={p2shAddress} lockData={currentScriptLocks} onUnlock={unlockScriptTx} />
+                <QrEncodedAddress
+                    address={p2shAddress}
+                    lockData={currentScriptLocks}
+                    onUnlock={unlockScriptTx}
+                    lockDurationDay={lockDuration.value}
+                />
             )}
             <IonLoading isOpen={isLoading.loadState} message={isLoading.message} />
             <IonCard>

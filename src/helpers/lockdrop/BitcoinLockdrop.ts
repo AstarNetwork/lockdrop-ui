@@ -177,14 +177,19 @@ export function getNetworkFromAddress(address: string) {
  */
 export function satoshiToBitcoin(satoshi: BigNumber | number | string) {
     // 1 bitcoin = 100,000,000 satoshi
-
     const denominator = new BigNumber(10).pow(new BigNumber(8));
 
-    // if the parameter is a number, convert it to BN
-    if (typeof satoshi === 'number' || typeof satoshi == 'string') {
-        return new BigNumber(satoshi).div(denominator);
+    if (typeof satoshi === 'string' || typeof satoshi === 'number') {
+        const _satNum = typeof satoshi === 'string' ? parseInt(satoshi) : satoshi;
+        if (isNaN(_satNum)) {
+            throw new Error('Provided value is not a number');
+        }
+        if (_satNum < 0) {
+            throw new Error('Provided value cannot be negative');
+        }
     }
-    return satoshi.div(denominator);
+
+    return new BigNumber(satoshi).div(denominator);
 }
 
 /**
@@ -195,10 +200,17 @@ export function bitcoinToSatoshi(bitcoin: BigNumber | number | string) {
     // 1 bitcoin = 100,000,000 satoshis
     const denominator = new BigNumber('100000000');
 
-    if (typeof bitcoin === 'number' || typeof bitcoin == 'string') {
-        return new BigNumber(bitcoin).multipliedBy(denominator);
+    if (typeof bitcoin === 'number' || typeof bitcoin === 'string') {
+        const _btcNum = typeof bitcoin === 'string' ? parseFloat(bitcoin) : bitcoin;
+        if (isNaN(_btcNum)) {
+            throw new Error('Provided value is not a number');
+        }
+        if (_btcNum < 0) {
+            throw new Error('Provided value cannot be negative');
+        }
     }
-    return bitcoin.multipliedBy(denominator);
+
+    return new BigNumber(bitcoin).multipliedBy(denominator).integerValue();
 }
 
 /**
@@ -364,15 +376,16 @@ export async function btcUnlockTx(
     if (fee < 0) {
         throw new Error('Transaction fee cannot be less than zero');
     }
-
     if (!Number.isInteger(blockSequence) || !Number.isFinite(blockSequence)) {
         throw new Error('Block sequence must be a valid integer, but received: ' + blockSequence);
     }
     if (!Number.isInteger(fee) || !Number.isFinite(fee)) {
         throw new Error('Fee must be a valid integer, but received: ' + fee);
     }
-
     const txIndex = 0;
+    if (lockTx.outs[txIndex].value - fee < 0) {
+        throw new Error(`Transaction fee cannot be larger than ${lockTx.outs[txIndex].value} Satoshi`);
+    }
 
     //const sequence = bip68.encode({ blocks: lockBlocks });
     const tx = new bitcoinjs.Transaction();
@@ -408,12 +421,14 @@ export async function btcUnlockTx(
  * @param publicKey public key of the user in string hex (compression is done within the function)
  * @param lockDuration script token locking duration in days (converted to relative block sequence within the function)
  * @param network the bitcoin network the transaction is for
+ * @param txFee the transaction fee for the UTXO in Satoshi
  */
 export function unsignedUnlockTx(
     lockTransaction: BlockStreamApi.Transaction,
     publicKey: string,
     lockDuration: number,
     network: bitcoinjs.Network,
+    txFee: number,
 ) {
     const lockP2sh = getLockP2SH(lockDuration, publicKey, network);
     const { address } = bitcoinjs.payments.p2pkh({ pubkey: Buffer.from(publicKey, 'hex'), network });
@@ -428,16 +443,21 @@ export function unsignedUnlockTx(
         throw new Error('Invalid public key provided');
     }
 
-    const lockScript = btcLockScript(publicKey, daysToBlockSequence(lockDuration), network);
+    if (lockVout.value - txFee < 0) {
+        throw new Error(`Transaction fee cannot be larger than ${lockVout.value} Satoshi`);
+    }
+    if (txFee <= 0) {
+        throw new Error('Transaction fee cannot be 0 or less');
+    }
 
-    const RELAY_FEE = 200;
+    const lockScript = btcLockScript(publicKey, daysToBlockSequence(lockDuration), network);
     const sequence = 0;
     const output = bitcoinjs.address.toOutputScript(address, network);
 
     const tx = new bitcoinjs.Transaction();
     tx.version = 2;
     tx.addInput(Buffer.from(lockTransaction.txid, 'hex').reverse(), 0, sequence);
-    tx.addOutput(output, lockVout.value - RELAY_FEE);
+    tx.addOutput(output, lockVout.value - txFee);
 
     const hashType = bitcoinjs.Transaction.SIGHASH_ALL;
     const signatureHash = tx.hashForSignature(0, lockScript, hashType).toString('hex');

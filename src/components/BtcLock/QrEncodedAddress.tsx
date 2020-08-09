@@ -18,6 +18,7 @@ import { BlockStreamApi } from 'src/types/BlockStreamTypes';
 interface Props {
     address: string;
     lockData: BlockStreamApi.Transaction[];
+    lockDurationDay: number;
     onUnlock?: Function;
 }
 
@@ -55,7 +56,7 @@ const useStyles = makeStyles(theme =>
     }),
 );
 
-const QrEncodedAddress: React.FC<Props> = ({ address, lockData, onUnlock }) => {
+const QrEncodedAddress: React.FC<Props> = ({ address, lockData, onUnlock, lockDurationDay }) => {
     const classes = useStyles();
     const [imageUri, setUri] = useState('');
     const [imageLoaded, setImageLoad] = useState(false);
@@ -90,7 +91,12 @@ const QrEncodedAddress: React.FC<Props> = ({ address, lockData, onUnlock }) => {
                         </Grid>
                         <Grid item xs={12} sm={6} className={classes.chipGrid}>
                             <div className={classes.statusChip}>
-                                <LockStatus lockData={lockData} scriptAddress={address} onUnlock={onUnlock} />
+                                <LockStatus
+                                    lockData={lockData}
+                                    scriptAddress={address}
+                                    onUnlock={onUnlock}
+                                    lockDurationDay={lockDurationDay}
+                                />
                             </div>
                         </Grid>
                     </Grid>
