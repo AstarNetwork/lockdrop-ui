@@ -37,6 +37,7 @@ import ClaimStatus from '../ClaimStatus';
 import * as plasmUtils from '../../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
 import { BlockStreamApi } from 'src/types/BlockStreamTypes';
+import * as polkadotUtil from '@polkadot/util-crypto';
 
 interface Props {
     networkType: bitcoinjs.Network;
@@ -88,14 +89,25 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
     const [userUnlockSig, setUserUnlockSig] = useState('');
     const [unlockUtxoHex, setUnlockUtxoHex] = useState('');
     const [showModal, setShowModal] = useState(false);
-    // in BTC
+    // in satoshi
     const [unlockFee, setUnlockFee] = useState('0');
+
+    // signature nonce used for security
+    const sigNonce = useMemo(() => {
+        return polkadotUtil.randomAsHex(2);
+    }, []);
 
     const isValidFee = useCallback(
         (fee: string, lockTx: BlockStreamApi.Transaction) => {
-            if (typeof lockTx !== 'undefined' && !isNaN(parseFloat(fee))) {
+            // checks if the given string is a valid integer
+            function checkInt(val: string) {
+                const checkString = new RegExp(/^(0|[1-9][0-9]*)$/);
+                return checkString.test(val);
+            }
+
+            if (typeof lockTx !== 'undefined' && !isNaN(parseInt(fee)) && checkInt(fee)) {
                 const lockP2sh = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
-                const _fee = btcLock.bitcoinToSatoshi(fee).toNumber();
+                const _fee = parseInt(fee);
                 const lockVout = lockTx.vout.find(locked => locked.scriptpubkey_address === lockP2sh.address!);
                 if (typeof lockVout === 'undefined') {
                     return false;
@@ -110,8 +122,8 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
 
     const sigHash = useMemo(() => {
         try {
-            if (typeof lockUtxo !== 'undefined' && !isNaN(parseFloat(unlockFee)) && isValidFee(unlockFee, lockUtxo)) {
-                const _fee = btcLock.bitcoinToSatoshi(unlockFee).toNumber();
+            if (typeof lockUtxo !== 'undefined' && !isNaN(parseInt(unlockFee)) && isValidFee(unlockFee, lockUtxo)) {
+                const _fee = parseInt(unlockFee);
                 const unsigned = btcLock.unsignedUnlockTx(lockUtxo, publicKey, lockDuration.value, networkType, _fee);
                 setShowModal(true);
                 setUnlockTxBuilder(unsigned.unsignedUnlockTx);
@@ -131,7 +143,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
 
             if (!lockDuration || !sigInput || !addressInput) throw new Error('Please fill in all the inputs');
 
-            if (new Message(btcLock.MESSAGE).verify(addressInput, sigInput)) {
+            if (new Message(btcLock.MESSAGE + sigNonce).verify(addressInput, sigInput)) {
                 const pub = btcLock.getPublicKey(addressInput, sigInput, 'compressed');
                 setPublicKey(pub);
 
@@ -140,11 +152,11 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                 if (typeof p2sh.address === 'string') {
                     setP2sh(p2sh.address);
                 } else {
-                    throw new Error('Cannot create P2SH address!');
+                    throw new Error('Cannot create P2SH address');
                 }
                 toast.success('Successfully created lock script');
             } else {
-                throw new Error('Cannot verify signature!');
+                throw new Error('Invalid signature');
             }
         } catch (e) {
             console.log(e);
@@ -155,7 +167,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
     // show unsigned transaction hahs
     const unlockScriptTx = (lock: BlockStreamApi.Transaction) => {
         // set default transaction fee
-        setUnlockFee(btcLock.satoshiToBitcoin(lock.fee * 0.1).toFixed());
+        setUnlockFee((lock.fee * 0.1).toString());
         setLockUtxo(lock);
     };
 
@@ -203,7 +215,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
         setLockUtxo(undefined);
         setUnlockTxBuilder(undefined);
         setUserUnlockSig('');
-        setUnlockFee('0.00241');
+        setUnlockFee('0');
         setUnlockUtxoHex('');
         setShowModal(false);
     };
@@ -347,7 +359,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                                         <IonItem>
                                             <IonLabel position="floating">Transaction fee</IonLabel>
                                             <IonInput
-                                                placeholder={btcLock.satoshiToBitcoin(lockUtxo.fee).toFixed() + ' BTC'}
+                                                placeholder={lockUtxo.fee.toString() + '  Satoshi'}
                                                 onIonInput={e => {
                                                     const _inputFee = (e.target as HTMLInputElement).value;
                                                     setUnlockFee(_inputFee);
@@ -381,7 +393,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                 </IonCardHeader>
 
                 <IonCardContent>
-                    <CopyMessageBox header="message" message={btcLock.MESSAGE} />
+                    <CopyMessageBox header="message" message={btcLock.MESSAGE + sigNonce} />
                     <IonLabel position="stacked">Bitcoin Address</IonLabel>
                     <IonItem>
                         <IonInput
