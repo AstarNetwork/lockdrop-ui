@@ -74,26 +74,6 @@ export const btcDustyDurations: OptionItem[] = [
     { label: '30 Days', value: 30, rate: 360 },
 ];
 
-// /**
-//  * the token increase rate for lock durations
-//  */
-// export const rates = [
-//     { key: 30, value: 24 },
-//     { key: 100, value: 100 },
-//     { key: 300, value: 360 },
-//     { key: 1000, value: 1600 },
-// ];
-
-// /**
-//  * the token increase rate for Dusty lock durations
-//  */
-// export const dustyRates = [
-//     { key: 3, value: 24 },
-//     { key: 10, value: 100 },
-//     { key: 30, value: 360 },
-//     { key: 100, value: 1600 },
-// ];
-
 export const firstLock: LockMenu[] = [
     {
         title: 'ETH Lock',
@@ -137,6 +117,5 @@ export const dustyLock: LockMenu[] = [
         icon: btcLogo,
         startDate: firstLockdropStart,
         endDate: firstLockdropEnd,
-        disabled: true,
     },
 ];
