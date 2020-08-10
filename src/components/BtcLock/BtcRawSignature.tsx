@@ -27,7 +27,6 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { DropdownOption } from '../DropdownOption';
 import { btcDustyDurations, btcDurations } from '../../data/lockInfo';
-import { Message } from 'bitcore-lib';
 import QrEncodedAddress from './QrEncodedAddress';
 import CopyMessageBox from '../CopyMessageBox';
 import * as bitcoinjs from 'bitcoinjs-lib';
@@ -37,7 +36,7 @@ import ClaimStatus from '../ClaimStatus';
 import * as plasmUtils from '../../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
 import { BlockStreamApi } from 'src/types/BlockStreamTypes';
-import * as polkadotUtil from '@polkadot/util-crypto';
+//import * as polkadotUtil from '@polkadot/util-crypto';
 
 interface Props {
     networkType: bitcoinjs.Network;
@@ -70,8 +69,8 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
     // switch lock duration depending on the chain network
     const networkLockDur = networkType === bitcoinjs.networks.bitcoin ? btcDurations : btcDustyDurations;
 
-    const [addressInput, setAddress] = useState('');
-    const [sigInput, setSig] = useState('');
+    // const [addressInput, setAddress] = useState('');
+    // const [sigInput, setSig] = useState('');
     const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
     const [p2shAddress, setP2sh] = useState('');
     const [publicKey, setPublicKey] = useState('');
@@ -93,9 +92,9 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
     const [unlockFee, setUnlockFee] = useState('0');
 
     // signature nonce used for security
-    const sigNonce = useMemo(() => {
-        return polkadotUtil.randomAsHex(2);
-    }, []);
+    // const sigNonce = useMemo(() => {
+    //     return polkadotUtil.randomAsHex(2);
+    // }, []);
 
     const isValidFee = useCallback(
         (fee: string, lockTx: BlockStreamApi.Transaction) => {
@@ -138,26 +137,26 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
 
     const onSubmit = () => {
         try {
-            if (btcLock.getNetworkFromAddress(addressInput) !== networkType)
-                throw new Error('Please use a valid Bitcoin network address');
+            if (!lockDuration || !publicKey) throw new Error('Please fill in all the inputs');
 
-            if (!lockDuration || !sigInput || !addressInput) throw new Error('Please fill in all the inputs');
+            if (btcLock.validatePublicKey(publicKey)) throw new Error('Please use a valid Bitcoin network public key');
 
-            if (new Message(btcLock.MESSAGE + sigNonce).verify(addressInput, sigInput)) {
-                const pub = btcLock.getPublicKey(addressInput, sigInput, 'compressed');
-                setPublicKey(pub);
+            // if (new Message(btcLock.MESSAGE + sigNonce).verify(addressInput, sigInput)) {
+            //     const pub = btcLock.getPublicKey(addressInput, sigInput, 'compressed');
+            //     setPublicKey(pub);
 
-                const p2sh = btcLock.getLockP2SH(lockDuration.value, pub, networkType);
+            //     const p2sh = btcLock.getLockP2SH(lockDuration.value, pub, networkType);
 
-                if (typeof p2sh.address === 'string') {
-                    setP2sh(p2sh.address);
-                } else {
-                    throw new Error('Cannot create P2SH address');
-                }
-                toast.success('Successfully created lock script');
-            } else {
-                throw new Error('Invalid signature');
-            }
+            //     if (typeof p2sh.address === 'string') {
+            //         setP2sh(p2sh.address);
+            //     } else {
+            //         throw new Error('Cannot create P2SH address');
+            //     }
+            //     toast.success('Successfully created lock script');
+            // } else {
+            //     throw new Error('Invalid signature');
+            // }
+            toast.success('Successfully created lock script');
         } catch (e) {
             console.log(e);
             toast.error(e.message);
@@ -282,7 +281,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
 
     useEffect(() => {
         // change P2SH if the user changed the lock duration
-        if (publicKey) {
+        if (publicKey && lockDuration.value !== 0) {
             const lockScript = btcLock.getLockP2SH(lockDuration.value, publicKey, networkType);
             setP2sh(lockScript.address!);
             fetchLockdropParams().catch(e => {
@@ -385,32 +384,30 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
             <IonCard>
                 <IonCardHeader>
                     <IonCardSubtitle>
-                        Please sign the following message with your tool of choice and copy and paste the following
-                        input. The provided address will be the one that will receive the tokens once it has been
-                        unlocked.
+                        Please provide the public key of the BTC address you wish to use for the BTC lockdrop
                     </IonCardSubtitle>
-                    <IonCardTitle>Sign Message</IonCardTitle>
+                    <IonCardTitle>Input Public Key</IonCardTitle>
                 </IonCardHeader>
 
                 <IonCardContent>
-                    <CopyMessageBox header="message" message={btcLock.MESSAGE + sigNonce} />
-                    <IonLabel position="stacked">Bitcoin Address</IonLabel>
+                    {/* <CopyMessageBox header="message" message={btcLock.MESSAGE + sigNonce} /> */}
                     <IonItem>
+                        <IonLabel position="stacked">Bitcoin Public Key</IonLabel>
                         <IonInput
-                            value={addressInput}
-                            placeholder="Enter BTC Address"
-                            onIonChange={e => setAddress(e.detail.value!)}
+                            value={publicKey}
+                            placeholder="Enter BTC Public Key"
+                            onIonChange={e => setPublicKey(e.detail.value!)}
                         ></IonInput>
                     </IonItem>
 
-                    <IonItem>
+                    {/* <IonItem>
                         <IonTextarea
                             placeholder="Paste your base64 message signature here..."
                             value={sigInput}
                             onIonChange={e => setSig(e.detail.value!)}
                         ></IonTextarea>
                     </IonItem>
-                    <IonLabel position="stacked">Lock Duration</IonLabel>
+                    <IonLabel position="stacked">Lock Duration</IonLabel> */}
                     <IonItem>
                         <DropdownOption
                             dataSets={btcDustyDurations}
@@ -441,7 +438,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                 <Typography variant="h4" component="h1" align="center">
                     Real-time Lockdrop Status
                 </Typography>
-                {publicKey ? (
+                {publicKey && lockDuration.value !== 0 ? (
                     <ClaimStatus
                         claimParams={allLockParams}
                         plasmApi={plasmApi}
