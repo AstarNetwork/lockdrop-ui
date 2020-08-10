@@ -9,6 +9,8 @@ import { regtestUtils } from './_regtest';
 import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
 import bip68 from 'bip68';
 import * as plasmUtils from '../helpers/plasmUtils';
+import * as polkadotUtil from '@polkadot/util-crypto';
+//import secp256k1 from 'secp256k1';
 
 // we use a lot of API calls in this test, it's good to extend the timeout
 jest.setTimeout(60000);
@@ -64,7 +66,7 @@ describe('BTC signature and key validation tests', () => {
         ).toBeFalsy();
     });
 
-    it('verifies public key', () => {
+    it('verifies public key recovery', () => {
         // mainnet version number is 128(0x08) while testnet is 239 (0xEF)
         // details from here https://en.bitcoin.it/wiki/List_of_address_prefixes
         const priv = wif.decode(testSet1.privateKey, 128);
@@ -77,7 +79,31 @@ describe('BTC signature and key validation tests', () => {
                 '16R2kAxaUNM4xj6ykKbxEugpJdYyJzTP13',
                 'H0b22gIQIfutUzm7Z9qchdfhUtaO52alhNPK3emrkGOfbOzGHVPuWD9rMIphxniwBNgF/YN4c5C/dMwXz3yJz5k=',
             ),
-        ).toEqual(true);
+        ).toBeTruthy();
+
+        const randomPriv = bitcoin.ECPair.makeRandom({ network: bitcoin.networks.testnet });
+        const { address } = bitcoin.payments.p2pkh({ pubkey: randomPriv.publicKey, network: bitcoin.networks.testnet });
+        const msg = new Message('sign this: ' + polkadotUtil.randomAsHex(2));
+
+        const sig = msg.sign(new PrivateKey(randomPriv.toWIF()));
+        const recoveredPub = msg.recoverPublicKey(address!, sig);
+
+        const msg2 = new Message('sign this too: ' + polkadotUtil.randomAsHex(2));
+        const sig2 = msg2.sign(new PrivateKey(randomPriv.toWIF()));
+        const recoveredPub2 = msg2.recoverPublicKey(address!, sig2);
+        console.log(msg.toObject());
+        console.log(msg2.toObject());
+
+        expect(randomPriv.publicKey.toString('hex')).toEqual(recoveredPub);
+        expect(randomPriv.publicKey.toString('hex')).toEqual(recoveredPub2);
+
+        // const recoveredPubkey = secp256k1.ecdsaRecover(
+        //     new Message('sign this: ' + polkadotUtil.randomAsHex(2)).magicHash(), // 32 byte hash of message
+        //     Buffer.from(sig, 'base64'), // 64 byte signature of message (not DER, 32 byte R and 32 byte S with 0x00 padding)
+        //     recoveryFlag, // number 1 or 0. This will usually be encoded in the base64 message signature
+        //     true, // true if you want result to be compressed (33 bytes), false if you want it uncompressed (65 bytes) this also is usually encoded in the base64 signature
+        // );
+        // expect(randomPriv.publicKey.toString('hex')).toEqual(recoveredPubkey);
     });
 
     it('sign message with private key', () => {

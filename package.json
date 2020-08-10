@@ -66,6 +66,7 @@
         "redux": "^4.0.5",
         "regtest-client": "^0.2.0",
         "rxjs-hooks": "^0.5.2",
+        "secp256k1": "^4.0.2",
         "semantic-ui-react": "^0.88.2",
         "styled-components": "^5.0.1",
         "styled-media-query": "^2.1.2",
