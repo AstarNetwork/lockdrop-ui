@@ -69,7 +69,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
     // switch lock duration depending on the chain network
     const networkLockDur = networkType === bitcoinjs.networks.bitcoin ? btcDurations : btcDustyDurations;
 
-    // const [addressInput, setAddress] = useState('');
+    const [pubKeyInput, setPubKeyInput] = useState('');
     // const [sigInput, setSig] = useState('');
     const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
     const [p2shAddress, setP2sh] = useState('');
@@ -137,9 +137,10 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
 
     const onSubmit = () => {
         try {
-            if (!lockDuration || !publicKey) throw new Error('Please fill in all the inputs');
+            if (!lockDuration || !pubKeyInput) throw new Error('Please fill in all the inputs');
 
-            if (btcLock.validatePublicKey(publicKey)) throw new Error('Please use a valid Bitcoin network public key');
+            if (!btcLock.validatePublicKey(pubKeyInput, networkType))
+                throw new Error('Please use a valid Bitcoin network public key');
 
             // if (new Message(btcLock.MESSAGE + sigNonce).verify(addressInput, sigInput)) {
             //     const pub = btcLock.getPublicKey(addressInput, sigInput, 'compressed');
@@ -156,6 +157,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
             // } else {
             //     throw new Error('Invalid signature');
             // }
+            setPublicKey(pubKeyInput);
             toast.success('Successfully created lock script');
         } catch (e) {
             console.log(e);
@@ -394,9 +396,9 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                     <IonItem>
                         <IonLabel position="stacked">Bitcoin Public Key</IonLabel>
                         <IonInput
-                            value={publicKey}
+                            value={pubKeyInput}
                             placeholder="Enter BTC Public Key"
-                            onIonChange={e => setPublicKey(e.detail.value!)}
+                            onIonChange={e => setPubKeyInput(e.detail.value!)}
                         ></IonInput>
                     </IonItem>
 
