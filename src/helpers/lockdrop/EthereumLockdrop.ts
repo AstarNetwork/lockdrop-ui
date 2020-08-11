@@ -15,8 +15,6 @@ import { ecrecover, fromRpcSig, toBuffer, bufferToHex } from 'ethereumjs-util';
 import * as lockInfo from '../../data/lockInfo';
 import EthCrypto from 'eth-crypto';
 
-// todo: reduce client-side operations and replace it with data from the plasm node
-
 /**
  * exchange rate at the start of April 14 UTC (at the end of the first lockdrop)
  * this is only used for the first lockdrop
@@ -269,6 +267,24 @@ export async function connectWeb3(lockSeason: 'firstLock' | 'secondLock' | 'thir
 }
 
 /**
+ * returns the UTC date in epoch string of when the lockdrop smart contract will end
+ * @param contract the lockdrop contract instance
+ */
+export async function getContractEndDate(contract: Contract) {
+    const _lockdropEndDate = await contract.methods.LOCK_END_TIME().call();
+    return _lockdropEndDate as string;
+}
+
+/**
+ * returns the UTC date of when the lockdrop smart contract will start
+ * @param contract the lockdrop contract instance
+ */
+export async function getContractStartDate(contract: Contract) {
+    const _lockdropStartDate = await contract.methods.LOCK_START_TIME().call();
+    return _lockdropStartDate as string;
+}
+
+/**
  * validate and create a transaction to the lock contract with the given parameter.
  * This will return the transaction hash
  * @param txInput the lock parameter for the contract
@@ -294,6 +310,7 @@ export async function submitLockTx(txInput: LockInput, address: string, contract
     // convert user input to Wei
     const amountToSend = Web3.utils.toWei(txInput.amount, 'ether');
     let hash = '';
+
     // communicate with the smart contract
     await contract.methods
         .lock(txInput.duration, introducer)
@@ -304,5 +321,9 @@ export async function submitLockTx(txInput: LockInput, address: string, contract
         .on('transactionHash', (res: any) => {
             hash = res;
         });
+
+    if (hash === '') {
+        throw new Error('An error has occurred while trying to send transaction');
+    }
     return hash;
 }
