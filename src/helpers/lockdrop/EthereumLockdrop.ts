@@ -267,6 +267,24 @@ export async function connectWeb3(lockSeason: 'firstLock' | 'secondLock' | 'thir
 }
 
 /**
+ * returns the UTC date in epoch string of when the lockdrop smart contract will end
+ * @param contract the lockdrop contract instance
+ */
+export async function getContractEndDate(contract: Contract) {
+    const _lockdropEndDate = await contract.methods.LOCK_END_TIME().call();
+    return _lockdropEndDate as string;
+}
+
+/**
+ * returns the UTC date of when the lockdrop smart contract will start
+ * @param contract the lockdrop contract instance
+ */
+export async function getContractStartDate(contract: Contract) {
+    const _lockdropStartDate = await contract.methods.LOCK_START_TIME().call();
+    return _lockdropStartDate as string;
+}
+
+/**
  * validate and create a transaction to the lock contract with the given parameter.
  * This will return the transaction hash
  * @param txInput the lock parameter for the contract
@@ -289,15 +307,13 @@ export async function submitLockTx(txInput: LockInput, address: string, contract
         throw new Error('Please input a valid Ethereum address');
     }
 
-    // convert lock days to epoch seconds
-    const _lockDur = txInput.duration * 60 * 60 * 24;
-
     // convert user input to Wei
     const amountToSend = Web3.utils.toWei(txInput.amount, 'ether');
     let hash = '';
+
     // communicate with the smart contract
     await contract.methods
-        .lock(_lockDur, introducer)
+        .lock(txInput.duration, introducer)
         .send({
             from: address,
             value: amountToSend,

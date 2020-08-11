@@ -4,7 +4,14 @@
 import { IonContent, IonPage, IonLoading, IonButton } from '@ionic/react';
 import React from 'react';
 import LockdropForm from '../components/EthLock/LockdropForm';
-import { connectWeb3, getAllLockEvents, submitLockTx, getPubKey } from '../helpers/lockdrop/EthereumLockdrop';
+import {
+    connectWeb3,
+    getAllLockEvents,
+    submitLockTx,
+    getPubKey,
+    getContractEndDate,
+    getContractStartDate,
+} from '../helpers/lockdrop/EthereumLockdrop';
 import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -20,6 +27,8 @@ import * as plasmUtils from '../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import ClaimStatus from 'src/components/ClaimStatus';
+import moment from 'moment';
+import LockdropCountdownPanel from 'src/components/EthLock/LockdropCountdownPanel';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -46,6 +55,8 @@ interface PageStates {
     error: null;
     fetchingLockData: boolean;
     publicKey: string;
+    lockdropStart: string; // unix timestamp string
+    lockdropEnd: string; // unix timestamp string
 }
 
 toast.configure({
@@ -74,6 +85,8 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
             error: null,
             fetchingLockData: true,
             publicKey: '',
+            lockdropStart: '0',
+            lockdropEnd: '0',
         };
     }
 
@@ -94,6 +107,12 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
             }
 
             this.setState({ networkType: await this.state.web3.eth.net.getNetworkType() });
+
+            // check contract start and end dates
+            const _end = await getContractEndDate(this.state.contract);
+            const _start = await getContractStartDate(this.state.contract);
+
+            this.setState({ lockdropEnd: _end, lockdropStart: _start });
         } catch (e) {
             this.setState({ error: e });
             console.log(e);
@@ -230,6 +249,14 @@ class DustyEthLockPage extends React.Component<{}, PageStates> {
                                     </SectionCard>
                                 ) : (
                                     <>
+                                        <SectionCard maxWidth="lg">
+                                            <LockdropCountdownPanel
+                                                startTime={moment.unix(parseInt(this.state.lockdropStart))}
+                                                endTime={moment.unix(parseInt(this.state.lockdropEnd))}
+                                                lockData={this.state.allLockEvents}
+                                            />
+                                        </SectionCard>
+
                                         <LockdropForm
                                             token="ETH"
                                             onSubmit={this.handleSubmit}
