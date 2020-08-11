@@ -15,8 +15,6 @@ import { ecrecover, fromRpcSig, toBuffer, bufferToHex } from 'ethereumjs-util';
 import * as lockInfo from '../../data/lockInfo';
 import EthCrypto from 'eth-crypto';
 
-// todo: reduce client-side operations and replace it with data from the plasm node
-
 /**
  * exchange rate at the start of April 14 UTC (at the end of the first lockdrop)
  * this is only used for the first lockdrop
@@ -291,12 +289,15 @@ export async function submitLockTx(txInput: LockInput, address: string, contract
         throw new Error('Please input a valid Ethereum address');
     }
 
+    // convert lock days to epoch seconds
+    const _lockDur = txInput.duration * 60 * 60 * 24;
+
     // convert user input to Wei
     const amountToSend = Web3.utils.toWei(txInput.amount, 'ether');
     let hash = '';
     // communicate with the smart contract
     await contract.methods
-        .lock(txInput.duration, introducer)
+        .lock(_lockDur, introducer)
         .send({
             from: address,
             value: amountToSend,
@@ -304,5 +305,9 @@ export async function submitLockTx(txInput: LockInput, address: string, contract
         .on('transactionHash', (res: any) => {
             hash = res;
         });
+
+    if (hash === '') {
+        throw new Error('An error has occurred while trying to send transaction');
+    }
     return hash;
 }
