@@ -88,22 +88,38 @@ describe('BTC signature and key validation tests', () => {
         const sig = msg.sign(new PrivateKey(randomPriv.toWIF()));
         const recoveredPub = msg.recoverPublicKey(address!, sig);
 
-        const msg2 = new Message('sign this too: ' + polkadotUtil.randomAsHex(2));
-        const sig2 = msg2.sign(new PrivateKey(randomPriv.toWIF()));
-        const recoveredPub2 = msg2.recoverPublicKey(address!, sig2);
-        console.log(msg.toObject());
-        console.log(msg2.toObject());
+        //const msg2 = new Message('sign this too: ' + polkadotUtil.randomAsHex(2));
+        //const sig2 = randomPriv.sign(msg2.magicHash());
 
         expect(randomPriv.publicKey.toString('hex')).toEqual(recoveredPub);
-        expect(randomPriv.publicKey.toString('hex')).toEqual(recoveredPub2);
 
-        // const recoveredPubkey = secp256k1.ecdsaRecover(
-        //     new Message('sign this: ' + polkadotUtil.randomAsHex(2)).magicHash(), // 32 byte hash of message
-        //     Buffer.from(sig, 'base64'), // 64 byte signature of message (not DER, 32 byte R and 32 byte S with 0x00 padding)
-        //     recoveryFlag, // number 1 or 0. This will usually be encoded in the base64 message signature
-        //     true, // true if you want result to be compressed (33 bytes), false if you want it uncompressed (65 bytes) this also is usually encoded in the base64 signature
-        // );
-        // expect(randomPriv.publicKey.toString('hex')).toEqual(recoveredPubkey);
+        /*
+        const recPub = polkadotUtil.secp256k1Recover(
+            Uint8Array.from(msg.magicHash()),
+            Uint8Array.from(Buffer.from(sig, 'base64')),
+            1,
+        );
+
+        const recoveredPubkey = secp256k1.ecdsaRecover(
+            Uint8Array.from(Buffer.from(sig2.toString('base64'), 'base64')), // 64 byte signature of message (not DER, 32 byte R and 32 byte S with 0x00 padding)
+            1, // number 1 or 0. This will usually be encoded in the base64 message signature
+            Uint8Array.from(msg2.magicHash()), // 32 byte hash of message
+            true, // true if you want result to be compressed (33 bytes), false if you want it uncompressed (65 bytes) this also is usually encoded in the base64 signature
+        );
+        const addr2 = bitcoin.payments.p2pkh({
+            pubkey: Buffer.from(recPub),
+            network: bitcoin.networks.testnet,
+        }).address!;
+        const addr3 = bitcoin.payments.p2pkh({
+            pubkey: Buffer.from(recoveredPubkey),
+            network: bitcoin.networks.testnet,
+        }).address!;
+
+        console.log(Buffer.from(recPub).toString('hex') + '\n' + addr2);
+        console.log(Buffer.from(recoveredPubkey).toString('hex') + '\n' + addr3);
+
+        expect(Buffer.from(recPub).toString('hex')).toEqual(Buffer.from(recoveredPubkey).toString('hex'));
+        */
     });
 
     it('sign message with private key', () => {
