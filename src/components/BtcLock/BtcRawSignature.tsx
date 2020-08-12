@@ -157,7 +157,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
             // } else {
             //     throw new Error('Invalid signature');
             // }
-            setPublicKey(pubKeyInput);
+            setPublicKey(btcLock.compressPubKey(pubKeyInput, networkType));
             toast.success('Successfully created lock script');
         } catch (e) {
             console.log(e);
