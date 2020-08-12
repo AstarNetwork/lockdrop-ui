@@ -10,6 +10,8 @@ import { BlockStreamApi } from 'src/types/BlockStreamTypes';
 import { SoChainApi } from 'src/types/SoChainTypes';
 import AppBtc from '@ledgerhq/hw-app-btc';
 import * as LedgerTypes from '../../types/LedgerTypes';
+import secp256k1 from 'secp256k1';
+import * as polkadotUtil from '@polkadot/util';
 
 // https://www.blockchain.com/api/api_websocket
 export const BLOCKCHAIN_WS = 'wss://ws.blockchain.info/inv';
@@ -263,27 +265,52 @@ export function compressPubKey(publicKey: string, network: bitcoinjs.Network) {
 }
 
 /**
- * returns a public key from the given address and signature
- * by default this will return an uncompressed public key.
+ * returns a compressed public key from the given address and signature.
  * this function will only work with BIP44 encoded address. BIP49 or BIP84 will return
  * an error.
- * @param address bitcoin address
- * @param signature base 64 signature for signing the plasm network message
- * @param compression should the public key be compressed or not
- * @param msg optional message used to generate the signature
+ * @param address bitcoin address in base58 string
+ * @param signature the signature in base64 string
+ * @param msg message that was used to sign excluding the prefix in string
+ * @param network bitcoin network this belongs to. If none is given, the function will guess one
  */
-export function getPublicKey(
-    address: string,
-    signature: string,
-    compression?: 'compressed' | 'uncompressed',
-    msg?: string,
-) {
-    const compressedPubKey = new Message(msg ? msg : MESSAGE).recoverPublicKey(
-        address,
-        signature.replace(/(\r\n|\n|\r)/gm, ''),
-    );
-    const addressNetwork = getNetworkFromAddress(address);
-    return compression === 'compressed' ? compressedPubKey : decompressPubKey(compressedPubKey, addressNetwork);
+export function getPublicKey(address: string, signature: string, msg: string, network?: bitcoinjs.Network) {
+    const msgInst = new Message(msg);
+
+    if (!msgInst.verify(address, signature)) {
+        throw new Error('Invalid signature given!');
+    }
+
+    const msgHash = msgInst.magicHash();
+    const sigHash = Buffer.from(signature, 'base64');
+    const _net = network ? network : getNetworkFromAddress(address);
+
+    let recoveredPubKey = '';
+
+    // recovery ID is either 0 or 1, so try both and check the provided address
+    for (let recId = 0; recId < 2; recId++) {
+        // returns a compressed public key by default
+        const _pubKey = secp256k1.ecdsaRecover(
+            polkadotUtil.bufferToU8a(sigHash), // 64 byte signature of message (not DER, 32 byte R and 32 byte S with 0x00 padding)
+            0, // number 1 or 0. This will usually be encoded in the base64 message signature
+            polkadotUtil.bufferToU8a(msgHash), // 32 byte hash of message
+            true, // true if you want result to be compressed (33 bytes), false if you want it uncompressed (65 bytes) this also is usually encoded in the base64 signature
+        );
+        const recoveredAddress = bitcoinjs.payments.p2pkh({
+            pubkey: polkadotUtil.u8aToBuffer(_pubKey),
+            network: _net,
+        }).address!;
+
+        if (recoveredAddress === address) {
+            recoveredPubKey = polkadotUtil.u8aToHex(_pubKey);
+            break;
+        }
+    }
+
+    if (!recoveredPubKey) {
+        throw new Error('could not recover the public key for ' + address);
+    }
+
+    return recoveredPubKey;
 }
 
 /**
