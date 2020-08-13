@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { PrivateKey, Message } from 'bitcore-lib';
-import eccrypto from 'eccrypto';
 import wif from 'wif';
 import * as bitcoin from 'bitcoinjs-lib';
 import * as assert from 'assert';
@@ -9,8 +8,10 @@ import { regtestUtils } from './_regtest';
 import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
 import bip68 from 'bip68';
 import * as plasmUtils from '../helpers/plasmUtils';
-import * as polkadotUtil from '@polkadot/util-crypto';
-//import secp256k1 from 'secp256k1';
+import * as polkadotCrypto from '@polkadot/util-crypto';
+import * as polkadotUtil from '@polkadot/util';
+import secp256k1 from 'secp256k1';
+import * as bitcoinjsMessage from 'bitcoinjs-message';
 
 // we use a lot of API calls in this test, it's good to extend the timeout
 jest.setTimeout(60000);
@@ -66,60 +67,39 @@ describe('BTC signature and key validation tests', () => {
         ).toBeFalsy();
     });
 
-    it('verifies public key recovery', () => {
+    it('verifies public key recovery from message with nonce and recover pub key', () => {
+        const _net = bitcoin.networks.bitcoin;
         // mainnet version number is 128(0x08) while testnet is 239 (0xEF)
         // details from here https://en.bitcoin.it/wiki/List_of_address_prefixes
-        const priv = wif.decode(testSet1.privateKey, 128);
-
-        const pub = eccrypto.getPublic(priv.privateKey);
-        expect(pub.toString('hex').replace('0x', '')).toEqual(testSet1.publicKey);
-
-        expect(
-            new Message('Hello World').verify(
-                '16R2kAxaUNM4xj6ykKbxEugpJdYyJzTP13',
-                'H0b22gIQIfutUzm7Z9qchdfhUtaO52alhNPK3emrkGOfbOzGHVPuWD9rMIphxniwBNgF/YN4c5C/dMwXz3yJz5k=',
-            ),
-        ).toBeTruthy();
-
-        const randomPriv = bitcoin.ECPair.makeRandom({ network: bitcoin.networks.testnet });
-        const { address } = bitcoin.payments.p2pkh({ pubkey: randomPriv.publicKey, network: bitcoin.networks.testnet });
-        const msg = new Message('sign this: ' + polkadotUtil.randomAsHex(2));
-
-        const sig = msg.sign(new PrivateKey(randomPriv.toWIF()));
-        const recoveredPub = msg.recoverPublicKey(address!, sig);
-
-        //const msg2 = new Message('sign this too: ' + polkadotUtil.randomAsHex(2));
-        //const sig2 = randomPriv.sign(msg2.magicHash());
-
-        expect(randomPriv.publicKey.toString('hex')).toEqual(recoveredPub);
-
-        /*
-        const recPub = polkadotUtil.secp256k1Recover(
-            Uint8Array.from(msg.magicHash()),
-            Uint8Array.from(Buffer.from(sig, 'base64')),
-            1,
-        );
-
-        const recoveredPubkey = secp256k1.ecdsaRecover(
-            Uint8Array.from(Buffer.from(sig2.toString('base64'), 'base64')), // 64 byte signature of message (not DER, 32 byte R and 32 byte S with 0x00 padding)
-            1, // number 1 or 0. This will usually be encoded in the base64 message signature
-            Uint8Array.from(msg2.magicHash()), // 32 byte hash of message
-            true, // true if you want result to be compressed (33 bytes), false if you want it uncompressed (65 bytes) this also is usually encoded in the base64 signature
-        );
-        const addr2 = bitcoin.payments.p2pkh({
-            pubkey: Buffer.from(recPub),
-            network: bitcoin.networks.testnet,
-        }).address!;
-        const addr3 = bitcoin.payments.p2pkh({
-            pubkey: Buffer.from(recoveredPubkey),
-            network: bitcoin.networks.testnet,
+        const priv = bitcoin.ECPair.fromPrivateKey(wif.decode(testSet1.privateKey, 128).privateKey);
+        const addr = bitcoin.payments.p2pkh({
+            pubkey: priv.publicKey,
+            network: _net,
         }).address!;
 
-        console.log(Buffer.from(recPub).toString('hex') + '\n' + addr2);
-        console.log(Buffer.from(recoveredPubkey).toString('hex') + '\n' + addr3);
+        const nonces = [];
+        for (let i = 0; i <= 20; i++) {
+            nonces.push(i);
+        }
 
-        expect(Buffer.from(recPub).toString('hex')).toEqual(Buffer.from(recoveredPubkey).toString('hex'));
-        */
+        const recoveredData = nonces.map(nonce => {
+            // using bitcoinjs message
+            const msg = 'sign this with nonce: ' + polkadotCrypto.randomAsHex(nonce);
+            const sig = bitcoinjsMessage.sign(msg, priv.privateKey!, true);
+            const recoveredPub = bitcoinjsMessage.recover(msg, addr, sig);
+
+            // using btc Lockdrop method
+            const msg2 = 'sign this with nonce: ' + polkadotCrypto.randomAsHex(nonce);
+            const sig2 = bitcoinjsMessage.sign(msg2, priv.privateKey!, true);
+            const recoveredPub2 = btcLockdrop.getPublicKey(addr, sig2, msg2);
+
+            return { recoveredPub, recoveredPub2 };
+        });
+
+        recoveredData.forEach(dat => {
+            expect(dat.recoveredPub).toEqual(priv.publicKey.toString('hex'));
+            expect(dat.recoveredPub2).toEqual(dat.recoveredPub);
+        });
     });
 
     it('sign message with private key', () => {
@@ -135,16 +115,6 @@ describe('BTC signature and key validation tests', () => {
         expect(btcLockdrop.validateBtcAddress(testSet2.address)).toBeTruthy();
         // invalid address
         expect(btcLockdrop.validateBtcAddress('26R2kAxaUNb4xj6ykKbxEuGpJaYyJzTP13')).toBeFalsy();
-    });
-
-    it('recovers the public key from the signature', () => {
-        const pubKey1 = btcLockdrop.getPublicKey(testSet1.address, testSet1.signature);
-        const pubKey2 = btcLockdrop.getPublicKey(testSet2.address, testSet2.signature);
-        const pubKey3 = btcLockdrop.getPublicKey(testSet3.address, testSet3.signature);
-
-        expect(btcLockdrop.decompressPubKey(pubKey1, bitcoin.networks.bitcoin)).toEqual(testSet1.publicKey);
-        expect(pubKey2).toEqual(testSet2.publicKey);
-        expect(pubKey3).toEqual(testSet3.publicKey);
     });
 
     it('compresses public key', () => {

@@ -100,8 +100,8 @@ const TrezorLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                             const _pubKey = btcLock.getPublicKey(
                                 res.payload.address,
                                 res.payload.signature,
-                                'compressed',
                                 _msg,
+                                networkType,
                             );
                             setPublicKey(_pubKey);
                         } else {

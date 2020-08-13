@@ -5,7 +5,7 @@ import { Hash, H256 } from '@polkadot/types/interfaces';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import { u8aConcat } from '@polkadot/util';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
-import * as plasmDefinitions from 'plasm-types/interfaces/definitions';
+import * as plasmDefinitions from '@plasm/types/interfaces/definitions';
 import { LockdropType, Claim, Lockdrop } from 'src/types/LockdropModels';
 
 /**

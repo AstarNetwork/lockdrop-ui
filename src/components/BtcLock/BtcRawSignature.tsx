@@ -36,7 +36,8 @@ import ClaimStatus from '../ClaimStatus';
 import * as plasmUtils from '../../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
 import { BlockStreamApi } from 'src/types/BlockStreamTypes';
-//import * as polkadotUtil from '@polkadot/util-crypto';
+import * as polkadotCrypto from '@polkadot/util-crypto';
+import * as bitcoinjsMessage from 'bitcoinjs-message';
 
 interface Props {
     networkType: bitcoinjs.Network;
@@ -69,8 +70,9 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
     // switch lock duration depending on the chain network
     const networkLockDur = networkType === bitcoinjs.networks.bitcoin ? btcDurations : btcDustyDurations;
 
-    const [pubKeyInput, setPubKeyInput] = useState('');
-    // const [sigInput, setSig] = useState('');
+    const [sigInput, setSig] = useState('');
+    const [addressInput, setAddress] = useState('');
+
     const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
     const [p2shAddress, setP2sh] = useState('');
     const [publicKey, setPublicKey] = useState('');
@@ -92,9 +94,9 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
     const [unlockFee, setUnlockFee] = useState('0');
 
     // signature nonce used for security
-    // const sigNonce = useMemo(() => {
-    //     return polkadotUtil.randomAsHex(2);
-    // }, []);
+    const sigNonce = useMemo(() => {
+        return polkadotCrypto.randomAsHex(2);
+    }, []);
 
     const isValidFee = useCallback(
         (fee: string, lockTx: BlockStreamApi.Transaction) => {
@@ -137,27 +139,30 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
 
     const onSubmit = () => {
         try {
-            if (!lockDuration || !pubKeyInput) throw new Error('Please fill in all the inputs');
+            if (!lockDuration || !addressInput || !sigInput) throw new Error('Please fill in all the inputs');
 
-            if (!btcLock.validatePublicKey(pubKeyInput, networkType))
-                throw new Error('Please use a valid Bitcoin network public key');
+            if (!btcLock.validateBtcAddress(addressInput, networkType))
+                throw new Error('Please use a valid Bitcoin address');
+            const _msg = btcLock.MESSAGE + sigNonce;
 
-            // if (new Message(btcLock.MESSAGE + sigNonce).verify(addressInput, sigInput)) {
-            //     const pub = btcLock.getPublicKey(addressInput, sigInput, 'compressed');
-            //     setPublicKey(pub);
+            if (bitcoinjsMessage.verify(_msg, addressInput, sigInput)) {
+                const pub = btcLock.getPublicKey(addressInput, sigInput, _msg, networkType);
+                console.log({ _msg, addressInput, sigInput, pub });
+                setPublicKey(pub);
 
-            //     const p2sh = btcLock.getLockP2SH(lockDuration.value, pub, networkType);
+                const p2sh = btcLock.getLockP2SH(lockDuration.value, pub, networkType);
 
-            //     if (typeof p2sh.address === 'string') {
-            //         setP2sh(p2sh.address);
-            //     } else {
-            //         throw new Error('Cannot create P2SH address');
-            //     }
-            //     toast.success('Successfully created lock script');
-            // } else {
-            //     throw new Error('Invalid signature');
-            // }
-            setPublicKey(btcLock.compressPubKey(pubKeyInput, networkType));
+                if (typeof p2sh.address === 'string') {
+                    setP2sh(p2sh.address);
+                } else {
+                    throw new Error('Cannot create P2SH address');
+                }
+                toast.success('Successfully created lock script');
+            } else {
+                throw new Error('Invalid signature');
+            }
+
+            //setPublicKey(btcLock.compressPubKey(pubKeyInput, networkType));
             toast.success('Successfully created lock script');
         } catch (e) {
             console.log(e);
@@ -386,30 +391,31 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
             <IonCard>
                 <IonCardHeader>
                     <IonCardSubtitle>
-                        Please provide the public key of the BTC address you wish to use for the BTC lockdrop
+                        Please provide the public key or address and signature of the BTC address you wish to use for
+                        the BTC lockdrop
                     </IonCardSubtitle>
-                    <IonCardTitle>Input Public Key</IonCardTitle>
+                    <IonCardTitle>Get Public Key</IonCardTitle>
                 </IonCardHeader>
 
                 <IonCardContent>
-                    {/* <CopyMessageBox header="message" message={btcLock.MESSAGE + sigNonce} /> */}
+                    <CopyMessageBox header="message" message={btcLock.MESSAGE + sigNonce} />
                     <IonItem>
-                        <IonLabel position="stacked">Bitcoin Public Key</IonLabel>
+                        <IonLabel position="stacked">Bitcoin Address</IonLabel>
                         <IonInput
-                            value={pubKeyInput}
-                            placeholder="Enter BTC Public Key"
-                            onIonChange={e => setPubKeyInput(e.detail.value!)}
+                            value={addressInput}
+                            placeholder="Enter BTC Address"
+                            onIonChange={e => setAddress(e.detail.value!)}
                         ></IonInput>
                     </IonItem>
 
-                    {/* <IonItem>
+                    <IonItem>
                         <IonTextarea
                             placeholder="Paste your base64 message signature here..."
                             value={sigInput}
                             onIonChange={e => setSig(e.detail.value!)}
                         ></IonTextarea>
                     </IonItem>
-                    <IonLabel position="stacked">Lock Duration</IonLabel> */}
+                    <IonLabel position="stacked">Lock Duration</IonLabel>
                     <IonItem>
                         <DropdownOption
                             dataSets={btcDustyDurations}

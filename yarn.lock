@@ -1757,6 +1757,11 @@
   resolved "https://registry.yarnpkg.com/@nodelib/fs.stat/-/fs.stat-1.1.3.tgz#2b5a3ab3f918cca48a8c754c08168e3f03eba61b"
   integrity sha512-shAmDyaQC4H92APFoIaVDHCx5bStIocgvbwQyxPRrbUY20V1EYTbSDchWbuwlMG3V17cprZhA6+78JfB+3DTPw==
 
+"@plasm/types@^1.3.0":
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/@plasm/types/-/types-1.3.0.tgz#b20408dcdb537867ec92986c226c08ece0da2d41"
+  integrity sha512-+O2xZv8DSNqobR6zDQK2posDKXx5O61OAaI0MQV0NXA/1Pw9xuAKhEwhZyYjqKGnhOzg/M6dnS/OSyzR8o9FbA==
+
 "@polkadot/api-derive@1.19.1":
   version "1.19.1"
   resolved "https://registry.yarnpkg.com/@polkadot/api-derive/-/api-derive-1.19.1.tgz#f243b889a649b90510cece6f08b49149e6cb80b0"
@@ -2363,10 +2368,10 @@
   resolved "https://registry.yarnpkg.com/@types/bigi/-/bigi-1.4.2.tgz#8dda60612e689e5769047568d0ce8b8fa83db953"
   integrity sha512-St8Vm0x1ApYlU9yNaFx3jBis5JVU6oR/5Xtgvn8+N8Ts8f3ze6kOvAAg0aNkbGMGhhG6PrP0nMOgDI9NMFETkA==
 
-"@types/bitcore-lib@^0.15.1":
-  version "0.15.1"
-  resolved "https://registry.yarnpkg.com/@types/bitcore-lib/-/bitcore-lib-0.15.1.tgz#42c0e33b716cc008c533071d037da7e38bf16757"
-  integrity sha512-rxBI1QO9AjbZsj8nXZvQGzRm33XBrLCdAf9ok35a4ihH5wUNnM5hmY1eaortWVhouetk1aGGnSW7Uos3VBXlTw==
+"@types/bitcore-lib@^0.15.2":
+  version "0.15.2"
+  resolved "https://registry.yarnpkg.com/@types/bitcore-lib/-/bitcore-lib-0.15.2.tgz#148d5a83995e4520c125fa57d06e8c8749e6dc52"
+  integrity sha512-4EGo5FunshASa0xq2Ta2zfi5CANZ7SB6NfHXJKHk5QUort8ywL1Z7tE9Mr5ft7mHjXQVBngqTguQ8Y5So37hiA==
   dependencies:
     "@types/node" "*"
 
@@ -3616,7 +3621,7 @@ bech32@=1.1.3:
   resolved "https://registry.yarnpkg.com/bech32/-/bech32-1.1.3.tgz#bd47a8986bbb3eec34a56a097a84b8d3e9a2dfcd"
   integrity sha512-yuVFUvrNcoJi0sv5phmqc6P+Fl1HjRDRNOOkHY2X/3LBy2bIGNSFx4fZ95HMaXHupuS7cZR15AsvtmCIF4UEyg==
 
-bech32@^1.1.2:
+bech32@^1.1.2, bech32@^1.1.3:
   version "1.1.4"
   resolved "https://registry.yarnpkg.com/bech32/-/bech32-1.1.4.tgz#e38c9f37bf179b8eb16ae3a772b40c356d4832e9"
   integrity sha512-s0IrSOzLlbvX7yp4WBfPITzpAU8sqQcpsmwXDiKwrG4r491vwCO/XpejasRNl0piBMe/DvP4Tz0mIS/X1DPJBQ==
@@ -3739,9 +3744,21 @@ bitcoinjs-lib@^5.1.10:
     varuint-bitcoin "^1.0.4"
     wif "^2.0.1"
 
-"bitcore-lib@https://github.com/staketechnologies/bitcore.git#3b02566a8bff4d87e5338e8ba1e4c91e67ce9458":
-  version "8.20.4"
-  resolved "https://github.com/staketechnologies/bitcore.git#3b02566a8bff4d87e5338e8ba1e4c91e67ce9458"
+"bitcoinjs-message@https://github.com/hoonsubin/bitcoinjs-message":
+  version "2.1.1"
+  resolved "https://github.com/hoonsubin/bitcoinjs-message#73d671a0fbb0b4910c7e25f75dc76e9caeeeaa4f"
+  dependencies:
+    bech32 "^1.1.3"
+    bs58check "^2.1.2"
+    buffer-equals "^1.0.3"
+    create-hash "^1.1.2"
+    secp256k1 "^3.0.1"
+    varuint-bitcoin "^1.0.1"
+
+bitcore-lib@^8.22.0:
+  version "8.22.0"
+  resolved "https://registry.yarnpkg.com/bitcore-lib/-/bitcore-lib-8.22.0.tgz#1a0a87f9cdadd737348835798e4fb9428db3e8b9"
+  integrity sha512-cwAuf3xk3ztpgOE0QUvApYddNwKE4/PfCPPReel/+c/ShruekRhBHUKunZJvoYISjS7YhbfkppYSjsuxO9d/ZQ==
   dependencies:
     bech32 "=1.1.3"
     bn.js "=4.11.8"
@@ -4002,6 +4019,11 @@ buffer-compare@=1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/buffer-compare/-/buffer-compare-1.1.1.tgz#5be7be853af89198d1f4ddc090d1d66a48aef596"
   integrity sha1-W+e+hTr4kZjR9N3AkNHWakiu9ZY=
+
+buffer-equals@^1.0.3:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/buffer-equals/-/buffer-equals-1.0.4.tgz#0353b54fd07fd9564170671ae6f66b9cf10d27f5"
+  integrity sha1-A1O1T9B/2VZBcGca5vZrnPENJ/U=
 
 buffer-from@^1.0.0:
   version "1.1.1"
@@ -10462,11 +10484,6 @@ pkg-up@^2.0.0:
   dependencies:
     find-up "^2.1.0"
 
-plasm-types@^0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/plasm-types/-/plasm-types-0.0.2.tgz#494277b596e3432859f25289fd2fc7ebfe9f4c12"
-  integrity sha512-1LSCXdDywJB8EQpPAq7eoV1qBhn+m4xjYMcIdToYTsoSKo/+ObC88Q7Y0k9THHLyeR8XmidCYuL4+kiGPKe97w==
-
 pn@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/pn/-/pn-1.1.0.tgz#e2f4cef0e219f463c179ab37463e4e1ecdccbafb"
@@ -14001,7 +14018,7 @@ varint@^5.0.0:
   resolved "https://registry.yarnpkg.com/varint/-/varint-5.0.0.tgz#d826b89f7490732fabc0c0ed693ed475dcb29ebf"
   integrity sha1-2Ca4n3SQcy+rwMDtaT7Uddyynr8=
 
-varuint-bitcoin@^1.0.4, varuint-bitcoin@^1.1.2:
+varuint-bitcoin@^1.0.1, varuint-bitcoin@^1.0.4, varuint-bitcoin@^1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/varuint-bitcoin/-/varuint-bitcoin-1.1.2.tgz#e76c138249d06138b480d4c5b40ef53693e24e92"
   integrity sha512-4EVb+w4rx+YfVM32HQX42AbbT7/1f5zwAYhIujKXKk8NQK+JfRVl3pqT3hjNn/L+RstigmGGKVwHA/P0wgITZw==

@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Message } from 'bitcore-lib';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import bip68 from 'bip68';
 import { LockdropType, HwSigner } from '../../types/LockdropModels';
@@ -10,6 +9,7 @@ import { BlockStreamApi } from 'src/types/BlockStreamTypes';
 import { SoChainApi } from 'src/types/SoChainTypes';
 import AppBtc from '@ledgerhq/hw-app-btc';
 import * as LedgerTypes from '../../types/LedgerTypes';
+import * as bitcoinjsMessage from 'bitcoinjs-message';
 
 // https://www.blockchain.com/api/api_websocket
 export const BLOCKCHAIN_WS = 'wss://ws.blockchain.info/inv';
@@ -263,27 +263,29 @@ export function compressPubKey(publicKey: string, network: bitcoinjs.Network) {
 }
 
 /**
- * returns a public key from the given address and signature
- * by default this will return an uncompressed public key.
+ * returns a compressed public key from the given address and signature.
  * this function will only work with BIP44 encoded address. BIP49 or BIP84 will return
  * an error.
- * @param address bitcoin address
- * @param signature base 64 signature for signing the plasm network message
- * @param compression should the public key be compressed or not
- * @param msg optional message used to generate the signature
+ * @param address bitcoin address in base58 string
+ * @param signature the signature in base64 string or buffer
+ * @param msg message that was used to sign excluding the prefix in string
+ * @param network bitcoin network this belongs to. If none is given, the function will guess one
  */
-export function getPublicKey(
-    address: string,
-    signature: string,
-    compression?: 'compressed' | 'uncompressed',
-    msg?: string,
-) {
-    const compressedPubKey = new Message(msg ? msg : MESSAGE).recoverPublicKey(
-        address,
-        signature.replace(/(\r\n|\n|\r)/gm, ''),
-    );
-    const addressNetwork = getNetworkFromAddress(address);
-    return compression === 'compressed' ? compressedPubKey : decompressPubKey(compressedPubKey, addressNetwork);
+export function getPublicKey(address: string, signature: string | Buffer, msg: string, network?: bitcoinjs.Network) {
+    const _net = network ? network : getNetworkFromAddress(address);
+
+    // returns a compressed public key by default
+    const _pubKey = bitcoinjsMessage.recover(msg, address, signature);
+
+    const recoveredAddress = bitcoinjs.payments.p2pkh({
+        pubkey: Buffer.from(_pubKey, 'hex'),
+        network: _net,
+    }).address!;
+
+    if (recoveredAddress !== address) {
+        throw new Error('Could not recover public key for ' + address);
+    }
+    return _pubKey;
 }
 
 /**
