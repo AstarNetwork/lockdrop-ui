@@ -24,7 +24,7 @@
         "bip174": "^1.0.1",
         "bip68": "https://github.com/staketechnologies/bip68.git#3e294b8765dcab0147a4300eba730e365c343d4d",
         "bitcoinjs-lib": "^5.1.10",
-        "bitcoinjs-message": "^2.1.1",
+        "bitcoinjs-message": "https://github.com/hoonsubin/bitcoinjs-message",
         "bitcore-lib": "^8.22.0",
         "eccrypto": "^1.1.3",
         "eslint-plugin-react-hooks": "^0.0.0-d7382b6c4",
