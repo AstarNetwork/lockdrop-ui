@@ -11,7 +11,7 @@ import { Company, Products, Collaboration, Blogs, Community } from '../data/link
 import Divider from '@material-ui/core/Divider';
 import { ThemeColors } from '../theme/themes';
 
-function Copyright() {
+const Copyright = () => {
     return (
         <>
             <Typography variant="body2">
@@ -23,7 +23,7 @@ function Copyright() {
             </Typography>
         </>
     );
-}
+};
 
 const useStyles = makeStyles(theme => ({
     root: {
@@ -45,7 +45,7 @@ const useStyles = makeStyles(theme => ({
     siteMap: {},
 }));
 
-export default function StickyFooter() {
+const StickyFooter = () => {
     const classes = useStyles();
 
     return (
@@ -170,4 +170,6 @@ export default function StickyFooter() {
             </footer>
         </div>
     );
-}
+};
+
+export default StickyFooter;
