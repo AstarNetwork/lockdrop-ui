@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     IonContent,
     IonPage,
@@ -21,6 +21,7 @@ import ethLogo from '../resources/ethereum_logo.svg';
 import btcLogo from '../resources/bitcoin_logo.svg';
 import { makeStyles } from '@material-ui/core';
 import { firstLockdropStart, firstLockdropEnd } from '../data/lockInfo';
+import TosAgreementModal from 'src/components/TosAgreementModal';
 
 // randomize the lockdrop logo
 // this is for AB testing the logo
@@ -41,9 +42,22 @@ const useStyles = makeStyles(() => ({
 export const LandingPage: React.FC = () => {
     const classes = useStyles();
 
+    // user session storage to store TOS state
+    const [userAgreed, setUserAgreed] = useState(localStorage.getItem('AgreedState') || 'false');
+
+    // save session every time the agreement state changes
+    useEffect(() => {
+        localStorage.setItem('AgreedState', userAgreed.toString());
+    }, [userAgreed]);
+
     return (
         <IonPage>
             <Navbar />
+            <TosAgreementModal
+                showModal={!userAgreed.includes('true')}
+                // we convert the boolean to string (because browser session)
+                onAgree={(ev: boolean) => setUserAgreed(ev ? 'true' : 'false')}
+            />
             <IonContent>
                 <SectionCard maxWidth="lg">
                     <img src={lockdropLogo} alt="" className={classes.logoImg} />
