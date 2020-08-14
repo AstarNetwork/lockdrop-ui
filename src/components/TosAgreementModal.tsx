@@ -46,10 +46,30 @@ const TosAgreementModal: React.FC<Props> = ({ showModal, onAgree }) => {
                         <IonTitle>Lockdrop Terms of Condition</IonTitle>
                     </IonToolbar>
                 </IonHeader>
+
                 <IonContent>
-                    <IonLabel className={classes.textBox}>
-                        <ReactMarkdown source={toc} escapeHtml={false} />
-                    </IonLabel>
+                    <div className={classes.textBox}>
+                        <IonLabel>
+                            <ReactMarkdown source={toc} escapeHtml={false} />
+                        </IonLabel>
+                        <IonLabel>
+                            <h2>
+                                Contact via{' '}
+                                <a href={'https://twitter.com/plasm_network'} rel="noopener noreferrer" target="_blank">
+                                    Twitter
+                                </a>{' '}
+                                or{' '}
+                                <a
+                                    href={'https://t.me/joinchat/IxHd_BfELvbxC9lUYm_czw'}
+                                    rel="noopener noreferrer"
+                                    target="_blank"
+                                >
+                                    Telegram
+                                </a>
+                            </h2>
+                        </IonLabel>
+                    </div>
+
                     <IonButton expand="block" onClick={() => handleAgreement(true)}>
                         Agree
                     </IonButton>
