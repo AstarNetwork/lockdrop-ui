@@ -54,7 +54,7 @@ const TosAgreementModal: React.FC<Props> = ({ showModal, onAgree }) => {
                         </IonLabel>
                         <IonLabel>
                             <h2>
-                                Contact via{' '}
+                                Follow us on{' '}
                                 <a href={'https://twitter.com/plasm_network'} rel="noopener noreferrer" target="_blank">
                                     Twitter
                                 </a>{' '}
@@ -64,8 +64,9 @@ const TosAgreementModal: React.FC<Props> = ({ showModal, onAgree }) => {
                                     rel="noopener noreferrer"
                                     target="_blank"
                                 >
-                                    Telegram
+                                    Telegram{' '}
                                 </a>
+                                for the latest information.
                             </h2>
                         </IonLabel>
                     </div>
