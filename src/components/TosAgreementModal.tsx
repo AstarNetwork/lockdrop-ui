@@ -58,7 +58,7 @@ const TosAgreementModal: React.FC<Props> = ({ showModal, onAgree }) => {
                                 <a href={'https://twitter.com/plasm_network'} rel="noopener noreferrer" target="_blank">
                                     Twitter
                                 </a>{' '}
-                                or{' '}
+                                and{' '}
                                 <a
                                     href={'https://t.me/joinchat/IxHd_BfELvbxC9lUYm_czw'}
                                     rel="noopener noreferrer"
