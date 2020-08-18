@@ -300,7 +300,7 @@ export function daysToBlockSequence(days: number) {
     }
     const blocksPerDay = 144; //10 min per block. day = 6 * 24
     const blockSequence = bip68.encode({ blocks: days * blocksPerDay });
-    if (blockSequence > 65535) {
+    if (blockSequence >= 65535) {
         // maximum lock time https://en.bitcoin.it/wiki/Timelock
         throw new Error('Block sequence cannot be more than 65535');
     }
@@ -323,7 +323,7 @@ export function btcLockScript(publicKeyHex: string, blockSequence: number, netwo
     if (!Number.isInteger(blockSequence) || !Number.isFinite(blockSequence)) {
         throw new Error('Block sequence must be a valid integer, but received: ' + blockSequence);
     }
-    if (blockSequence > 65535) {
+    if (blockSequence >= 65535) {
         // maximum lock time https://en.bitcoin.it/wiki/Timelock
         throw new Error('Block sequence cannot be more than 65535');
     }
