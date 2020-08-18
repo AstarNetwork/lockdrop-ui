@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
 import { IonContent, IonPage, IonLoading, IonButton } from '@ionic/react';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import LockdropForm from '../components/EthLock/LockdropForm';
 import * as ethLockdrop from '../helpers/lockdrop/EthereumLockdrop';
 import Web3 from 'web3';
@@ -14,13 +14,16 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { removeWeb3Event } from '../helpers/getWeb3';
 import SectionCard from '../components/SectionCard';
-import { Typography, Container } from '@material-ui/core';
+import { Typography, Container, Divider } from '@material-ui/core';
 import * as plasmUtils from '../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import ClaimStatus from 'src/components/ClaimStatus';
 import moment from 'moment';
 import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
+import { lockdropContracts } from '../data/lockInfo';
+import Dropdown from 'react-dropdown';
+import 'react-dropdown/style.css';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -48,6 +51,8 @@ const DustyEthLockPage: React.FC = () => {
     const [plasmApi, setPlasmApi] = useState<ApiPromise>();
     const [accounts, setAccounts] = useState<string[]>([]);
     const [contract, setContract] = useState<Contract>();
+    // set default testnet contract address
+    const [contractAddress, setContractAddress] = useState(lockdropContracts.secondLock.ropsten[0]);
 
     const [isLoading, setLoading] = useState<{
         loading: boolean;
@@ -64,6 +69,10 @@ const DustyEthLockPage: React.FC = () => {
 
     const [lockdropStart, setLockdropStart] = useState('0');
     const [lockdropEnd, setLockdropEnd] = useState('0');
+
+    const isMainnet = useMemo(() => {
+        return networkType === 'main';
+    }, [networkType]);
 
     const durationToEpoch = (duration: number) => {
         const epochDays = 60 * 60 * 24;
@@ -100,7 +109,7 @@ const DustyEthLockPage: React.FC = () => {
             try {
                 // get all the lock events from the chain
                 if (web3 && contract) {
-                    const _allLocks = await ethLockdrop.getAllLockEvents(web3, contract);
+                    const _allLocks = await ethLockdrop.getAllLockEvents(web3, await contract);
                     setLockEvents(_allLocks);
                 }
 
@@ -119,12 +128,6 @@ const DustyEthLockPage: React.FC = () => {
         };
     });
 
-    // called when the user changes MetaMask account
-    const handleAccountChange = () => {
-        // refresh the page
-        window.location.reload(false);
-    };
-
     // load web3 instance
     useEffect(() => {
         setLoading({
@@ -133,7 +136,7 @@ const DustyEthLockPage: React.FC = () => {
         });
         (async function() {
             try {
-                const web3State = await ethLockdrop.connectWeb3('secondLock');
+                const web3State = await ethLockdrop.connectWeb3(contractAddress);
 
                 const plasmNode = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Dusty);
                 setPlasmApi(plasmNode);
@@ -167,20 +170,50 @@ const DustyEthLockPage: React.FC = () => {
         // eslint-disable-next-line
     }, []);
 
-    // handle metamask account change event handler
     useEffect(() => {
-        // checks if account has changed in MetaMask
-        if ((window as any).ethereum.on) {
-            (window as any).ethereum.on('accountsChanged', handleAccountChange);
-        }
-        return () => {
-            (window as any).ethereum.removeEventListener('accountsChanged', handleAccountChange);
-        };
-    }, []);
+        if (web3) {
+            setLoading({
+                loading: true,
+                message: 'Connecting to Web3 instance with new contract...',
+            });
+            (async function() {
+                const _contract = await ethLockdrop.createContractInstance(web3, contractAddress);
 
-    const isMainnet = useCallback(() => {
-        return networkType === 'main';
-    }, [networkType]);
+                const _allLocks = await ethLockdrop.getAllLockEvents(web3, _contract);
+                setLockEvents(_allLocks);
+                // get the initial claim parameters
+                const _lockParam = getClaimParams(accounts[0]) || [];
+                setLockParams(_lockParam);
+                // check contract start and end dates
+                const _end = await ethLockdrop.getContractEndDate(_contract);
+                const _start = await ethLockdrop.getContractStartDate(_contract);
+                setLockdropEnd(_end);
+                setLockdropStart(_start);
+                setContract(_contract);
+            })().finally(() => {
+                setLoading({ loading: false, message: '' });
+            });
+        }
+        // we disable next line to prevent change on getClaimParams
+        // eslint-disable-next-line
+    }, [contractAddress, web3, accounts]);
+
+    // called when the user changes MetaMask account
+    // const handleAccountChange = () => {
+    //     // refresh the page
+    //     window.location.reload(false);
+    // };
+
+    // handle metamask account change event handler
+    // useEffect(() => {
+    //     // checks if account has changed in MetaMask
+    //     if ((window as any).ethereum.on) {
+    //         (window as any).ethereum.on('accountsChanged', handleAccountChange);
+    //     }
+    //     return () => {
+    //         (window as any).ethereum.removeEventListener('accountsChanged', handleAccountChange);
+    //     };
+    // }, []);
 
     const handleGetPublicKey = useCallback(() => {
         if (!publicKey && web3) {
@@ -211,7 +244,10 @@ const DustyEthLockPage: React.FC = () => {
 
     const handleSubmit = useCallback(
         async (formInputVal: LockInput) => {
-            setLoading({ loading: true, message: 'Submitting transaction...' });
+            setLoading({
+                loading: true,
+                message: 'Submitting transaction...',
+            });
             try {
                 if (!publicKey && web3) {
                     const _publicKey = await ethLockdrop.getPubKey(
@@ -223,7 +259,7 @@ const DustyEthLockPage: React.FC = () => {
                     setPublicKey(_publicKey);
                 }
 
-                contract && (await ethLockdrop.submitLockTx(formInputVal, accounts[0], contract));
+                contract && (await ethLockdrop.submitLockTx(formInputVal, accounts[0], await contract));
                 toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
             } catch (e) {
                 toast.error(e.message.toString());
@@ -241,7 +277,7 @@ const DustyEthLockPage: React.FC = () => {
             <IonContent>
                 <>
                     <IonLoading isOpen={isLoading.loading} message={isLoading.message} />
-                    {isMainnet() ? (
+                    {isMainnet ? (
                         <SectionCard maxWidth="lg">
                             <Typography variant="h2" component="h4" align="center">
                                 Please access this page with a Ethereum testnet wallet (Ropsten)
@@ -254,6 +290,15 @@ const DustyEthLockPage: React.FC = () => {
                                     startTime={moment.unix(parseInt(lockdropStart))}
                                     endTime={moment.unix(parseInt(lockdropEnd))}
                                     lockData={allLockEvents}
+                                />
+                                <Divider />
+                                <Typography variant="h4" component="h5" align="center">
+                                    Lockdrop Contract Address
+                                </Typography>
+                                <Dropdown
+                                    options={lockdropContracts.secondLock.ropsten}
+                                    value={contractAddress}
+                                    onChange={e => setContractAddress(e.value)}
                                 />
                             </SectionCard>
 
