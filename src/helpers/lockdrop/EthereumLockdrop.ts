@@ -12,7 +12,6 @@ import { lockDurationToRate } from '../plasmUtils';
 import { PlmDrop } from '../../types/PlasmDrop';
 import Web3Utils from 'web3-utils';
 import { ecrecover, fromRpcSig, toBuffer, bufferToHex } from 'ethereumjs-util';
-import * as lockInfo from '../../data/lockInfo';
 import EthCrypto from 'eth-crypto';
 
 /**
@@ -231,35 +230,36 @@ export function getTotalLockVal(locks: LockEvent[]): string {
 }
 
 /**
+ * creates a smart contract instance based on the contract address
+ * @param web3 web3js API instance
+ * @param contractAddress smart contract address
+ */
+export async function createContractInstance(web3: Web3, contractAddress: string) {
+    const lockdropAbi = Lockdrop.abi as Web3Utils.AbiItem[];
+
+    // create an empty contract instance first
+    return new web3.eth.Contract(lockdropAbi, contractAddress);
+}
+
+/**
  * authenticate if the client has web3 enabled wallet installed and can communicate with the blockchain
  * returns the web3.js instance, list of active accounts and the contract instance
- * @param lockSeason lockdrop season to indicate which lockdrop contract it should look for
+ * @param contractAddress the contract address that it should look for
  */
-export async function connectWeb3(lockSeason: 'firstLock' | 'secondLock' | 'thirdLock') {
+export async function connectWeb3(contractAddress: string) {
     // Get network provider and web3 instance.
     const web3 = await getWeb3();
-    //const web3 = getEthInst();
 
     if (web3 instanceof Web3) {
         // Use web3 to get the user's accounts.
         const accounts = await web3.eth.getAccounts();
-        const lockdropAbi = Lockdrop.abi as Web3Utils.AbiItem[];
 
-        // Get the contract instance.
-        //const networkId = await web3.eth.net.getId();
-
-        //const deployedNetwork = (Lockdrop.networks as any)[networkId];
-
-        const networkType = await web3.eth.net.getNetworkType();
-        const contractAddress = (lockInfo.lockdropContracts[lockSeason] as any)[networkType];
-
-        // create an empty contract instance first
-        const instance = new web3.eth.Contract(lockdropAbi, contractAddress !== '0x' && contractAddress);
+        const contract = await createContractInstance(web3, contractAddress);
 
         return {
             web3: web3,
             accounts: accounts,
-            contract: instance,
+            contract,
         };
     } else {
         throw new Error('Cannot get Web3 instance from the client');

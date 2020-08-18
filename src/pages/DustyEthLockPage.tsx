@@ -1,17 +1,9 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
 import { IonContent, IonPage, IonLoading, IonButton } from '@ionic/react';
-import React from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import LockdropForm from '../components/EthLock/LockdropForm';
-import {
-    connectWeb3,
-    getAllLockEvents,
-    submitLockTx,
-    getPubKey,
-    getContractEndDate,
-    getContractStartDate,
-} from '../helpers/lockdrop/EthereumLockdrop';
+import * as ethLockdrop from '../helpers/lockdrop/EthereumLockdrop';
 import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -22,13 +14,16 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { removeWeb3Event } from '../helpers/getWeb3';
 import SectionCard from '../components/SectionCard';
-import { Typography, Container } from '@material-ui/core';
+import { Typography, Container, Divider } from '@material-ui/core';
 import * as plasmUtils from '../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
 import * as polkadotUtil from '@polkadot/util-crypto';
 import ClaimStatus from 'src/components/ClaimStatus';
 import moment from 'moment';
-import LockdropCountdownPanel from 'src/components/EthLock/LockdropCountdownPanel';
+import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
+import { lockdropContracts } from '../data/lockInfo';
+import Dropdown from 'react-dropdown';
+import 'react-dropdown/style.css';
 
 const formInfo = `This is the lockdrop form for Ethereum.
 This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
@@ -42,23 +37,6 @@ Regarding the audit by Quantstamp, click <a
                             here
                         </a> for more details`;
 
-interface PageStates {
-    web3: Web3;
-    plasmApi: ApiPromise;
-    accounts: string[];
-    contract: Contract;
-    isLoading: boolean;
-    networkType: string;
-    isProcessing: boolean;
-    allLockEvents: LockEvent[];
-    lockParams: Lockdrop[];
-    error: null;
-    fetchingLockData: boolean;
-    publicKey: string;
-    lockdropStart: string; // unix timestamp string
-    lockdropEnd: string; // unix timestamp string
-}
-
 toast.configure({
     position: 'top-right',
     autoClose: 5000,
@@ -68,239 +46,293 @@ toast.configure({
     draggable: true,
 });
 
-class DustyEthLockPage extends React.Component<{}, PageStates> {
-    constructor(props: {}) {
-        super(props);
-        // initialize with null values
-        this.state = {
-            web3: {} as Web3,
-            plasmApi: {} as ApiPromise,
-            accounts: [''],
-            contract: {} as Contract,
-            isLoading: true,
-            networkType: '',
-            isProcessing: false,
-            allLockEvents: [],
-            lockParams: [],
-            error: null,
-            fetchingLockData: true,
-            publicKey: '',
-            lockdropStart: '0',
-            lockdropEnd: '0',
-        };
-    }
+const DustyEthLockPage: React.FC = () => {
+    const [web3, setWeb3] = useState<Web3>();
+    const [plasmApi, setPlasmApi] = useState<ApiPromise>();
+    const [accounts, setAccounts] = useState<string[]>([]);
+    const [contract, setContract] = useState<Contract>();
+    // set default testnet contract address
+    const [contractAddress, setContractAddress] = useState(lockdropContracts.secondLock.ropsten[0]);
 
-    // used for fetching data periodically
-    timerInterval: any;
+    const [isLoading, setLoading] = useState<{
+        loading: boolean;
+        message: string;
+    }>({
+        loading: false,
+        message: '',
+    });
 
-    // get and set the web3 state when the component is mounted
-    componentDidMount = async () => {
-        try {
-            const web3State = await connectWeb3('secondLock');
-            this.setState(web3State);
-            const plasmNode = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Dusty);
-            this.setState({ plasmApi: plasmNode });
+    const [networkType, setNetworkType] = useState('');
+    const [allLockEvents, setLockEvents] = useState<LockEvent[]>([]);
+    const [lockParams, setLockParams] = useState<Lockdrop[]>([]);
+    const [publicKey, setPublicKey] = useState<string>();
 
-            // checks if account has changed in MetaMask
-            if ((window as any).ethereum.on) {
-                (window as any).ethereum.on('accountsChanged', this.handleAccountChange);
-            }
+    const [lockdropStart, setLockdropStart] = useState('0');
+    const [lockdropEnd, setLockdropEnd] = useState('0');
 
-            this.setState({ networkType: await this.state.web3.eth.net.getNetworkType() });
+    const isMainnet = useMemo(() => {
+        return networkType === 'main';
+    }, [networkType]);
 
-            // check contract start and end dates
-            const _end = await getContractEndDate(this.state.contract);
-            const _start = await getContractStartDate(this.state.contract);
-
-            this.setState({ lockdropEnd: _end, lockdropStart: _start });
-        } catch (e) {
-            this.setState({ error: e });
-            console.log(e);
-        }
-
-        this.timerInterval = setInterval(() => {
-            this.getLockData().then(() => {
-                this.setState({ isLoading: false });
-            });
-        }, 5000);
-    };
-
-    isMainnet = () => {
-        return this.state.networkType === 'main';
-    };
-
-    componentWillUnmount = () => {
-        clearInterval(this.timerInterval);
-        removeWeb3Event();
-    };
-
-    // called when the user changes MetaMask account
-    handleAccountChange = () => {
-        // refresh the page
-        window.location.reload(false);
-    };
-
-    getLockData = async () => {
-        try {
-            // get all the lock events from the chain
-            const _allLocks = await getAllLockEvents(this.state.web3, this.state.contract);
-
-            if (this.state.publicKey) {
-                const _lockParam = this.getClaimParams();
-                this.setState({ lockParams: _lockParam });
-            }
-
-            this.setState({ allLockEvents: _allLocks });
-        } catch (error) {
-            this.setState({ error });
-            console.log(error);
-        }
-    };
-
-    setPublicKey = () => {
-        if (!this.state.publicKey) {
-            getPubKey(
-                this.state.web3,
-                `Sign this message to submit a lock request.
-                This action is required for the real-time lockdrop module
-                ${polkadotUtil.randomAsHex(3)}`,
-            )
-                .then(pub => {
-                    console.log('public: ' + pub);
-                    this.setState({ publicKey: pub });
-                })
-                .catch(e => {
-                    toast.error(e.message.toString());
-                    console.log(e);
-                });
-        }
+    const durationToEpoch = (duration: number) => {
+        const epochDays = 60 * 60 * 24;
+        return duration * epochDays;
     };
 
     /**
      * Obtains list of lockdrop claim parameters
      */
-    getClaimParams = () => {
-        const userLocks = this.state.allLockEvents.filter(i => i.lockOwner === this.state.accounts[0]);
-        const claimIDs = userLocks.map(lock => {
-            const _param = plasmUtils.createLockParam(
-                LockdropType.Ethereum,
-                lock.transactionHash,
-                this.state.publicKey,
-                this.durationToEpoch(lock.duration).toString(),
-                lock.eth.toString(),
-            );
-            return plasmUtils.structToLockdrop(_param as any);
+    const getClaimParams = useCallback(
+        (ethAccount: string) => {
+            if (publicKey) {
+                const userLocks = allLockEvents.filter(i => i.lockOwner === ethAccount);
+                const claimIDs = userLocks.map(lock => {
+                    const _param = plasmUtils.createLockParam(
+                        LockdropType.Ethereum,
+                        lock.transactionHash,
+                        publicKey,
+                        durationToEpoch(lock.duration).toString(),
+                        lock.eth.toString(),
+                    );
+                    return plasmUtils.structToLockdrop(_param as any);
+                });
+
+                return claimIDs;
+            }
+        },
+        [publicKey, allLockEvents],
+    );
+
+    // fetch lock data in the background
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            try {
+                // get all the lock events from the chain
+                if (web3 && contract) {
+                    const _allLocks = await ethLockdrop.getAllLockEvents(web3, await contract);
+                    setLockEvents(_allLocks);
+                }
+
+                const _lockParam = getClaimParams(accounts[0]) || [];
+                setLockParams(_lockParam);
+            } catch (error) {
+                toast.error(error.message);
+                console.log(error);
+            }
+        }, 5 * 1000);
+
+        // cleanup hook
+        return () => {
+            clearInterval(interval);
+            removeWeb3Event();
+        };
+    });
+
+    // load web3 instance
+    useEffect(() => {
+        setLoading({
+            loading: true,
+            message: 'Connecting to Web3 instance...',
         });
+        (async function() {
+            try {
+                const web3State = await ethLockdrop.connectWeb3(contractAddress);
 
-        return claimIDs;
-    };
+                const plasmNode = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Dusty);
+                setPlasmApi(plasmNode);
 
-    durationToEpoch = (duration: number) => {
-        const epochDays = 60 * 60 * 24;
-        return duration * epochDays;
-    };
+                setNetworkType(await web3State.web3.eth.net.getNetworkType());
 
-    handleSubmit = async (formInputVal: LockInput) => {
-        this.setState({ isProcessing: true });
-        try {
-            if (!this.state.publicKey) {
-                const _publicKey = await getPubKey(
-                    this.state.web3,
-                    `Sign this message to submit a lock request.
+                // get the initial claim parameters
+                const _lockParam = getClaimParams(web3State.accounts[0]) || [];
+                setLockParams(_lockParam);
+
+                // check contract start and end dates
+                const _end = await ethLockdrop.getContractEndDate(web3State.contract);
+                const _start = await ethLockdrop.getContractStartDate(web3State.contract);
+                setLockdropEnd(_end);
+                setLockdropStart(_start);
+
+                setWeb3(web3State.web3);
+                setContract(web3State.contract);
+                setAccounts(web3State.accounts);
+
+                const _allLocks = await ethLockdrop.getAllLockEvents(web3State.web3, web3State.contract);
+                setLockEvents(_allLocks);
+            } catch (e) {
+                toast.error(e.message);
+                console.log(e);
+            }
+        })().finally(() => {
+            setLoading({ loading: false, message: '' });
+        });
+        // we disable this because we want this to only call once (on component mount)
+        // eslint-disable-next-line
+    }, []);
+
+    useEffect(() => {
+        if (web3) {
+            setLoading({
+                loading: true,
+                message: 'Connecting to Web3 instance with new contract...',
+            });
+            (async function() {
+                const _contract = await ethLockdrop.createContractInstance(web3, contractAddress);
+
+                const _allLocks = await ethLockdrop.getAllLockEvents(web3, _contract);
+                setLockEvents(_allLocks);
+                // get the initial claim parameters
+                const _lockParam = getClaimParams(accounts[0]) || [];
+                setLockParams(_lockParam);
+                // check contract start and end dates
+                const _end = await ethLockdrop.getContractEndDate(_contract);
+                const _start = await ethLockdrop.getContractStartDate(_contract);
+                setLockdropEnd(_end);
+                setLockdropStart(_start);
+                setContract(_contract);
+            })().finally(() => {
+                setLoading({ loading: false, message: '' });
+            });
+        }
+        // we disable next line to prevent change on getClaimParams
+        // eslint-disable-next-line
+    }, [contractAddress, web3, accounts]);
+
+    // called when the user changes MetaMask account
+    // const handleAccountChange = () => {
+    //     // refresh the page
+    //     window.location.reload(false);
+    // };
+
+    // handle metamask account change event handler
+    // useEffect(() => {
+    //     // checks if account has changed in MetaMask
+    //     if ((window as any).ethereum.on) {
+    //         (window as any).ethereum.on('accountsChanged', handleAccountChange);
+    //     }
+    //     return () => {
+    //         (window as any).ethereum.removeEventListener('accountsChanged', handleAccountChange);
+    //     };
+    // }, []);
+
+    const handleGetPublicKey = useCallback(() => {
+        if (!publicKey && web3) {
+            setLoading({
+                loading: true,
+                message: 'Obtaining user signature...',
+            });
+
+            (async function() {
+                try {
+                    const _pub = await ethLockdrop.getPubKey(
+                        web3,
+                        `Sign this message to submit a lock request.
+                    This action is required for the real-time lockdrop module ${polkadotUtil.randomAsHex(3)}`,
+                    );
+                    setPublicKey(_pub);
+                } catch (e) {
+                    console.log(e);
+                    toast.error(e.message);
+                }
+            })().finally(() => {
+                setLoading({ loading: false, message: '' });
+            });
+        } else if (typeof web3 === 'undefined') {
+            toast.error('Not connected to Web3');
+        }
+    }, [publicKey, web3]);
+
+    const handleSubmit = useCallback(
+        async (formInputVal: LockInput) => {
+            setLoading({
+                loading: true,
+                message: 'Submitting transaction...',
+            });
+            try {
+                if (!publicKey && web3) {
+                    const _publicKey = await ethLockdrop.getPubKey(
+                        web3,
+                        `Sign this message to submit a lock request.
                 This action is required for the real-time lockdrop module
                 ${polkadotUtil.randomAsHex(3)}`,
-                );
+                    );
+                    setPublicKey(_publicKey);
+                }
 
-                this.setState({ publicKey: _publicKey });
+                contract && (await ethLockdrop.submitLockTx(formInputVal, accounts[0], await contract));
+                toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
+            } catch (e) {
+                toast.error(e.message.toString());
+                console.log(e);
             }
 
-            await submitLockTx(formInputVal, this.state.accounts[0], this.state.contract);
-            toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
-        } catch (e) {
-            toast.error(e.message.toString());
-            console.log(e);
-        }
+            setLoading({ loading: false, message: '' });
+        },
+        [accounts, contract, publicKey, web3],
+    );
 
-        this.setState({ isProcessing: false });
-    };
+    return (
+        <IonPage>
+            <Navbar />
+            <IonContent>
+                <>
+                    <IonLoading isOpen={isLoading.loading} message={isLoading.message} />
+                    {isMainnet ? (
+                        <SectionCard maxWidth="lg">
+                            <Typography variant="h2" component="h4" align="center">
+                                Please access this page with a Ethereum testnet wallet (Ropsten)
+                            </Typography>
+                        </SectionCard>
+                    ) : (
+                        <>
+                            <SectionCard maxWidth="lg">
+                                <LockdropCountdownPanel
+                                    startTime={moment.unix(parseInt(lockdropStart))}
+                                    endTime={moment.unix(parseInt(lockdropEnd))}
+                                    lockData={allLockEvents}
+                                />
+                                <Divider />
+                                <Typography variant="h4" component="h5" align="center">
+                                    Lockdrop Contract Address
+                                </Typography>
+                                <Dropdown
+                                    options={lockdropContracts.secondLock.ropsten}
+                                    value={contractAddress}
+                                    onChange={e => setContractAddress(e.value)}
+                                />
+                            </SectionCard>
 
-    render() {
-        return (
-            <IonPage>
-                <Navbar />
-                <IonContent>
-                    <>
-                        {this.state.isLoading ? (
-                            <IonLoading isOpen={true} message={'Connecting to Wallet and fetching chain data...'} />
-                        ) : (
-                            <>
-                                {this.state.isProcessing && (
-                                    <IonLoading
-                                        isOpen={this.state.isProcessing}
-                                        message={'Processing Transaction...'}
+                            <LockdropForm token="ETH" onSubmit={handleSubmit} description={formInfo} dusty />
+
+                            <SectionCard maxWidth="lg">
+                                <Typography variant="h4" component="h1" align="center">
+                                    Real-time Lockdrop Status
+                                </Typography>
+                                {publicKey && plasmApi ? (
+                                    <ClaimStatus
+                                        claimParams={lockParams}
+                                        plasmApi={plasmApi}
+                                        networkType="ETH"
+                                        plasmNetwork="Dusty"
+                                        publicKey={publicKey}
                                     />
-                                )}
-
-                                {this.isMainnet() ? (
-                                    <SectionCard maxWidth="lg">
-                                        <Typography variant="h2" component="h4" align="center">
-                                            Please access this page with a Ethereum testnet wallet (Ropsten)
-                                        </Typography>
-                                    </SectionCard>
                                 ) : (
                                     <>
-                                        <SectionCard maxWidth="lg">
-                                            <LockdropCountdownPanel
-                                                startTime={moment.unix(parseInt(this.state.lockdropStart))}
-                                                endTime={moment.unix(parseInt(this.state.lockdropEnd))}
-                                                lockData={this.state.allLockEvents}
-                                            />
-                                        </SectionCard>
-
-                                        <LockdropForm
-                                            token="ETH"
-                                            onSubmit={this.handleSubmit}
-                                            description={formInfo}
-                                            dusty
-                                        />
-
-                                        <SectionCard maxWidth="lg">
-                                            <Typography variant="h4" component="h1" align="center">
-                                                Real-time Lockdrop Status
-                                            </Typography>
-                                            {this.state.publicKey ? (
-                                                <ClaimStatus
-                                                    claimParams={this.state.lockParams}
-                                                    plasmApi={this.state.plasmApi}
-                                                    networkType="ETH"
-                                                    plasmNetwork="Dusty"
-                                                    publicKey={this.state.publicKey}
-                                                />
-                                            ) : (
-                                                <>
-                                                    <Container>
-                                                        <IonButton expand="block" onClick={() => this.setPublicKey()}>
-                                                            Click to view lock claims
-                                                        </IonButton>
-                                                    </Container>
-                                                </>
-                                            )}
-                                        </SectionCard>
-
-                                        <LockedEthList
-                                            web3={this.state.web3}
-                                            accounts={this.state.accounts}
-                                            lockData={this.state.allLockEvents}
-                                        />
+                                        <Container>
+                                            <IonButton expand="block" onClick={handleGetPublicKey}>
+                                                Click to view lock claims
+                                            </IonButton>
+                                        </Container>
                                     </>
                                 )}
-                            </>
-                        )}
-                    </>
-                    <Footer />
-                </IonContent>
-            </IonPage>
-        );
-    }
-}
+                            </SectionCard>
+                            {web3 && <LockedEthList web3={web3} accounts={accounts} lockData={allLockEvents} />}
+                        </>
+                    )}
+                </>
+                <Footer />
+            </IonContent>
+        </IonPage>
+    );
+};
 export default DustyEthLockPage;

@@ -14,7 +14,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SectionCard from '../components/SectionCard';
 import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
-import { firstLockdropEnd, firstLockdropStart } from '../data/lockInfo';
+import { firstLockdropEnd, firstLockdropStart, lockdropContracts } from '../data/lockInfo';
 import moment from 'moment';
 import LockdropResult from '../components/EthLock/LockdropResult';
 import { Divider } from '@material-ui/core';
@@ -94,9 +94,14 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
     // used for fetching data periodically
     timerInterval: any;
 
+    isMainnet = () => {
+        return this.state.networkType === 'main';
+    };
+
     // get and set the web3 state when the component is mounted
     componentDidMount = async () => {
-        const web3State = await connectWeb3('firstLock');
+        const _addr = this.isMainnet() ? lockdropContracts.firstLock.main : lockdropContracts.firstLock.ropsten;
+        const web3State = await connectWeb3(_addr);
         this.setState(web3State);
 
         // checks if account has changed in MetaMask
@@ -118,10 +123,6 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
     componentWillUnmount = () => {
         clearInterval(this.timerInterval);
         removeWeb3Event();
-    };
-
-    isMainnet = () => {
-        return this.state.networkType === 'main';
     };
 
     // called when the user changes MetaMask account
