@@ -238,17 +238,11 @@ export function getTotalLockVal(locks: LockEvent[]): string {
 export async function connectWeb3(lockSeason: 'firstLock' | 'secondLock' | 'thirdLock') {
     // Get network provider and web3 instance.
     const web3 = await getWeb3();
-    //const web3 = getEthInst();
 
     if (web3 instanceof Web3) {
         // Use web3 to get the user's accounts.
         const accounts = await web3.eth.getAccounts();
         const lockdropAbi = Lockdrop.abi as Web3Utils.AbiItem[];
-
-        // Get the contract instance.
-        //const networkId = await web3.eth.net.getId();
-
-        //const deployedNetwork = (Lockdrop.networks as any)[networkId];
 
         const networkType = await web3.eth.net.getNetworkType();
         const contractAddress = (lockInfo.lockdropContracts[lockSeason] as any)[networkType];
