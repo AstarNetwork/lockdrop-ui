@@ -259,7 +259,7 @@ const DustyEthLockPage: React.FC = () => {
                     setPublicKey(_publicKey);
                 }
 
-                contract && (await ethLockdrop.submitLockTx(formInputVal, accounts[0], await contract));
+                contract && (await ethLockdrop.submitLockTx(formInputVal, accounts[0], contract));
                 toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
             } catch (e) {
                 toast.error(e.message.toString());

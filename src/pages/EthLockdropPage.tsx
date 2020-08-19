@@ -1,53 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
 import { IonContent, IonPage, IonLoading } from '@ionic/react';
-import React from 'react';
-import LockdropForm from '../components/EthLock/LockdropForm';
-import { connectWeb3, getAllLockEvents, submitLockTx } from '../helpers/lockdrop/EthereumLockdrop';
+import React, { useState, useEffect, useMemo } from 'react';
+import * as ethLockdrop from '../helpers/lockdrop/EthereumLockdrop';
 import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
-import { LockInput, LockEvent } from '../types/LockdropModels';
+import { LockEvent } from '../types/LockdropModels';
 import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import SectionCard from '../components/SectionCard';
-import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
-import { firstLockdropEnd, firstLockdropStart, lockdropContracts } from '../data/lockInfo';
-import moment from 'moment';
-import LockdropResult from '../components/EthLock/LockdropResult';
-import { Divider } from '@material-ui/core';
-import AffiliationList from '../components/EthLock/AffiliationList';
 import { removeWeb3Event } from '../helpers/getWeb3';
-
-const formInfo = `This is the lockdrop form for Ethereum.
-This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
-If you find any errors or find issues with this form, please contact the Plasm team.
-Regarding the audit by Quantstamp, click <a
-                            color="inherit"
-                            href="https://github.com/staketechnologies/lockdrop-ui/blob/16a2d495d85f2d311957b9cf366204fbfabadeaa/audit/quantstamp-audit.pdf"
-                            rel="noopener noreferrer"
-                            target="_blank"
-                        >
-                            here
-                        </a> for more details`;
-
-interface PageStates {
-    web3: Web3;
-    accounts: string[];
-    contract: Contract;
-    isLoading: boolean;
-    networkType: string;
-    isProcessing: boolean;
-    allLockEvents: LockEvent[];
-    error: null;
-    fetchingLockData: boolean;
-}
-
-// need an empty interface to use states (React's generic positioning)
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface PageProps {}
+import SectionCard from '../components/SectionCard';
+import { Typography, Divider } from '@material-ui/core';
+import moment from 'moment';
+import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
+import { lockdropContracts } from '../data/lockInfo';
+import 'react-dropdown/style.css';
+import LockdropResult from 'src/components/EthLock/LockdropResult';
+import AffiliationList from 'src/components/EthLock/AffiliationList';
 
 toast.configure({
     position: 'top-right',
@@ -58,166 +30,123 @@ toast.configure({
     draggable: true,
 });
 
-const hasFirstLockdropStarted = () => {
-    const now = moment()
-        .utc()
-        .valueOf();
-    const start = firstLockdropStart.valueOf();
-    //const end = firstLockdropEnd.valueOf();
-    return start <= now;
-};
+const EthLockdropPage: React.FC = () => {
+    const [web3, setWeb3] = useState<Web3>();
+    const [accounts, setAccounts] = useState<string[]>([]);
+    const [contract, setContract] = useState<Contract>();
 
-const hasFirstLockdropEnded = () => {
-    const now = moment()
-        .utc()
-        .valueOf();
-    const end = firstLockdropEnd.valueOf();
-    return end <= now;
-};
+    const [isLoading, setLoading] = useState<{
+        loading: boolean;
+        message: string;
+    }>({
+        loading: false,
+        message: '',
+    });
 
-class EthLockdropPage extends React.Component<PageProps, PageStates> {
-    constructor(props: PageProps) {
-        super(props);
-        // initialize with null values
-        this.state = {
-            web3: {} as Web3,
-            accounts: [''],
-            contract: {} as Contract,
-            isLoading: true,
-            networkType: '',
-            isProcessing: false,
-            allLockEvents: [],
-            error: null,
-            fetchingLockData: true,
+    const [networkType, setNetworkType] = useState('');
+    const [allLockEvents, setLockEvents] = useState<LockEvent[]>([]);
+
+    const [lockdropStart, setLockdropStart] = useState('0');
+    const [lockdropEnd, setLockdropEnd] = useState('0');
+
+    const isMainnet = useMemo(() => {
+        return networkType === 'main';
+    }, [networkType]);
+
+    // fetch lock data in the background
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            try {
+                // get all the lock events from the chain
+                if (web3 && contract) {
+                    const _allLocks = await ethLockdrop.getAllLockEvents(web3, contract);
+                    setLockEvents(_allLocks);
+                }
+            } catch (error) {
+                toast.error(error.message);
+                console.log(error);
+            }
+        }, 5 * 1000);
+
+        // cleanup hook
+        return () => {
+            clearInterval(interval);
+            removeWeb3Event();
         };
-    }
-    // used for fetching data periodically
-    timerInterval: any;
+    });
 
-    isMainnet = () => {
-        return this.state.networkType === 'main';
-    };
+    // load web3 instance
+    useEffect(() => {
+        setLoading({
+            loading: true,
+            message: 'Connecting to Web3 instance...',
+        });
+        (async function() {
+            try {
+                const web3State = await ethLockdrop.connectWeb3(lockdropContracts.firstLock.main);
 
-    // get and set the web3 state when the component is mounted
-    componentDidMount = async () => {
-        //const _addr = this.isMainnet() ? lockdropContracts.firstLock.main : lockdropContracts.firstLock.ropsten;
-        const web3State = await connectWeb3(lockdropContracts.firstLock.main);
-        this.setState(web3State);
+                setNetworkType(await web3State.web3.eth.net.getNetworkType());
 
-        // checks if account has changed in MetaMask
-        if ((window as any).ethereum.on) {
-            (window as any).ethereum.on('accountsChanged', this.handleAccountChange);
-        }
+                // check contract start and end dates
+                const _end = await ethLockdrop.getContractEndDate(web3State.contract);
+                const _start = await ethLockdrop.getContractStartDate(web3State.contract);
+                setLockdropEnd(_end);
+                setLockdropStart(_start);
 
-        this.setState({ networkType: await this.state.web3.eth.net.getNetworkType() });
+                setWeb3(web3State.web3);
+                setContract(web3State.contract);
+                setAccounts(web3State.accounts);
 
-        //this.state.web3.eth.net.getNetworkType().then(i => this.setState({ networkType: i }));
+                const _allLocks = await ethLockdrop.getAllLockEvents(web3State.web3, web3State.contract);
+                setLockEvents(_allLocks);
+            } catch (e) {
+                toast.error(e.message);
+                console.log(e);
+            }
+        })().finally(() => {
+            setLoading({ loading: false, message: '' });
+        });
+        // we disable this because we want this to only call once (on component mount)
+        // eslint-disable-next-line
+    }, []);
 
-        this.timerInterval = setInterval(() => {
-            this.getLockData().then(() => {
-                this.setState({ isLoading: false });
-            });
-        }, 5000);
-    };
-
-    componentWillUnmount = () => {
-        clearInterval(this.timerInterval);
-        removeWeb3Event();
-    };
-
-    // called when the user changes MetaMask account
-    handleAccountChange = () => {
-        // refresh the page
-        window.location.reload(false);
-    };
-
-    getLockData = async () => {
-        try {
-            // get all the lock events from the chain
-            const allLocks = await getAllLockEvents(this.state.web3, this.state.contract);
-
-            this.setState({ allLockEvents: allLocks });
-        } catch (error) {
-            this.setState({ error });
-            console.log(error);
-        }
-    };
-
-    handleSubmit = async (formInputVal: LockInput) => {
-        this.setState({ isProcessing: true });
-        try {
-            await submitLockTx(formInputVal, this.state.accounts[0], this.state.contract);
-            toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
-        } catch (e) {
-            toast.error(e.toString());
-            console.log(e);
-        }
-
-        this.setState({ isProcessing: false });
-    };
-
-    render() {
-        return (
-            <IonPage>
-                <Navbar />
-                <IonContent>
-                    {hasFirstLockdropStarted() ? (
-                        this.state.isLoading ? (
-                            <IonLoading isOpen={true} message={'Connecting to Wallet and fetching chain data...'} />
-                        ) : (
-                            <>
-                                {this.state.isProcessing ? (
-                                    <IonLoading
-                                        isOpen={this.state.isProcessing}
-                                        message={'Processing Transaction...'}
-                                    />
-                                ) : null}
-
-                                <SectionCard maxWidth="lg">
-                                    <LockdropCountdownPanel
-                                        endTime={firstLockdropEnd}
-                                        startTime={firstLockdropStart}
-                                        lockData={this.state.allLockEvents}
-                                    />
-                                    {hasFirstLockdropEnded() && this.isMainnet() ? (
-                                        <>
-                                            <Divider />
-                                            <LockdropResult
-                                                lockData={this.state.allLockEvents}
-                                                web3={this.state.web3}
-                                            />
-                                        </>
-                                    ) : (
-                                        <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
-                                    )}
-                                </SectionCard>
-                                <AffiliationList lockData={this.state.allLockEvents} />
-                                {/* {hasFirstLockdropEnded() ? null : (
-                                    <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
-                                )} */}
-
-                                <LockedEthList
-                                    web3={this.state.web3}
-                                    accounts={this.state.accounts}
-                                    lockData={this.state.allLockEvents}
-                                />
-                            </>
-                        )
+    return (
+        <IonPage>
+            <Navbar />
+            <IonContent>
+                <>
+                    <IonLoading isOpen={isLoading.loading} message={isLoading.message} />
+                    {!isMainnet ? (
+                        <SectionCard maxWidth="lg">
+                            <Typography variant="h2" component="h4" align="center">
+                                Please access this page with a Mainnet wallet
+                            </Typography>
+                        </SectionCard>
                     ) : (
                         <>
                             <SectionCard maxWidth="lg">
                                 <LockdropCountdownPanel
-                                    endTime={firstLockdropEnd}
-                                    startTime={firstLockdropStart}
-                                    lockData={this.state.allLockEvents}
+                                    startTime={moment.unix(parseInt(lockdropStart))}
+                                    endTime={moment.unix(parseInt(lockdropEnd))}
+                                    lockData={allLockEvents}
                                 />
+                                {web3 && (
+                                    <>
+                                        <Divider />
+                                        <LockdropResult lockData={allLockEvents} web3={web3} />
+                                    </>
+                                )}
                             </SectionCard>
+
+                            <AffiliationList lockData={allLockEvents} />
+
+                            {web3 && <LockedEthList web3={web3} accounts={accounts} lockData={allLockEvents} />}
                         </>
                     )}
-                    <Footer />
-                </IonContent>
-            </IonPage>
-        );
-    }
-}
+                </>
+                <Footer />
+            </IonContent>
+        </IonPage>
+    );
+};
 export default EthLockdropPage;
