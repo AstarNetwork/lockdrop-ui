@@ -69,12 +69,10 @@ const SideMenu: React.FC = () => {
                                 <IonLabel>Twitter</IonLabel>
                             </IonItem>
                         </a>
-                        <a href={Links.github} rel="noopener noreferrer" target="_blank">
-                            <IonItem button detail>
-                                <IonIcon src={github} slot="start" />
-                                <IonLabel>Github</IonLabel>
-                            </IonItem>
-                        </a>
+                        <IonItem href={Links.github} rel="noopener noreferrer" target="_blank" detail>
+                            <IonIcon src={github} slot="start" />
+                            <IonLabel>Github</IonLabel>
+                        </IonItem>
                     </IonList>
                 </IonContent>
             </IonMenu>

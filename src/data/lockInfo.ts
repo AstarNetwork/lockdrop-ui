@@ -16,10 +16,9 @@ export const firstLockdropStart = moment.utc('2020-03-15 00:00:00');
  */
 export const firstLockdropEnd = moment.utc('2020-04-14 00:00:00');
 
-// todo: the second lockdrop dates are just a temporary value
-export const secondLockdropStart = moment.utc('2020-08-10 00:00:00');
+export const secondLockdropStart = moment.utc('2020-08-31 00:00:00');
 
-export const secondLockdropEnd = moment.utc('2020-09-10 00:00:00');
+export const secondLockdropEnd = moment.utc('2020-09-30 00:00:00');
 
 //todo: add other contract addresses when ready
 export const lockdropContracts = {
@@ -93,14 +92,14 @@ export const secondLock: LockMenu[] = [
         endDate: secondLockdropEnd,
         disabled: true,
     },
-    {
-        title: 'BTC Lock',
-        uri: '/lock-form/first',
-        icon: btcLogo,
-        startDate: secondLockdropStart,
-        endDate: secondLockdropEnd,
-        disabled: true,
-    },
+    // {
+    //     title: 'BTC Lock',
+    //     uri: '/lock-form/first',
+    //     icon: btcLogo,
+    //     startDate: secondLockdropStart,
+    //     endDate: secondLockdropEnd,
+    //     disabled: true,
+    // },
 ];
 
 export const dustyLock: LockMenu[] = [
