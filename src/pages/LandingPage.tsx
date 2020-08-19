@@ -20,7 +20,7 @@ import lockdropLogoB from '../resources/ld_logo_b.png';
 import ethLogo from '../resources/ethereum_logo.svg';
 import btcLogo from '../resources/bitcoin_logo.svg';
 import { makeStyles } from '@material-ui/core';
-import { firstLockdropStart, firstLockdropEnd } from '../data/lockInfo';
+import { firstLockdropStart, firstLockdropEnd, secondLockdropStart, secondLockdropEnd } from '../data/lockInfo';
 import TosAgreementModal from 'src/components/TosAgreementModal';
 
 // randomize the lockdrop logo
@@ -112,17 +112,17 @@ export const LandingPage: React.FC = () => {
                         </IonButton>
                     </IonItem>
 
-                    <IonItem>
+                    {/* <IonItem>
                         <IonIcon src={btcLogo} slot="start" />
                         <IonLabel>Plasm BTC Lock</IonLabel>
                         <IonButton fill="outline" slot="end" disabled={true}>
                             View
                         </IonButton>
-                    </IonItem>
+                    </IonItem> */}
                     <IonCardContent>
-                        Lock Start: TBA
+                        Lock Start: {secondLockdropStart.format('YYYY-MM-DD hh:mm').toString()} UTC
                         <br />
-                        Lock End: TBA
+                        Lock End: {secondLockdropEnd.format('YYYY-MM-DD hh:mm').toString()} UTC
                     </IonCardContent>
                 </SectionCard>
 
