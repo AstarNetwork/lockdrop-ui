@@ -100,8 +100,8 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
 
     // get and set the web3 state when the component is mounted
     componentDidMount = async () => {
-        const _addr = this.isMainnet() ? lockdropContracts.firstLock.main : lockdropContracts.firstLock.ropsten;
-        const web3State = await connectWeb3(_addr);
+        //const _addr = this.isMainnet() ? lockdropContracts.firstLock.main : lockdropContracts.firstLock.ropsten;
+        const web3State = await connectWeb3(lockdropContracts.firstLock.main);
         this.setState(web3State);
 
         // checks if account has changed in MetaMask
@@ -187,12 +187,14 @@ class EthLockdropPage extends React.Component<PageProps, PageStates> {
                                                 web3={this.state.web3}
                                             />
                                         </>
-                                    ) : null}
+                                    ) : (
+                                        <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
+                                    )}
                                 </SectionCard>
                                 <AffiliationList lockData={this.state.allLockEvents} />
-                                {hasFirstLockdropEnded() ? null : (
+                                {/* {hasFirstLockdropEnded() ? null : (
                                     <LockdropForm token="ETH" onSubmit={this.handleSubmit} description={formInfo} />
-                                )}
+                                )} */}
 
                                 <LockedEthList
                                     web3={this.state.web3}
