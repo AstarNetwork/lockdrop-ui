@@ -52,7 +52,10 @@ const DustyEthLockPage: React.FC = () => {
     const [accounts, setAccounts] = useState<string[]>([]);
     const [contract, setContract] = useState<Contract>();
     // set default testnet contract address
-    const [contractAddress, setContractAddress] = useState(lockdropContracts.secondLock.ropsten[0]);
+    const [contractAddress, setContractAddress] = useState(
+        // always use the last contract as default
+        lockdropContracts.secondLock.ropsten[lockdropContracts.secondLock.ropsten.length - 1],
+    );
 
     const [isLoading, setLoading] = useState<{
         loading: boolean;
