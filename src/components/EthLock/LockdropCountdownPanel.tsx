@@ -24,7 +24,7 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData 
     const now = moment().utc();
 
     const calculateTimeLeft = (): TimeFormat => {
-        const tillStart = moment(startTime).valueOf() - now.valueOf();
+        const tillStart = startTime.valueOf() - now.valueOf();
 
         //let difference = tillStart;
         let difference = duration(startTime.diff(now));
@@ -41,7 +41,7 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData 
             seconds: 0,
         };
 
-        const tillEnd = moment(endTime).valueOf() - now.valueOf();
+        const tillEnd = endTime.valueOf() - now.valueOf();
         // check if the duration has ended
         if (tillEnd > 0) {
             timeLeft = {
@@ -55,10 +55,10 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData 
     };
 
     const getLockState = (): LockState => {
-        const tillStart = moment(startTime).valueOf() - now.valueOf();
+        const tillStart = startTime.valueOf() - now.valueOf();
         if (tillStart > 0) {
             return LockState.notStart;
-        } else if (tillStart <= 0 && !(moment(endTime).valueOf() - now.valueOf() < 0)) {
+        } else if (tillStart <= 0 && !(endTime.valueOf() - now.valueOf() < 0)) {
             return LockState.start;
         } else {
             return LockState.end;

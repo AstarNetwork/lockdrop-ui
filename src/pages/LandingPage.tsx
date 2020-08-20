@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     IonContent,
     IonPage,
@@ -22,6 +22,8 @@ import btcLogo from '../resources/bitcoin_logo.svg';
 import { makeStyles } from '@material-ui/core';
 import { firstLockdropStart, firstLockdropEnd, secondLockdropStart, secondLockdropEnd } from '../data/lockInfo';
 import TosAgreementModal from 'src/components/TosAgreementModal';
+//import moment from 'moment';
+import momentTimezone from 'moment-timezone';
 
 // randomize the lockdrop logo
 // this is for AB testing the logo
@@ -49,6 +51,12 @@ export const LandingPage: React.FC = () => {
     useEffect(() => {
         localStorage.setItem('AgreedState', userAgreed.toString());
     }, [userAgreed]);
+
+    const timezone = useMemo(() => {
+        const zoneName = momentTimezone.tz.guess();
+        const timezone = momentTimezone.tz(zoneName).zoneAbbr();
+        return timezone;
+    }, []);
 
     return (
         <IonPage>
@@ -94,9 +102,9 @@ export const LandingPage: React.FC = () => {
                     </IonItem>
 
                     <IonCardContent>
-                        Lock Start: {firstLockdropStart.format('YYYY-MM-DD hh:mm').toString()} UTC
+                        Lock Start: {firstLockdropStart.format('YYYY-MM-DD hh:mm').toString()} {timezone}
                         <br />
-                        Lock End: {firstLockdropEnd.format('YYYY-MM-DD hh:mm').toString()} UTC
+                        Lock End: {firstLockdropEnd.format('YYYY-MM-DD hh:mm').toString()} {timezone}
                     </IonCardContent>
                 </SectionCard>
 
@@ -120,9 +128,9 @@ export const LandingPage: React.FC = () => {
                         </IonButton>
                     </IonItem> */}
                     <IonCardContent>
-                        Lock Start: {secondLockdropStart.format('YYYY-MM-DD hh:mm').toString()} UTC
+                        Lock Start: {secondLockdropStart.format('YYYY-MM-DD hh:mm').toString()} {timezone}
                         <br />
-                        Lock End: {secondLockdropEnd.format('YYYY-MM-DD hh:mm').toString()} UTC
+                        Lock End: {secondLockdropEnd.format('YYYY-MM-DD hh:mm').toString()} {timezone}
                     </IonCardContent>
                 </SectionCard>
 
