@@ -4,21 +4,21 @@ import ethLogo from '../resources/ethereum_logo.svg';
 import btcLogo from '../resources/bitcoin_logo.svg';
 import Lockdrop from '../contracts/Lockdrop.json';
 
+const LOCKDROP_DURATION = 30; // days
+
 /**
  * the time zone is set to UTC as default
  * lockdrop starts from 1584230400 epoch time
  */
-export const firstLockdropStart = moment.utc('2020-03-15 00:00:00');
+export const firstLockdropStart = moment.unix(1584230400);
+export const firstLockdropEnd = firstLockdropStart.clone().add(LOCKDROP_DURATION, 'days');
 
 /**
- * the 1st lockdrop will last for 30 days
- * lockdrop ends in 1586822400
+ * the time zone is set to UTC as default
+ * lockdrop starts from 1598832000 epoch time
  */
-export const firstLockdropEnd = moment.utc('2020-04-14 00:00:00');
-
-export const secondLockdropStart = moment.utc('2020-08-31 00:00:00');
-
-export const secondLockdropEnd = moment.utc('2020-09-30 00:00:00');
+export const secondLockdropStart = moment.unix(1598832000);
+export const secondLockdropEnd = secondLockdropStart.clone().add(LOCKDROP_DURATION, 'days');
 
 //todo: add other contract addresses when ready
 export const lockdropContracts = {
