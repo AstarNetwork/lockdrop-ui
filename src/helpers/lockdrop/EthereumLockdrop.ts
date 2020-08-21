@@ -242,6 +242,24 @@ export async function createContractInstance(web3: Web3, contractAddress: string
 }
 
 /**
+ * returns the unlock date of the given ethereum lock event.
+ * this will return the unlock date in unix time (seconds)
+ * @param lockInfo
+ */
+export const getUnlockDate = (lockInfo: LockEvent) => {
+    // 24 hours in epoch
+    const epochDay = 60 * 60 * 24;
+
+    // Ethereum lock timestamp is in integers
+    const lockedDay = parseInt(lockInfo.timestamp);
+
+    // locked date + lock duration in days to epoch
+    const unlockDate = lockedDay + lockInfo.duration * epochDay;
+
+    return unlockDate;
+};
+
+/**
  * authenticate if the client has web3 enabled wallet installed and can communicate with the blockchain
  * returns the web3.js instance, list of active accounts and the contract instance
  * @param contractAddress the contract address that it should look for
