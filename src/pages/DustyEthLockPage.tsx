@@ -88,8 +88,14 @@ const DustyEthLockPage: React.FC = () => {
     const getClaimParams = useCallback(
         (ethAccount: string) => {
             if (publicKey) {
-                const userLocks = allLockEvents.filter(i => i.lockOwner === ethAccount);
-                const claimIDs = userLocks.map(lock => {
+                const claimableLocks = allLockEvents.filter(i => {
+                    const isOwnedLock = i.lockOwner === ethAccount;
+                    // check if the lock as been confirmed for at least 10 blocks
+                    const hasTimePast = moment.utc().valueOf() > parseInt(i.timestamp) + 35 * 10;
+                    return isOwnedLock && hasTimePast;
+                });
+
+                const claimIDs = claimableLocks.map(lock => {
                     const _param = plasmUtils.createLockParam(
                         LockdropType.Ethereum,
                         lock.transactionHash,
@@ -112,7 +118,7 @@ const DustyEthLockPage: React.FC = () => {
             try {
                 // get all the lock events from the chain
                 if (web3 && contract) {
-                    const _allLocks = await ethLockdrop.getAllLockEvents(web3, await contract);
+                    const _allLocks = await ethLockdrop.getAllLockEvents(web3, contract);
                     setLockEvents(_allLocks);
                 }
 
@@ -201,22 +207,24 @@ const DustyEthLockPage: React.FC = () => {
         // eslint-disable-next-line
     }, [contractAddress, web3, accounts]);
 
-    // called when the user changes MetaMask account
-    // const handleAccountChange = () => {
-    //     // refresh the page
-    //     window.location.reload(false);
-    // };
+    /**
+     * called when the user changes MetaMask account
+     */
+    const handleAccountChange = () => {
+        // refresh the page
+        window.location.reload(false);
+    };
 
     // handle metamask account change event handler
-    // useEffect(() => {
-    //     // checks if account has changed in MetaMask
-    //     if ((window as any).ethereum.on) {
-    //         (window as any).ethereum.on('accountsChanged', handleAccountChange);
-    //     }
-    //     return () => {
-    //         (window as any).ethereum.removeEventListener('accountsChanged', handleAccountChange);
-    //     };
-    // }, []);
+    useEffect(() => {
+        // checks if account has changed in MetaMask
+        if ((window as any).ethereum.on) {
+            (window as any).ethereum.on('accountsChanged', handleAccountChange);
+        }
+        return () => {
+            (window as any).ethereum.removeEventListener('accountsChanged', handleAccountChange);
+        };
+    }, []);
 
     const handleGetPublicKey = useCallback(() => {
         if (!publicKey && web3) {

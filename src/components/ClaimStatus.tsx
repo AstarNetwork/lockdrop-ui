@@ -280,6 +280,10 @@ const ClaimItem: React.FC<ItemProps> = ({
         setDeclineList(decline);
     };
 
+    /**
+     * sends a lockdrop claim request to the plasm node by the given lockdrop parameter
+     * @param param lockdrop parameter data
+     */
     const submitClaimReq = (param: Lockdrop) => {
         setSendingRequest(true);
         claimData = undefined;
@@ -303,11 +307,20 @@ const ClaimItem: React.FC<ItemProps> = ({
             });
     };
 
-    const hasAllVotes = () => approveList.length + declineList.length >= voteThreshold;
-    const reqAccepted = () => approveList.length - declineList.length >= positiveVotes;
+    const hasAllVotes = useMemo(() => {
+        return approveList.length + declineList.length >= voteThreshold;
+    }, [approveList, declineList, voteThreshold]);
 
+    const reqAccepted = useMemo(() => {
+        return approveList.length - declineList.length >= positiveVotes;
+    }, [approveList, declineList, positiveVotes]);
+
+    /**
+     * requests the plasm node to send the lockdrop rewards to the locker's address
+     * @param id lockdrop claim ID
+     */
     const submitTokenClaim = (id: Uint8Array | H256) => {
-        if (hasAllVotes() && reqAccepted()) {
+        if (hasAllVotes && reqAccepted) {
             setClaimingLock(true);
             plasmUtils
                 .sendLockdropClaim(plasmApi, id)
@@ -318,6 +331,8 @@ const ClaimItem: React.FC<ItemProps> = ({
                     toast.error(e);
                     console.log(e);
                 });
+        } else {
+            throw new Error('Claim requirement was not met');
         }
     };
 
@@ -334,11 +349,11 @@ const ClaimItem: React.FC<ItemProps> = ({
     }, [claimData, claimingLock, sendingRequest]);
 
     const ActionIcon = () => {
-        if (claimData && !hasAllVotes()) {
+        if (claimData && !hasAllVotes) {
             return <HourglassEmptyIcon />;
         } else if (claimData === undefined) {
             return <SendIcon />;
-        } else if (claimData && !reqAccepted()) {
+        } else if (claimData && !reqAccepted) {
             return <ReplayIcon />;
         }
         return <CheckIcon />;
@@ -466,7 +481,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                             edge="end"
                             aria-label="request"
                             onClick={() => {
-                                claimData === undefined || !reqAccepted()
+                                claimData === undefined || !reqAccepted
                                     ? submitClaimReq(lockParam)
                                     : submitTokenClaim(claimId);
                             }}
@@ -475,7 +490,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                                 sendingRequest ||
                                 claimData?.complete.valueOf() ||
                                 claimingLock ||
-                                (claimData && !hasAllVotes())
+                                (claimData && !hasAllVotes)
                             }
                         >
                             <ActionIcon />

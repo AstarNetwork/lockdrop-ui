@@ -2,7 +2,8 @@
 import BigNumber from 'bignumber.js';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Hash, H256 } from '@polkadot/types/interfaces';
-import * as polkadotUtil from '@polkadot/util-crypto';
+import * as polkadotUtilCrypto from '@polkadot/util-crypto';
+//import * as polkadotUtil from '@polkadot/util';
 import { u8aConcat } from '@polkadot/util';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
 import * as plasmDefinitions from '@plasm/types/interfaces/definitions';
@@ -27,6 +28,26 @@ export function femtoToPlm(femto: BigNumber) {
     }
     const plmDenominator = new BigNumber(10).pow(new BigNumber(15));
     return femto.dividedBy(plmDenominator);
+}
+
+/**
+ * a Proof-of-Work function that hashes the lockdrop claim ID and the nonce
+ * together to verify the unsigned transaction.
+ * this will return the correct nonce in hex string
+ * @param claimId the real-time lockdrop claim ID (blake2 hashed lock parameter)
+ */
+export function claimPowNonce(claimId: Uint8Array | H256): Uint8Array {
+    let nonce = polkadotUtilCrypto.randomAsU8a();
+    while (true) {
+        const hash = polkadotUtilCrypto.blake2AsU8a(u8aConcat(claimId, nonce));
+        //console.log('PoW hash: ' + u8aToHex(hash));
+        if (hash[0] > 0) {
+            nonce = polkadotUtilCrypto.randomAsU8a();
+            //console.log('Next nonce: ' + u8aToHex(nonce));
+        } else {
+            return nonce;
+        }
+    }
 }
 
 /**
@@ -129,15 +150,37 @@ export function createLockParam(
         },
     );
 
+    // console.log({
+    //     type: network, // enum is converted to number
+    //     transactionHash: transactionHash,
+    //     publicKey: new U8aFixed(plasmTypeReg, publicKey, 264).toHex(),
+    //     duration: new u64(plasmTypeReg, duration).toString(),
+    //     value: new u128(plasmTypeReg, value).toString(),
+    //     nonce: polkadotUtil.u8aToHex(claimPowNonce(lockParam.hash)),
+    // });
+
     return lockParam;
 }
 
 /**
- * Returns the claim ID that is used to look up lockdrop claim requests
- * @param lockdropParam Lockdrop claim request parameter
+ * signature message that is used for the claim_to() function
  */
-export function getClaimId(lockdropParam: Struct) {
-    return lockdropParam.hash;
+export const SIG_MESSAGE = 'todo';
+
+/**
+ * sends the unclaimed lockdrop reward to the given plasm address.
+ * the signature must derive from the public key that made the lock.
+ * @param api
+ * @param claimId
+ * @param recipient
+ * @param signature
+ */
+export async function claimTo(api: ApiPromise, claimId: string, recipient: string, signature: string) {
+    const claimToTx = api.tx.plasmLockdrop.claimTo(claimId, recipient, signature);
+
+    const txHash = await claimToTx.send();
+
+    return txHash;
 }
 
 /**
@@ -174,9 +217,9 @@ export function generatePlmAddress(publicKey: string) {
     };
 
     // hash to blake2
-    const plasmPubKey = polkadotUtil.blake2AsU8a(toByteArray(publicKey.replace('0x', '')), 256);
+    const plasmPubKey = polkadotUtilCrypto.blake2AsU8a(toByteArray(publicKey.replace('0x', '')), 256);
     // encode address
-    const plasmAddress = polkadotUtil.encodeAddress(plasmPubKey, 5);
+    const plasmAddress = polkadotUtilCrypto.encodeAddress(plasmPubKey, 5);
     return plasmAddress;
 }
 
@@ -285,24 +328,4 @@ export function structToLockdrop(lockdropParam: Struct) {
     };
 
     return param;
-}
-
-/**
- * a Proof-of-Work function that hashes the lockdrop claim ID and the nonce
- * together to verify the unsigned transaction.
- * this will return the correct nonce in hex string
- * @param claimId the real-time lockdrop claim ID (blake2 hashed lock parameter)
- */
-export function claimPowNonce(claimId: Uint8Array | H256): Uint8Array {
-    let nonce = polkadotUtil.randomAsU8a();
-    while (true) {
-        const hash = polkadotUtil.blake2AsU8a(u8aConcat(claimId, nonce));
-        //console.log('PoW hash: ' + u8aToHex(hash));
-        if (hash[0] > 0) {
-            nonce = polkadotUtil.randomAsU8a();
-            //console.log('Next nonce: ' + u8aToHex(nonce));
-        } else {
-            return nonce;
-        }
-    }
 }
