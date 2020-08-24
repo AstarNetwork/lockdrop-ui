@@ -163,9 +163,14 @@ export function createLockParam(
 }
 
 /**
- * signature message that is used for the claim_to() function
+ * signature message that is used for the claim_to() function.
+ * sign this message with a ECDSA private key to generate the correct signature
  */
-export const SIG_MESSAGE = 'todo';
+export const claimToMessage = (claimId: string, plasmAddressHex: string) =>
+    `I declare to claim lockdrop reward with ID ${claimId.replace('0x', '')} to AccountId ${plasmAddressHex.replace(
+        '0x',
+        '',
+    )}`;
 
 /**
  * sends the unclaimed lockdrop reward to the given plasm address.
