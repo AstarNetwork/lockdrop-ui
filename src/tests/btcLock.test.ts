@@ -9,8 +9,6 @@ import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
 import bip68 from 'bip68';
 import * as plasmUtils from '../helpers/plasmUtils';
 import * as polkadotCrypto from '@polkadot/util-crypto';
-import * as polkadotUtil from '@polkadot/util';
-import secp256k1 from 'secp256k1';
 import * as bitcoinjsMessage from 'bitcoinjs-message';
 
 // we use a lot of API calls in this test, it's good to extend the timeout
