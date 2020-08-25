@@ -21,7 +21,7 @@ import {
     IonText,
     IonLoading,
 } from '@ionic/react';
-import { makeStyles, createStyles, Container, Typography } from '@material-ui/core';
+import { makeStyles, createStyles } from '@material-ui/core';
 import * as btcLock from '../../helpers/lockdrop/BitcoinLockdrop';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -31,17 +31,14 @@ import QrEncodedAddress from './QrEncodedAddress';
 import CopyMessageBox from '../CopyMessageBox';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import { OptionItem, Lockdrop, LockdropType } from 'src/types/LockdropModels';
-import SectionCard from '../SectionCard';
-import ClaimStatus from '../ClaimStatus';
 import * as plasmUtils from '../../helpers/plasmUtils';
-import { ApiPromise } from '@polkadot/api';
 import { BlockStreamApi } from 'src/types/BlockStreamTypes';
 import * as polkadotCrypto from '@polkadot/util-crypto';
 import * as bitcoinjsMessage from 'bitcoinjs-message';
 
 interface Props {
     networkType: bitcoinjs.Network;
-    plasmApi: ApiPromise;
+    //plasmApi: ApiPromise;
 }
 
 const useStyles = makeStyles(() =>
@@ -65,7 +62,7 @@ toast.configure({
  * Obtains lockdrop participant's public key by receiving raw signatures and BTC address
  * @param networkType Bitcoin network to use
  */
-const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
+const BtcRawSignature: React.FC<Props> = ({ networkType }) => {
     const classes = useStyles();
     // switch lock duration depending on the chain network
     const networkLockDur = networkType === bitcoinjs.networks.bitcoin ? btcDurations : btcDustyDurations;
@@ -442,7 +439,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                     </div>
                 </IonCardContent>
             </IonCard>
-            <SectionCard maxWidth="lg">
+            {/* <SectionCard maxWidth="lg">
                 <Typography variant="h4" component="h1" align="center">
                     Real-time Lockdrop Status
                 </Typography>
@@ -463,7 +460,7 @@ const BtcRawSignature: React.FC<Props> = ({ networkType, plasmApi }) => {
                         </Container>
                     </>
                 )}
-            </SectionCard>
+            </SectionCard> */}
         </div>
     );
 };

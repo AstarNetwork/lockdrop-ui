@@ -8,9 +8,7 @@ import quantstampLogo from '../resources/quantstamp-logo.png';
 import BtcRawSignature from '../components/BtcLock/BtcRawSignature';
 //import TrezorConnect, { DEVICE } from 'trezor-connect';
 import * as bitcoinjs from 'bitcoinjs-lib';
-import * as plasmUtils from '../helpers/plasmUtils';
 import { toast } from 'react-toastify';
-import { ApiPromise } from '@polkadot/api';
 
 toast.configure({
     position: 'top-right',
@@ -38,8 +36,6 @@ const useStyles = makeStyles(theme =>
 
 export default function DustyBtcLockPage() {
     const classes = useStyles();
-
-    const [plasmApi, setPlasmApi] = useState<ApiPromise>({} as ApiPromise);
     const [isLoading, setLoading] = useState<{
         loadState: boolean;
         message: string;
@@ -55,22 +51,22 @@ export default function DustyBtcLockPage() {
             message: 'Connecting to Plasm Network',
         });
 
-        plasmUtils
-            .createPlasmInstance(plasmUtils.PlasmNetwork.Dusty)
-            .then(e => {
-                setPlasmApi(e);
-                console.log('connected to Plasm network');
-            })
-            .catch(err => {
-                toast.error(err);
-                console.log(err);
-            })
-            .finally(() => {
-                setLoading({
-                    loadState: false,
-                    message: '',
-                });
-            });
+        // plasmUtils
+        //     .createPlasmInstance(plasmUtils.PlasmNetwork.Dusty)
+        //     .then(e => {
+        //         setPlasmApi(e);
+        //         console.log('connected to Plasm network');
+        //     })
+        //     .catch(err => {
+        //         toast.error(err);
+        //         console.log(err);
+        //     })
+        //     .finally(() => {
+        //         setLoading({
+        //             loadState: false,
+        //             message: '',
+        //         });
+        //     });
     }, []);
 
     return (
@@ -96,7 +92,7 @@ export default function DustyBtcLockPage() {
                                 </Link>
                             </Typography>
                         </div>
-                        <BtcRawSignature networkType={bitcoinjs.networks.testnet} plasmApi={plasmApi} />
+                        <BtcRawSignature networkType={bitcoinjs.networks.testnet} />
                     </SectionCard>
                     <Footer />
                 </IonContent>
