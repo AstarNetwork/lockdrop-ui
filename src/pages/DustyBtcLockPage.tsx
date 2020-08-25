@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { IonContent, IonPage, IonLoading } from '@ionic/react';
+import React, { useEffect } from 'react';
+import { IonContent, IonPage } from '@ionic/react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SectionCard from '../components/SectionCard';
@@ -36,21 +36,20 @@ const useStyles = makeStyles(theme =>
 
 export default function DustyBtcLockPage() {
     const classes = useStyles();
-    const [isLoading, setLoading] = useState<{
-        loadState: boolean;
-        message: string;
-    }>({
-        loadState: false,
-        message: '',
-    });
+    // const [isLoading, setLoading] = useState<{
+    //     loadState: boolean;
+    //     message: string;
+    // }>({
+    //     loadState: false,
+    //     message: '',
+    // });
 
     // connect to plasm node on mount
     useEffect(() => {
-        setLoading({
-            loadState: true,
-            message: 'Connecting to Plasm Network',
-        });
-
+        // setLoading({
+        //     loadState: true,
+        //     message: 'Connecting to Plasm Network',
+        // });
         // plasmUtils
         //     .createPlasmInstance(plasmUtils.PlasmNetwork.Dusty)
         //     .then(e => {
@@ -72,7 +71,6 @@ export default function DustyBtcLockPage() {
     return (
         <>
             <IonPage>
-                <IonLoading isOpen={isLoading.loadState} message={isLoading.message} />
                 <Navbar />
                 <IonContent>
                     <SectionCard maxWidth="md">
