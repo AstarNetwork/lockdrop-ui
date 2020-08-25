@@ -19,7 +19,7 @@ interface Props {
     address: string;
     lockData: BlockStreamApi.Transaction[];
     lockDurationDay: number;
-    onUnlock?: Function;
+    onUnlock?: (lock: BlockStreamApi.Transaction) => void;
 }
 
 const useStyles = makeStyles(theme =>

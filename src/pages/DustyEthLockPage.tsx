@@ -17,7 +17,8 @@ import SectionCard from '../components/SectionCard';
 import { Typography, Container, Divider } from '@material-ui/core';
 import * as plasmUtils from '../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
-import * as polkadotUtil from '@polkadot/util-crypto';
+import * as polkadotCrypto from '@polkadot/util-crypto';
+import * as polkadotUtil from '@polkadot/util';
 import ClaimStatus from 'src/components/ClaimStatus';
 import moment from 'moment';
 import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
@@ -238,7 +239,7 @@ const DustyEthLockPage: React.FC = () => {
                     const _pub = await ethLockdrop.getPubKey(
                         web3,
                         `Sign this message to submit a lock request.
-                    This action is required for the real-time lockdrop module ${polkadotUtil.randomAsHex(3)}`,
+                    This action is required for the real-time lockdrop module ${polkadotCrypto.randomAsHex(3)}`,
                     );
                     setPublicKey(_pub);
                 } catch (e) {
@@ -265,7 +266,7 @@ const DustyEthLockPage: React.FC = () => {
                         web3,
                         `Sign this message to submit a lock request.
                 This action is required for the real-time lockdrop module
-                ${polkadotUtil.randomAsHex(3)}`,
+                ${polkadotCrypto.randomAsHex(3)}`,
                     );
                     setPublicKey(_publicKey);
                 }
@@ -281,6 +282,19 @@ const DustyEthLockPage: React.FC = () => {
         },
         [accounts, contract, publicKey, web3],
     );
+
+    const getClaimToSig = async (id: Uint8Array, sendAddr?: string) => {
+        if (typeof web3 === 'undefined') {
+            throw new Error('Could not connect to Web3js');
+        }
+        if (typeof sendAddr === 'undefined') {
+            throw new Error('Could not connect to Web3js');
+        }
+
+        const _claimId = polkadotUtil.u8aToHex(id);
+        const _msg = plasmUtils.claimToMessage(_claimId, sendAddr);
+        return await ethLockdrop.getMessageSignature(web3, _msg, false);
+    };
 
     return (
         <IonPage>
@@ -326,6 +340,7 @@ const DustyEthLockPage: React.FC = () => {
                                         networkType="ETH"
                                         plasmNetwork="Dusty"
                                         publicKey={publicKey}
+                                        getLockerSig={(id, addr) => getClaimToSig(id, addr)}
                                     />
                                 ) : (
                                     <>

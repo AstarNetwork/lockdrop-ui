@@ -7,7 +7,7 @@ interface Props {
     startTime: Moment;
     endTime: Moment;
     /**function callback if the countdown is over. This returns a boolean as the parameter */
-    onFinish?: Function;
+    onFinish?: (finished: boolean) => void;
 }
 
 const CountdownTimer: React.FC<Props> = ({ startTime, endTime, onFinish }) => {

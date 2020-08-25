@@ -33,7 +33,7 @@ interface Props {
     scriptAddress: string;
     lockData: BlockStreamApi.Transaction[];
     lockDurationDay: number;
-    onUnlock?: Function;
+    onUnlock?: (lock: BlockStreamApi.Transaction) => void;
 }
 
 /**

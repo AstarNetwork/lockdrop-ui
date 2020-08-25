@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Hash, H256 } from '@polkadot/types/interfaces';
 import * as polkadotUtilCrypto from '@polkadot/util-crypto';
-//import * as polkadotUtil from '@polkadot/util';
+import * as polkadotUtils from '@polkadot/util';
 import { u8aConcat } from '@polkadot/util';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
 import * as plasmDefinitions from '@plasm/types/interfaces/definitions';
@@ -164,23 +164,32 @@ export function createLockParam(
 
 /**
  * signature message that is used for the claim_to() function.
- * sign this message with a ECDSA private key to generate the correct signature
+ * sign this message with a ECDSA private key to generate the correct signature.
+ * the 0x prefix will be automatically removed
+ * @param claimId lockdrop claim ID in hex string
+ * @param plasmAddress plasm network public address in ss58 encoding. This is the receiving address
  */
-export const claimToMessage = (claimId: string, plasmAddressHex: string) =>
-    `I declare to claim lockdrop reward with ID ${claimId.replace('0x', '')} to AccountId ${plasmAddressHex.replace(
-        '0x',
-        '',
-    )}`;
+export const claimToMessage = (claimId: string, plasmAddress: string) => {
+    const addressHex = polkadotUtils.u8aToHex(polkadotUtilCrypto.decodeAddress(plasmAddress)).replace('0x', '');
+
+    return `I declare to claim lockdrop reward with ID ${claimId.replace('0x', '')} to AccountId ${addressHex}`;
+};
 
 /**
  * sends the unclaimed lockdrop reward to the given plasm address.
  * the signature must derive from the public key that made the lock.
- * @param api
- * @param claimId
- * @param recipient
- * @param signature
+ * @param api plasm network API instance
+ * @param claimId lockdrop claim ID in hex string without 0x prefix
+ * @param recipient plasm address in hex string without the 0x prefix
+ * @param signature hex string without the 0x for the ECDSA signature from the user
  */
 export async function claimTo(api: ApiPromise, claimId: string, recipient: string, signature: string) {
+    const regexp = /^[0-9a-fA-F]+$/;
+
+    if (!regexp.test(claimId) || !regexp.test(recipient) || !regexp.test(signature)) {
+        throw new Error('all parameters must be in string hex without 0x prefix');
+    }
+
     const claimToTx = api.tx.plasmLockdrop.claimTo(claimId, recipient, signature);
 
     const txHash = await claimToTx.send();

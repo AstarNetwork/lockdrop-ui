@@ -14,7 +14,7 @@ import { ethDurations, ethDustyDurations } from '../../data/lockInfo';
 
 type InputProps = {
     token: string;
-    onSubmit: Function;
+    onSubmit: (inputs: LockInput) => void;
     description?: string;
     dusty?: boolean;
 };
