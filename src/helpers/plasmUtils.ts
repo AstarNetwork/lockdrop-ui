@@ -179,18 +179,23 @@ export const claimToMessage = (claimId: string, plasmAddress: string) => {
  * sends the unclaimed lockdrop reward to the given plasm address.
  * the signature must derive from the public key that made the lock.
  * @param api plasm network API instance
- * @param claimId lockdrop claim ID in hex string without 0x prefix
- * @param recipient plasm address in hex string without the 0x prefix
+ * @param claimId lockdrop claim ID hash in raw byte stream
+ * @param recipient plasm address in decoded form
  * @param signature hex string without the 0x for the ECDSA signature from the user
  */
-export async function claimTo(api: ApiPromise, claimId: string, recipient: string, signature: string) {
-    const regexp = /^[0-9a-fA-F]+$/;
-
-    if (!regexp.test(claimId) || !regexp.test(recipient) || !regexp.test(signature)) {
-        throw new Error('all parameters must be in string hex without 0x prefix');
+export async function claimTo(
+    api: ApiPromise,
+    claimId: Uint8Array,
+    recipient: Uint8Array | string,
+    signature: Uint8Array,
+) {
+    const encodedAddr = recipient instanceof Uint8Array ? polkadotUtilCrypto.encodeAddress(recipient) : recipient;
+    const addrCheck = polkadotUtilCrypto.checkAddress(encodedAddr, 5);
+    if (!addrCheck[0]) {
+        throw new Error('Plasm address check error: ' + addrCheck[1]);
     }
 
-    const claimToTx = api.tx.plasmLockdrop.claimTo(claimId, recipient, signature);
+    const claimToTx = api.tx.plasmLockdrop.claimTo(claimId, encodedAddr, signature);
 
     const txHash = await claimToTx.send();
 

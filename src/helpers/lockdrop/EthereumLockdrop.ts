@@ -30,7 +30,8 @@ export async function getMessageSignature<T extends boolean>(
     asSigParam: T,
 ): Promise<T extends true ? ethereumUtils.ECDSASignature : string>;
 /**
- * retrieves the ECDSA signature from the given message via Web3js client call
+ * retrieves the ECDSA signature from the given message via Web3js client call.
+ * this will either return the v, r, s values, or the full sig in hex string
  * @param web3 web3js api instance
  * @param message message string to sign
  * @param asSigParam return ECDSA sig param if true (i.e. only v, r, s values)
@@ -46,6 +47,8 @@ export async function getMessageSignature(web3: Web3, message: string, asSigPara
     if (!ethereumUtils.isValidSignature(res.v, res.r, res.s)) {
         throw new Error('Invalid signature');
     }
+
+    console.log({ res, sig });
 
     if (asSigParam) {
         return res;
