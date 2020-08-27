@@ -7,7 +7,7 @@ import { makeStyles, createStyles } from '@material-ui/core';
 
 interface Props {
     showModal: boolean;
-    onAgree?: Function;
+    onAgree?: (agreed: boolean) => void;
 }
 
 const useStyles = makeStyles(theme =>

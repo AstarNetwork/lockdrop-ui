@@ -193,4 +193,9 @@ describe('real-time lockdrop claim hash tests', () => {
         const powHash = polkadotCryptoUtil.blake2AsU8a(powData);
         expect(powHash[0]).toEqual(0);
     });
+
+    // it('checks claim_to() function request from an Ethereum address', () => {
+    //     const unclaimedId = '0x7fc5a41bf6765bc018fbe70e794df6d6c29f6f4e5850bd2a50c1309bcfd18a6f';
+
+    // });
 });

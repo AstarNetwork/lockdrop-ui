@@ -21,12 +21,10 @@ import { btcDustyDurations, btcDurations } from '../../data/lockInfo';
 import * as btcLock from '../../helpers/lockdrop/BitcoinLockdrop';
 import { toast } from 'react-toastify';
 //import BigNumber from 'bignumber.js';
-import { makeStyles, createStyles, Typography, Container } from '@material-ui/core';
+import { makeStyles, createStyles } from '@material-ui/core';
 import QrEncodedAddress from './QrEncodedAddress';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import { OptionItem, Lockdrop, LockdropType } from 'src/types/LockdropModels';
-import SectionCard from '../SectionCard';
-import ClaimStatus from '../ClaimStatus';
 import { ApiPromise } from '@polkadot/api';
 import * as plasmUtils from '../../helpers/plasmUtils';
 import { BlockStreamApi } from 'src/types/BlockStreamTypes';
@@ -53,7 +51,7 @@ const useStyles = makeStyles(() =>
     }),
 );
 
-const TrezorLock: React.FC<Props> = ({ networkType, plasmApi }) => {
+const TrezorLock: React.FC<Props> = ({ networkType }) => {
     const classes = useStyles();
 
     const defaultPath = networkType === bitcoinjs.networks.bitcoin ? "m/44'/0'/0'" : "m/44'/1'/0'";
@@ -82,44 +80,44 @@ const TrezorLock: React.FC<Props> = ({ networkType, plasmApi }) => {
         return { valid: true, message: 'valid input' };
     };
 
-    const signLockdropClaims = () => {
-        const _msg = 'sign to display real-time lockdrop status';
-        setLoading({ loadState: true, message: 'Waiting for Trezor' });
+    // const signLockdropClaims = () => {
+    //     const _msg = 'sign to display real-time lockdrop status';
+    //     setLoading({ loadState: true, message: 'Waiting for Trezor' });
 
-        if (!publicKey) {
-            // we have initiated the Trezor instance before this component mounted
-            TrezorConnect.signMessage({
-                path: addressPath,
-                message: _msg,
-                coin: networkType === bitcoinjs.networks.bitcoin ? 'BTC' : 'Testnet',
-            })
-                .then(res => {
-                    // we use a try-catch block because Trezor promise won't fail
-                    try {
-                        if (res.success) {
-                            const _pubKey = btcLock.getPublicKey(
-                                res.payload.address,
-                                res.payload.signature,
-                                _msg,
-                                networkType,
-                            );
-                            setPublicKey(_pubKey);
-                        } else {
-                            throw new Error(res.payload.error);
-                        }
-                    } catch (e) {
-                        toast.error(e.toString());
-                        console.log(e);
-                    }
-                })
-                .finally(() => {
-                    setLoading({
-                        loadState: false,
-                        message: '',
-                    });
-                });
-        }
-    };
+    //     if (!publicKey) {
+    //         // we have initiated the Trezor instance before this component mounted
+    //         TrezorConnect.signMessage({
+    //             path: addressPath,
+    //             message: _msg,
+    //             coin: networkType === bitcoinjs.networks.bitcoin ? 'BTC' : 'Testnet',
+    //         })
+    //             .then(res => {
+    //                 // we use a try-catch block because Trezor promise won't fail
+    //                 try {
+    //                     if (res.success) {
+    //                         const _pubKey = btcLock.getPublicKey(
+    //                             res.payload.address,
+    //                             res.payload.signature,
+    //                             _msg,
+    //                             networkType,
+    //                         );
+    //                         setPublicKey(_pubKey);
+    //                     } else {
+    //                         throw new Error(res.payload.error);
+    //                     }
+    //                 } catch (e) {
+    //                     toast.error(e.toString());
+    //                     console.log(e);
+    //                 }
+    //             })
+    //             .finally(() => {
+    //                 setLoading({
+    //                     loadState: false,
+    //                     message: '',
+    //                 });
+    //             });
+    //     }
+    // };
 
     const createLockAddress = () => {
         setLoading({ loadState: true, message: 'Waiting for Trezor' });
@@ -323,28 +321,6 @@ const TrezorLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                     </div>
                 </IonCardContent>
             </IonCard>
-            <SectionCard maxWidth="lg">
-                <Typography variant="h4" component="h1" align="center">
-                    Real-time Lockdrop Status
-                </Typography>
-                {publicKey ? (
-                    <ClaimStatus
-                        claimParams={allLockParams}
-                        plasmApi={plasmApi}
-                        networkType="BTC"
-                        plasmNetwork="Dusty"
-                        publicKey={publicKey}
-                    />
-                ) : (
-                    <>
-                        <Container>
-                            <IonButton expand="block" onClick={() => signLockdropClaims()}>
-                                Click to view lock claims
-                            </IonButton>
-                        </Container>
-                    </>
-                )}
-            </SectionCard>
         </div>
     );
 };

@@ -20,12 +20,10 @@ import { btcDustyDurations, btcDurations } from '../../data/lockInfo';
 import * as btcLock from '../../helpers/lockdrop/BitcoinLockdrop';
 import { toast } from 'react-toastify';
 //import BigNumber from 'bignumber.js';
-import { makeStyles, createStyles, Typography, Container } from '@material-ui/core';
+import { makeStyles, createStyles } from '@material-ui/core';
 import QrEncodedAddress from './QrEncodedAddress';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import { OptionItem, Lockdrop, LockdropType } from 'src/types/LockdropModels';
-import SectionCard from '../SectionCard';
-import ClaimStatus from '../ClaimStatus';
 import { ApiPromise } from '@polkadot/api';
 import * as plasmUtils from '../../helpers/plasmUtils';
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
@@ -55,7 +53,7 @@ const useStyles = makeStyles(() =>
     }),
 );
 
-const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
+const LedgerLock: React.FC<Props> = ({ networkType }) => {
     const classes = useStyles();
 
     const defaultPath = networkType === bitcoinjs.networks.bitcoin ? "m/44'/0'/0'" : "m/44'/1'/0'";
@@ -110,27 +108,6 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
             }
         } else {
             return btcApi;
-        }
-    };
-
-    const viewClaims = async () => {
-        if (!publicKey) {
-            setLoading({ loadState: true, message: 'Waiting for Ledger' });
-
-            try {
-                const btc = await ledgerApiInstance();
-                btc.getWalletPublicKey(addressPath, { format: 'p2sh' }).then(wallet => {
-                    setPublicKey(wallet.publicKey);
-                });
-            } catch (err) {
-                toast.error(err.message);
-                console.log(err);
-            } finally {
-                setLoading({
-                    loadState: false,
-                    message: '',
-                });
-            }
         }
     };
 
@@ -387,28 +364,6 @@ const LedgerLock: React.FC<Props> = ({ networkType, plasmApi }) => {
                     </div>
                 </IonCardContent>
             </IonCard>
-            <SectionCard maxWidth="lg">
-                <Typography variant="h4" component="h1" align="center">
-                    Real-time Lockdrop Status
-                </Typography>
-                {publicKey ? (
-                    <ClaimStatus
-                        claimParams={allLockParams}
-                        plasmApi={plasmApi}
-                        networkType="BTC"
-                        plasmNetwork="Dusty"
-                        publicKey={publicKey}
-                    />
-                ) : (
-                    <>
-                        <Container>
-                            <IonButton expand="block" onClick={() => viewClaims()}>
-                                Click to view lock claims
-                            </IonButton>
-                        </Container>
-                    </>
-                )}
-            </SectionCard>
         </div>
     );
 };
