@@ -11,6 +11,7 @@ import {
     IonLabel,
     IonButton,
     IonRouterLink,
+    IonImg,
 } from '@ionic/react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -68,7 +69,8 @@ export const LandingPage: React.FC = () => {
             />
             <IonContent>
                 <SectionCard maxWidth="lg">
-                    <img src={lockdropLogo} alt="" className={classes.logoImg} />
+                    <IonImg src={lockdropLogo} alt="" className={classes.logoImg} />
+                    {/* <img src={lockdropLogo} alt="" className={classes.logoImg} /> */}
                     <IonCardHeader>
                         <IonCardSubtitle>Plasm Network Lockdrop Web Application</IonCardSubtitle>
                         <IonCardTitle>Plasm Network Lockdrop</IonCardTitle>

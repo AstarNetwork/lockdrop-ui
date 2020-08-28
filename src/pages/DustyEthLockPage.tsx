@@ -14,7 +14,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { removeWeb3Event } from '../helpers/getWeb3';
 import SectionCard from '../components/SectionCard';
-import { Typography, Container, Divider } from '@material-ui/core';
+import { Typography, Container, Divider, makeStyles, createStyles } from '@material-ui/core';
 import * as plasmUtils from '../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
 import * as polkadotCrypto from '@polkadot/util-crypto';
@@ -47,7 +47,22 @@ toast.configure({
     draggable: true,
 });
 
+const useStyles = makeStyles(theme =>
+    createStyles({
+        addressDropdown: {
+            padding: theme.spacing(0, 3, 0),
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            [theme.breakpoints.up('md')]: {
+                maxWidth: '60%',
+            },
+        },
+    }),
+);
+
 const DustyEthLockPage: React.FC = () => {
+    const classes = useStyles();
+
     const [web3, setWeb3] = useState<Web3>();
     const [plasmApi, setPlasmApi] = useState<ApiPromise>();
     const [accounts, setAccounts] = useState<string[]>([]);
@@ -324,6 +339,7 @@ const DustyEthLockPage: React.FC = () => {
                                     options={lockdropContracts.secondLock.ropsten}
                                     value={contractAddress}
                                     onChange={e => setContractAddress(e.value)}
+                                    className={classes.addressDropdown}
                                 />
                             </SectionCard>
 

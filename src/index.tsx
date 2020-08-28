@@ -3,8 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
-import { createMuiTheme } from '@material-ui/core/styles';
-import { MuiThemeProvider } from '@material-ui/core/styles';
+import { MuiThemeProvider, createMuiTheme, responsiveFontSizes } from '@material-ui/core/styles';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 
@@ -18,7 +17,7 @@ declare global {
 window.contract = window.contract || {};
 window.web3 = window.web3 || {};
 
-const theme = createMuiTheme({
+let theme = createMuiTheme({
     typography: {
         fontFamily: [
             'Work Sans',
@@ -42,6 +41,8 @@ const theme = createMuiTheme({
         },
     },
 });
+
+theme = responsiveFontSizes(theme);
 
 ReactDOM.render(
     <MuiThemeProvider theme={theme}>

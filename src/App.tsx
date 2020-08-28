@@ -26,6 +26,7 @@ import '@ionic/react/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 import SideMenu from './components/SideMenu';
+import LockdropCalcPage from './pages/LockdropCalcPage';
 
 const App: React.FC = () => {
     return (
@@ -39,6 +40,7 @@ const App: React.FC = () => {
                         <Route path="/lock-form/first" component={EthLockdropPage} />
                         <Route path="/lock-form/dusty-eth" component={DustyEthLockPage} />
                         <Route path="/lock-form/dusty-btc" component={DustyBtcLockPage} />
+                        <Route path="/utils-calculator" component={LockdropCalcPage} />
                         <Route exact path="/" render={() => <Redirect to="/lock-form" />} />
                     </IonRouterOutlet>
                 </IonSplitPane>
