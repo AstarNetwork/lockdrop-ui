@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
     IonPage,
     IonContent,
@@ -17,13 +17,13 @@ import {
     IonSelectOption,
     IonChip,
     IonLoading,
+    IonToggle,
 } from '@ionic/react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { Container } from '@material-ui/core';
-//import BigNumber from 'bignumber.js';
+import { Container, Typography } from '@material-ui/core';
+import BigNumber from 'bignumber.js';
 import { ethDurations, btcDurations } from 'src/data/lockInfo';
-import { OptionItem } from 'src/types/LockdropModels';
 import { ApiPromise } from '@polkadot/api';
 import * as plasmUtils from '../helpers/plasmUtils';
 
@@ -31,9 +31,12 @@ const LockdropCalcPage = () => {
     const [tokenType, setTokenType] = useState<'BTC' | 'ETH'>('ETH');
     const [tokenAmount, setTokenAmount] = useState('');
     const [tokenExRate, setTokenExRate] = useState<[number, number]>([0, 0]); // 1 token to USD rate
-    const [lockDuration, setLockDuration] = useState<OptionItem>();
+    const [lockDuration, setLockDuration] = useState(0);
     const [plasmApi, setPlasmApi] = useState<ApiPromise>();
     const [returnAlpha, setReturnAlpha] = useState(0);
+
+    const [isCustomRate, setIsCustomRate] = useState(false);
+    const [customExRate, setCustomExRate] = useState('');
 
     const [isLoading, setIsLoading] = useState<{ loading: boolean; message: string }>({ loading: false, message: '' });
 
@@ -81,6 +84,26 @@ const LockdropCalcPage = () => {
         };
     });
 
+    const calculatePlm = useCallback(() => {
+        // formula is `alpha * token * USD rate * bonus rate`
+        try {
+            if (typeof lockDuration === 'undefined') throw new Error('No lock duration selected');
+            // check if user toggled custom rate
+            const _exRate = isCustomRate
+                ? parseInt(customExRate) // use user provided token
+                : tokenType === 'BTC' // or use exchange rate for each token
+                ? tokenExRate[0]
+                : tokenExRate[1];
+            const _lockVal = new BigNumber(tokenAmount).times(new BigNumber(_exRate));
+            const total = _lockVal.times(new BigNumber(returnAlpha)).times(new BigNumber(lockDuration));
+            if (total.isNaN()) throw new Error('Invalid value in the calculation');
+            console.log({ _exRate, _lockVal, returnAlpha, dur: lockDuration });
+            return parseFloat(total.toFixed()).toLocaleString('en');
+        } catch (e) {
+            return '0';
+        }
+    }, [tokenType, tokenExRate, lockDuration, returnAlpha, tokenAmount, isCustomRate, customExRate]);
+
     return (
         <>
             <IonPage>
@@ -105,7 +128,8 @@ const LockdropCalcPage = () => {
                                 </IonLabel>
 
                                 <IonList>
-                                    <IonItemDivider>Token Information</IonItemDivider>
+                                    <IonItemDivider color="primary">Token Information</IonItemDivider>
+                                    <IonLabel>Plasm Network alpha value: {returnAlpha.toString()}</IonLabel>
                                     <IonItem>
                                         <IonLabel>
                                             <p>{tokenExRate[0].toString()} USD per 1 BTC</p>
@@ -113,21 +137,45 @@ const LockdropCalcPage = () => {
                                         </IonLabel>
                                     </IonItem>
                                     <IonItem>
-                                        <IonLabel>Locking Tokens</IonLabel>
-                                        <IonSelect
-                                            value={tokenType}
-                                            placeholder="Choose One"
-                                            onIonChange={e => {
-                                                e.detail.value && setTokenType(e.detail.value);
-                                            }}
-                                        >
-                                            <IonSelectOption value="BTC">BTC</IonSelectOption>
-                                            <IonSelectOption value="ETH">ETC</IonSelectOption>
-                                        </IonSelect>
+                                        <IonLabel>Toggle custom exchange rate</IonLabel>
+                                        <IonToggle
+                                            checked={isCustomRate}
+                                            onIonChange={e => setIsCustomRate(e.detail.checked)}
+                                        />
+                                    </IonItem>
+                                    <IonItem>
+                                        {isCustomRate ? (
+                                            <>
+                                                <IonLabel>Input token exchange rate (USD)</IonLabel>
+                                                <IonInput
+                                                    placeholder={'ex: 341'}
+                                                    onIonChange={e => {
+                                                        const _input = e.detail.value;
+                                                        if (_input && isFinite(parseFloat(_input))) {
+                                                            setCustomExRate(_input);
+                                                        }
+                                                    }}
+                                                    value={customExRate}
+                                                ></IonInput>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <IonLabel>Locking Token Type</IonLabel>
+                                                <IonSelect
+                                                    value={tokenType}
+                                                    placeholder="Choose One"
+                                                    onIonChange={e => {
+                                                        e.detail.value && setTokenType(e.detail.value);
+                                                    }}
+                                                >
+                                                    <IonSelectOption value="BTC">BTC</IonSelectOption>
+                                                    <IonSelectOption value="ETH">ETH</IonSelectOption>
+                                                </IonSelect>
+                                            </>
+                                        )}
                                     </IonItem>
 
-                                    <IonItemDivider>Lockdrop information</IonItemDivider>
-                                    <IonLabel>Current network token alpha value: {returnAlpha.toString()}</IonLabel>
+                                    <IonItemDivider color="primary">Lockdrop data</IonItemDivider>
 
                                     <IonItem>
                                         <IonLabel position="floating">Number of {tokenType} locking</IonLabel>
@@ -144,12 +192,11 @@ const LockdropCalcPage = () => {
                                     </IonItem>
                                     <IonLabel>Lock Duration</IonLabel>
                                     <IonItem>
-                                        <IonLabel>Locking for...</IonLabel>
+                                        <IonLabel>Locking for</IonLabel>
                                         <IonSelect
-                                            value={lockDuration?.value}
+                                            value={lockDuration}
                                             onIonChange={e => {
-                                                console.log(e.detail);
-                                                e.detail.value && setLockDuration(e.detail.value);
+                                                setLockDuration(e.detail.value);
                                             }}
                                         >
                                             {tokenLockDurs.map(dat => {
@@ -162,8 +209,8 @@ const LockdropCalcPage = () => {
                                         </IonSelect>
                                         <IonChip>
                                             <IonLabel>
-                                                {lockDuration
-                                                    ? 'The rate is ' + lockDuration.rate + 'x'
+                                                {lockDuration !== 0
+                                                    ? 'The rate is ' + lockDuration + 'x'
                                                     : 'Please choose the duration'}
                                             </IonLabel>
                                         </IonChip>
@@ -172,18 +219,20 @@ const LockdropCalcPage = () => {
                             </IonCardContent>
                             <IonCard>
                                 <IonCardHeader>
-                                    <IonCardSubtitle>
-                                        How much tokens you will get for each price points
-                                    </IonCardSubtitle>
+                                    <IonCardSubtitle>PLM token calculation</IonCardSubtitle>
                                     <IonCardTitle>Expected return</IonCardTitle>
                                 </IonCardHeader>
                                 <IonCardContent>
                                     <IonLabel>
-                                        This calculation is based on the current price of each locking tokens. The
-                                        actual lockdrop reward is calculated based on the exchange rate of the moment
-                                        Plasm Network validator nodes confirm your transaction, which is around 1 ~ 2
-                                        minutes after you press the claim lockdrop button. Therefore, the results shown
-                                        from this page will not reflect the actual number of tokens you will receive
+                                        Lockdrop reward formula:
+                                        <Typography variant="h3" component="h4" align="center">
+                                            alpha * tokens locked * 1 {tokenType} to USD * duration bonus
+                                        </Typography>
+                                    </IonLabel>
+                                    <IonLabel color="primary">
+                                        <Typography variant="h3" component="h1" align="center">
+                                            You return is estimated to be: {calculatePlm()} PLM
+                                        </Typography>
                                     </IonLabel>
                                 </IonCardContent>
                             </IonCard>
