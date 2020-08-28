@@ -22,13 +22,16 @@ export const secondLockdropEnd = secondLockdropStart.clone().add(LOCKDROP_DURATI
 //todo: add other contract addresses when ready
 export const lockdropContracts = {
     firstLock: {
-        main: '0x458DaBf1Eff8fCdfbF0896A6Bd1F457c01E2FfD6',
-        ropsten: '0xEEd84A89675342fB04faFE06F7BB176fE35Cb168',
-        private: Lockdrop.networks[5777].address,
+        main: { address: '0x458DaBf1Eff8fCdfbF0896A6Bd1F457c01E2FfD6', blockHeight: 9662816 },
+        ropsten: { address: '0xEEd84A89675342fB04faFE06F7BB176fE35Cb168', blockHeight: 7941301 },
+        private: { address: Lockdrop.networks[5777].address, blockHeight: 0 },
     },
     secondLock: {
-        main: '0xa4803f17607B7cDC3dC579083d9a14089E87502b',
-        ropsten: ['0x69e7eb3ab94a10e4f408d842b287c70aa0d11649', '0xa91E04a6ECF202A7628e0c9191676407015F5AF9'],
+        main: { address: '0xa4803f17607B7cDC3dC579083d9a14089E87502b', blockHeight: 10714638 },
+        ropsten: [
+            { address: '0x69e7eb3ab94a10e4f408d842b287c70aa0d11649', blockHeight: 8257718 },
+            { address: '0xa91E04a6ECF202A7628e0c9191676407015F5AF9', blockHeight: 8474518 },
+        ],
         private: Lockdrop.networks[5777].address,
     },
     thirdLock: { main: '0x', ropsten: '0x', private: Lockdrop.networks[5777].address },

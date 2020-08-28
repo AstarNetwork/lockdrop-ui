@@ -14,7 +14,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { removeWeb3Event } from '../helpers/getWeb3';
 import SectionCard from '../components/SectionCard';
-import { Typography, Container } from '@material-ui/core';
+import { Typography, Container, Divider, makeStyles, createStyles } from '@material-ui/core';
 import * as plasmUtils from '../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
 import * as polkadotCrypto from '@polkadot/util-crypto';
@@ -23,6 +23,7 @@ import ClaimStatus from 'src/components/ClaimStatus';
 import moment from 'moment';
 import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
 import { lockdropContracts } from '../data/lockInfo';
+import Dropdown from 'react-dropdown';
 import 'react-dropdown/style.css';
 
 const formInfo = `This is the lockdrop form for Ethereum.
@@ -37,23 +38,49 @@ Regarding the audit by Quantstamp, click <a
                             here
                         </a> for more details`;
 
-toast.configure({
-    position: 'top-right',
-    autoClose: 5000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-});
+const useStyles = makeStyles(theme =>
+    createStyles({
+        addressDropdown: {
+            padding: theme.spacing(0, 3, 0),
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            [theme.breakpoints.up('md')]: {
+                maxWidth: '60%',
+            },
+        },
+    }),
+);
 
-const EthSecondLockdropPage: React.FC = () => {
-    const contractAddress = lockdropContracts.secondLock.main;
+interface Props {
+    lockdropNetwork: plasmUtils.PlasmNetwork;
+}
+
+const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
+    const classes = useStyles();
     const now = moment.utc().valueOf();
+
+    /**
+     * returns true if this is lockdrop is for the plasm main net.
+     */
+    const isMainnetLock = lockdropNetwork === plasmUtils.PlasmNetwork.Main;
+
+    // this is used for rendering network names
+    const plasmNetToEthNet = isMainnetLock ? 'Main Network' : 'Ropsten';
 
     const [web3, setWeb3] = useState<Web3>();
     const [plasmApi, setPlasmApi] = useState<ApiPromise>();
     const [accounts, setAccounts] = useState<string[]>([]);
     const [contract, setContract] = useState<Contract>();
+    // set default testnet contract address
+    const [contractAddress, setContractAddress] = useState(() => {
+        const _mainContract = lockdropContracts.secondLock.main.address;
+        // always use the last contract as default if it's testnet
+        const _ropContract =
+            lockdropContracts.secondLock.ropsten[lockdropContracts.secondLock.ropsten.length - 1].address;
+
+        return isMainnetLock ? _mainContract : _ropContract;
+    });
+
     const [isLoading, setLoading] = useState<{
         loading: boolean;
         message: string;
@@ -62,7 +89,7 @@ const EthSecondLockdropPage: React.FC = () => {
         message: '',
     });
 
-    const [ethNetworkType, setEthNetworkType] = useState('');
+    const [currentNetwork, setCurrentNetwork] = useState('');
     const [allLockEvents, setLockEvents] = useState<LockEvent[]>([]);
     const [lockParams, setLockParams] = useState<Lockdrop[]>([]);
     const [publicKey, setPublicKey] = useState<string>();
@@ -70,9 +97,9 @@ const EthSecondLockdropPage: React.FC = () => {
     const [lockdropStart, setLockdropStart] = useState('0');
     const [lockdropEnd, setLockdropEnd] = useState('0');
 
-    const isMainnet = useMemo(() => {
-        return ethNetworkType === 'main';
-    }, [ethNetworkType]);
+    const isMainnet = (currentNetwork: string) => {
+        return currentNetwork === 'main';
+    };
 
     // checks if lockdrop is online
     const isLockdropOpen = useMemo(() => {
@@ -129,10 +156,9 @@ const EthSecondLockdropPage: React.FC = () => {
                 if (web3 && contract) {
                     const _allLocks = await ethLockdrop.getAllLockEvents(web3, contract);
                     setLockEvents(_allLocks);
+                    const _lockParam = getClaimParams(accounts[0]) || [];
+                    setLockParams(_lockParam);
                 }
-
-                const _lockParam = getClaimParams(accounts[0]) || [];
-                setLockParams(_lockParam);
             } catch (error) {
                 toast.error(error.message);
                 console.log(error);
@@ -155,28 +181,34 @@ const EthSecondLockdropPage: React.FC = () => {
         (async function() {
             try {
                 const web3State = await ethLockdrop.connectWeb3(contractAddress);
+                const _netType = await web3State.web3.eth.net.getNetworkType();
 
-                const plasmNode = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Main);
-                setPlasmApi(plasmNode);
+                if (isMainnet(_netType) === isMainnetLock) {
+                    setCurrentNetwork(_netType);
+                    const plasmNode = await plasmUtils.createPlasmInstance(
+                        isMainnetLock ? plasmUtils.PlasmNetwork.Main : plasmUtils.PlasmNetwork.Dusty,
+                    );
+                    setPlasmApi(plasmNode);
 
-                setEthNetworkType(await web3State.web3.eth.net.getNetworkType());
+                    // get the initial claim parameters
+                    const _lockParam = getClaimParams(web3State.accounts[0]) || [];
+                    setLockParams(_lockParam);
 
-                // get the initial claim parameters
-                const _lockParam = getClaimParams(web3State.accounts[0]) || [];
-                setLockParams(_lockParam);
+                    // check contract start and end dates
+                    const _end = await ethLockdrop.getContractEndDate(web3State.contract);
+                    const _start = await ethLockdrop.getContractStartDate(web3State.contract);
+                    setLockdropEnd(_end);
+                    setLockdropStart(_start);
 
-                // check contract start and end dates
-                const _end = await ethLockdrop.getContractEndDate(web3State.contract);
-                const _start = await ethLockdrop.getContractStartDate(web3State.contract);
-                setLockdropEnd(_end);
-                setLockdropStart(_start);
+                    setWeb3(web3State.web3);
+                    setContract(web3State.contract);
+                    setAccounts(web3State.accounts);
 
-                setWeb3(web3State.web3);
-                setContract(web3State.contract);
-                setAccounts(web3State.accounts);
-
-                const _allLocks = await ethLockdrop.getAllLockEvents(web3State.web3, web3State.contract);
-                setLockEvents(_allLocks);
+                    const _allLocks = await ethLockdrop.getAllLockEvents(web3State.web3, web3State.contract);
+                    setLockEvents(_allLocks);
+                } else {
+                    throw new Error('User is not connected to ' + plasmNetToEthNet);
+                }
             } catch (e) {
                 toast.error(e.message);
                 console.log(e);
@@ -297,10 +329,7 @@ const EthSecondLockdropPage: React.FC = () => {
     );
 
     const getClaimToSig = async (id: Uint8Array, sendAddr?: string) => {
-        if (typeof web3 === 'undefined') {
-            throw new Error('Could not connect to Web3js');
-        }
-        if (typeof sendAddr === 'undefined') {
+        if (typeof web3 === 'undefined' || typeof sendAddr === 'undefined') {
             throw new Error('Could not connect to Web3js');
         }
 
@@ -315,10 +344,10 @@ const EthSecondLockdropPage: React.FC = () => {
             <IonContent>
                 <>
                     <IonLoading isOpen={isLoading.loading} message={isLoading.message} />
-                    {!isMainnet ? (
+                    {isMainnet(currentNetwork) !== isMainnetLock ? (
                         <SectionCard maxWidth="lg">
                             <Typography variant="h2" component="h4" align="center">
-                                Please access this page with a Ethereum mainnet wallet
+                                Please access this page with a {plasmNetToEthNet} wallet
                             </Typography>
                         </SectionCard>
                     ) : (
@@ -329,6 +358,20 @@ const EthSecondLockdropPage: React.FC = () => {
                                     endTime={moment.unix(parseInt(lockdropEnd))}
                                     lockData={allLockEvents}
                                 />
+                                {!isMainnetLock && (
+                                    <>
+                                        <Divider />
+                                        <Typography variant="h4" component="h5" align="center">
+                                            Lockdrop Contract Address
+                                        </Typography>
+                                        <Dropdown
+                                            options={lockdropContracts.secondLock.ropsten.map(addr => addr.address)}
+                                            value={contractAddress}
+                                            onChange={e => setContractAddress(e.value)}
+                                            className={classes.addressDropdown}
+                                        />
+                                    </>
+                                )}
                             </SectionCard>
 
                             {isLockdropOpen && (
@@ -344,7 +387,7 @@ const EthSecondLockdropPage: React.FC = () => {
                                         claimParams={lockParams}
                                         plasmApi={plasmApi}
                                         networkType="ETH"
-                                        plasmNetwork="Plasm"
+                                        plasmNetwork={isMainnetLock ? 'Plasm' : 'Dusty'}
                                         publicKey={publicKey}
                                         getLockerSig={(id, addr) => getClaimToSig(id, addr)}
                                     />
@@ -367,4 +410,4 @@ const EthSecondLockdropPage: React.FC = () => {
         </IonPage>
     );
 };
-export default EthSecondLockdropPage;
+export default EthRealTimeLockPage;

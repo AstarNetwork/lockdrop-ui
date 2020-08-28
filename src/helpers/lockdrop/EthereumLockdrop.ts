@@ -23,12 +23,6 @@ export const ethFinalExRate = 205.56;
 // the total amount of issueing PLMs at 1st Lockdrop.
 const totalAmountOfPLMs = new BigNumber('500000000.000000000000000');
 const totalAmountOfPLMsForLockdrop = totalAmountOfPLMs.times(new BigNumber('17').div(new BigNumber('20')));
-
-export async function getMessageSignature<T extends boolean>(
-    web3: Web3,
-    message: string,
-    asSigParam: T,
-): Promise<T extends true ? ethereumUtils.ECDSASignature : string>;
 /**
  * retrieves the ECDSA signature from the given message via Web3js client call.
  * this will either return the v, r, s values, or the full sig in hex string
@@ -36,6 +30,12 @@ export async function getMessageSignature<T extends boolean>(
  * @param message message string to sign
  * @param asSigParam return ECDSA sig param if true (i.e. only v, r, s values)
  */
+export async function getMessageSignature<T extends boolean>(
+    web3: Web3,
+    message: string,
+    asSigParam: T,
+): Promise<T extends true ? ethereumUtils.ECDSASignature : string>;
+
 export async function getMessageSignature(web3: Web3, message: string, asSigParam: boolean) {
     const addresses = await web3.eth.getAccounts();
 
@@ -47,8 +47,6 @@ export async function getMessageSignature(web3: Web3, message: string, asSigPara
     if (!ethereumUtils.isValidSignature(res.v, res.r, res.s)) {
         throw new Error('Invalid signature');
     }
-
-    console.log({ res, sig });
 
     if (asSigParam) {
         return res;
@@ -90,9 +88,8 @@ export async function getPubKey(web3: Web3, message?: string) {
 export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<LockEvent[]> {
     // todo: set this value as the block number of where the contract was deployed for each network
     const mainnetStartBlock = 0;
-    const ev = await instance.getPastEvents('Locked', {
-        fromBlock: mainnetStartBlock,
-    });
+
+    const ev = await instance.getPastEvents('Locked', { fromBlock: mainnetStartBlock });
 
     const eventHashes = await Promise.all(
         ev.map(async e => {

@@ -118,7 +118,7 @@ export const LandingPage: React.FC = () => {
                         <IonIcon src={ethLogo} slot="start" />
                         <IonLabel>Plasm ETH Lock</IonLabel>
                         <IonButton fill="outline" slot="end">
-                            View
+                            <IonRouterLink routerLink="/lock-form/second-eth">View</IonRouterLink>
                         </IonButton>
                     </IonItem>
 

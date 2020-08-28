@@ -49,15 +49,6 @@ const useStyles = makeStyles(() =>
     }),
 );
 
-toast.configure({
-    position: 'top-right',
-    autoClose: 5000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-});
-
 /**
  * Obtains lockdrop participant's public key by receiving raw signatures and BTC address
  * @param networkType Bitcoin network to use

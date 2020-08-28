@@ -1,11 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { Route, Redirect } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/react';
 import { IonReactHashRouter } from '@ionic/react-router';
 import LandingPage from './pages/LandingPage';
-import EthLockdropPage from './pages/EthLockdropPage';
-import DustyEthLockPage from './pages/DustyEthLockPage';
+import FirstEthLockdropPage from './pages/FirstEthLockdropPage';
 import DustyBtcLockPage from './pages/DustyBtcLockPage';
+import SideMenu from './components/SideMenu';
+import LockdropCalcPage from './pages/LockdropCalcPage';
+import EthRealTimeLockPage from './pages/EthRealTimeLockPage';
+import * as plasmUtils from './helpers/plasmUtils';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -25,9 +29,6 @@ import '@ionic/react/css/display.css';
 
 /* Theme variables */
 import './theme/variables.css';
-import SideMenu from './components/SideMenu';
-import LockdropCalcPage from './pages/LockdropCalcPage';
-import EthSecondLockdropPage from './pages/EthSecondLockdropPage';
 
 const App: React.FC = () => {
     return (
@@ -38,9 +39,19 @@ const App: React.FC = () => {
 
                     <IonRouterOutlet id="main" animated>
                         <Route exact path="/lock-form" component={LandingPage} />
-                        <Route path="/lock-form/first" component={EthLockdropPage} />
-                        <Route path="/lock-form/second-eth" component={EthSecondLockdropPage} />
-                        <Route path="/lock-form/dusty-eth" component={DustyEthLockPage} />
+                        <Route path="/lock-form/first" component={FirstEthLockdropPage} />
+                        <Route
+                            path="/lock-form/second-eth"
+                            component={(props: any) => (
+                                <EthRealTimeLockPage {...props} lockdropNetwork={plasmUtils.PlasmNetwork.Main} />
+                            )}
+                        />
+                        <Route
+                            path="/lock-form/dusty-eth"
+                            component={(props: any) => (
+                                <EthRealTimeLockPage {...props} lockdropNetwork={plasmUtils.PlasmNetwork.Dusty} />
+                            )}
+                        />
                         <Route path="/lock-form/dusty-btc" component={DustyBtcLockPage} />
                         <Route path="/utils-calculator" component={LockdropCalcPage} />
                         <Route exact path="/" render={() => <Redirect to="/lock-form" />} />

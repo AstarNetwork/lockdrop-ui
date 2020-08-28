@@ -21,16 +21,7 @@ import 'react-dropdown/style.css';
 import LockdropResult from 'src/components/EthLock/LockdropResult';
 import AffiliationList from 'src/components/EthLock/AffiliationList';
 
-toast.configure({
-    position: 'top-right',
-    autoClose: 5000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-});
-
-const EthLockdropPage: React.FC = () => {
+const FirstEthLockdropPage: React.FC = () => {
     const [web3, setWeb3] = useState<Web3>();
     const [accounts, setAccounts] = useState<string[]>([]);
     const [contract, setContract] = useState<Contract>();
@@ -83,7 +74,7 @@ const EthLockdropPage: React.FC = () => {
         });
         (async function() {
             try {
-                const web3State = await ethLockdrop.connectWeb3(lockdropContracts.firstLock.main);
+                const web3State = await ethLockdrop.connectWeb3(lockdropContracts.firstLock.main.address);
 
                 setNetworkType(await web3State.web3.eth.net.getNetworkType());
 
@@ -149,4 +140,4 @@ const EthLockdropPage: React.FC = () => {
         </IonPage>
     );
 };
-export default EthLockdropPage;
+export default FirstEthLockdropPage;
