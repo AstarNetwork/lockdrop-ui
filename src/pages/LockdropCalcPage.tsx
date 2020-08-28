@@ -121,9 +121,15 @@ const LockdropCalcPage = () => {
                                     This calculation is based on the current price of each locking tokens. The actual
                                     lockdrop reward is calculated based on the exchange rate of the moment Plasm Network
                                     validator nodes confirm your transaction, which is{' '}
-                                    <em>around 1 ~ 2 minutes after you press the claim lockdrop button</em>. Therefore,
-                                    the results shown from this page will not reflect the actual number of tokens you
-                                    will receive.
+                                    <em>around 1 ~ 2 minutes after you press the claim lockdrop button</em>.
+                                    <Typography align="center">
+                                        Therefore,
+                                        <b>
+                                            the results shown from this page will not reflect the actual number of
+                                            tokens you will receive
+                                        </b>
+                                        .
+                                    </Typography>
                                 </IonLabel>
 
                                 <IonList>
