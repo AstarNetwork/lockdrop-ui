@@ -27,6 +27,7 @@ import '@ionic/react/css/display.css';
 import './theme/variables.css';
 import SideMenu from './components/SideMenu';
 import LockdropCalcPage from './pages/LockdropCalcPage';
+import EthSecondLockdropPage from './pages/EthSecondLockdropPage';
 
 const App: React.FC = () => {
     return (
@@ -38,6 +39,7 @@ const App: React.FC = () => {
                     <IonRouterOutlet id="main" animated>
                         <Route exact path="/lock-form" component={LandingPage} />
                         <Route path="/lock-form/first" component={EthLockdropPage} />
+                        <Route path="/lock-form/second-eth" component={EthSecondLockdropPage} />
                         <Route path="/lock-form/dusty-eth" component={DustyEthLockPage} />
                         <Route path="/lock-form/dusty-btc" component={DustyBtcLockPage} />
                         <Route path="/utils-calculator" component={LockdropCalcPage} />

@@ -27,7 +27,7 @@ export const lockdropContracts = {
         private: Lockdrop.networks[5777].address,
     },
     secondLock: {
-        main: '0x',
+        main: '0xa4803f17607B7cDC3dC579083d9a14089E87502b',
         ropsten: ['0x69e7eb3ab94a10e4f408d842b287c70aa0d11649', '0xa91E04a6ECF202A7628e0c9191676407015F5AF9'],
         private: Lockdrop.networks[5777].address,
     },

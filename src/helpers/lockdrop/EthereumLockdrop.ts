@@ -116,7 +116,6 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
                 blockNo: blockHash.blockNumber,
                 timestamp: time,
                 lockOwner: blockHash.from,
-                blockHash: blockHash.blockHash,
                 transactionHash: blockHash.hash,
             } as LockEvent;
         }),
@@ -318,7 +317,7 @@ export async function connectWeb3(contractAddress: string) {
 }
 
 /**
- * returns the UTC date in epoch string of when the lockdrop smart contract will end
+ * returns the UTC (in seconds) epoch string of when the lockdrop smart contract will end
  * @param contract the lockdrop contract instance
  */
 export async function getContractEndDate(contract: Contract) {
@@ -327,7 +326,7 @@ export async function getContractEndDate(contract: Contract) {
 }
 
 /**
- * returns the UTC date of when the lockdrop smart contract will start
+ * returns the UTC (in seconds) epoch string of when the lockdrop smart contract will start
  * @param contract the lockdrop contract instance
  */
 export async function getContractStartDate(contract: Contract) {

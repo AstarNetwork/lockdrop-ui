@@ -14,7 +14,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { removeWeb3Event } from '../helpers/getWeb3';
 import SectionCard from '../components/SectionCard';
-import { Typography, Container, Divider, makeStyles, createStyles } from '@material-ui/core';
+import { Typography, Container } from '@material-ui/core';
 import * as plasmUtils from '../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
 import * as polkadotCrypto from '@polkadot/util-crypto';
@@ -23,7 +23,6 @@ import ClaimStatus from 'src/components/ClaimStatus';
 import moment from 'moment';
 import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
 import { lockdropContracts } from '../data/lockInfo';
-import Dropdown from 'react-dropdown';
 import 'react-dropdown/style.css';
 
 const formInfo = `This is the lockdrop form for Ethereum.
@@ -47,32 +46,14 @@ toast.configure({
     draggable: true,
 });
 
-const useStyles = makeStyles(theme =>
-    createStyles({
-        addressDropdown: {
-            padding: theme.spacing(0, 3, 0),
-            marginLeft: 'auto',
-            marginRight: 'auto',
-            [theme.breakpoints.up('md')]: {
-                maxWidth: '60%',
-            },
-        },
-    }),
-);
-
-const DustyEthLockPage: React.FC = () => {
-    const classes = useStyles();
+const EthSecondLockdropPage: React.FC = () => {
+    const contractAddress = lockdropContracts.secondLock.main;
+    const now = moment.utc().valueOf();
 
     const [web3, setWeb3] = useState<Web3>();
     const [plasmApi, setPlasmApi] = useState<ApiPromise>();
     const [accounts, setAccounts] = useState<string[]>([]);
     const [contract, setContract] = useState<Contract>();
-    // set default testnet contract address
-    const [contractAddress, setContractAddress] = useState(
-        // always use the last contract as default
-        lockdropContracts.secondLock.ropsten[lockdropContracts.secondLock.ropsten.length - 1],
-    );
-
     const [isLoading, setLoading] = useState<{
         loading: boolean;
         message: string;
@@ -92,6 +73,18 @@ const DustyEthLockPage: React.FC = () => {
     const isMainnet = useMemo(() => {
         return ethNetworkType === 'main';
     }, [ethNetworkType]);
+
+    // checks if lockdrop is online
+    const isLockdropOpen = useMemo(() => {
+        if (lockdropStart === '0' || lockdropEnd === '0') return false;
+
+        const startsOn = moment.unix(parseInt(lockdropStart)).valueOf();
+        const endsOn = moment.unix(parseInt(lockdropEnd)).valueOf();
+        const started = now > startsOn;
+        const ended = now > endsOn;
+
+        return started && !ended;
+    }, [now, lockdropStart, lockdropEnd]);
 
     const durationToEpoch = (duration: number) => {
         const epochDays = 60 * 60 * 24;
@@ -163,7 +156,7 @@ const DustyEthLockPage: React.FC = () => {
             try {
                 const web3State = await ethLockdrop.connectWeb3(contractAddress);
 
-                const plasmNode = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Dusty);
+                const plasmNode = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Main);
                 setPlasmApi(plasmNode);
 
                 setEthNetworkType(await web3State.web3.eth.net.getNetworkType());
@@ -322,10 +315,10 @@ const DustyEthLockPage: React.FC = () => {
             <IonContent>
                 <>
                     <IonLoading isOpen={isLoading.loading} message={isLoading.message} />
-                    {isMainnet ? (
+                    {!isMainnet ? (
                         <SectionCard maxWidth="lg">
                             <Typography variant="h2" component="h4" align="center">
-                                Please access this page with a Ethereum testnet wallet (Ropsten)
+                                Please access this page with a Ethereum mainnet wallet
                             </Typography>
                         </SectionCard>
                     ) : (
@@ -336,19 +329,11 @@ const DustyEthLockPage: React.FC = () => {
                                     endTime={moment.unix(parseInt(lockdropEnd))}
                                     lockData={allLockEvents}
                                 />
-                                <Divider />
-                                <Typography variant="h4" component="h5" align="center">
-                                    Lockdrop Contract Address
-                                </Typography>
-                                <Dropdown
-                                    options={lockdropContracts.secondLock.ropsten}
-                                    value={contractAddress}
-                                    onChange={e => setContractAddress(e.value)}
-                                    className={classes.addressDropdown}
-                                />
                             </SectionCard>
 
-                            <LockdropForm token="ETH" onSubmit={handleSubmit} description={formInfo} dusty />
+                            {isLockdropOpen && (
+                                <LockdropForm token="ETH" onSubmit={handleSubmit} description={formInfo} dusty />
+                            )}
 
                             <SectionCard maxWidth="lg">
                                 <Typography variant="h4" component="h1" align="center">
@@ -359,7 +344,7 @@ const DustyEthLockPage: React.FC = () => {
                                         claimParams={lockParams}
                                         plasmApi={plasmApi}
                                         networkType="ETH"
-                                        plasmNetwork="Dusty"
+                                        plasmNetwork="Plasm"
                                         publicKey={publicKey}
                                         getLockerSig={(id, addr) => getClaimToSig(id, addr)}
                                     />
@@ -382,4 +367,4 @@ const DustyEthLockPage: React.FC = () => {
         </IonPage>
     );
 };
-export default DustyEthLockPage;
+export default EthSecondLockdropPage;

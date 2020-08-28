@@ -24,6 +24,7 @@ import LockOpenIcon from '@material-ui/icons/LockOpen';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { defaultAddress } from '../../data/affiliationProgram';
 import Web3Utils from 'web3-utils';
+import * as polkadotCryptoUtils from '@polkadot/util-crypto';
 
 const useStyles = makeStyles(theme =>
     createStyles({
@@ -95,7 +96,7 @@ const CurrentLocks: React.FC<CurrentLockProps> = ({ web3, accounts, lockData }) 
                                         <ListSubheader>You have {lockEvents.length} locks</ListSubheader>
                                         <Divider />
                                         {lockEvents.map(eventItem => (
-                                            <div key={eventItem.blockHash}>
+                                            <div key={polkadotCryptoUtils.randomAsHex(5)}>
                                                 <UnlockInfo lockInfo={eventItem} web3={web3} address={accounts[0]} />
                                                 <Divider />
                                             </div>
