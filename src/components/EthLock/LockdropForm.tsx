@@ -1,14 +1,13 @@
-import { IonLabel, IonButton, IonItem, IonInput, IonCard, IonCardContent, IonChip } from '@ionic/react';
+import { IonLabel, IonButton, IonItem, IonInput, IonCard, IonCardContent, IonChip, IonImg } from '@ionic/react';
 import React, { useState } from 'react';
 import { LockInput, OptionItem } from '../../types/LockdropModels';
 import SectionCard from '../SectionCard';
 import { DropdownOption } from '../DropdownOption';
 import Container from '@material-ui/core/Container';
 import BN from 'bn.js';
-import { Typography } from '@material-ui/core';
+import { Typography, Link } from '@material-ui/core';
 import quantstampLogo from '../../resources/quantstamp-logo.png';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-import Link from '@material-ui/core/Link';
 import parse from 'html-react-parser';
 import { ethDurations, ethDustyDurations } from '../../data/lockInfo';
 
@@ -30,16 +29,13 @@ const LockdropForm = ({ token, onSubmit, description, dusty }: InputProps) => {
             formRoot: {
                 padding: theme.spacing(4, 3, 0),
             },
-            txButton: {
-                margin: theme.spacing(3),
-            },
             formLabel: {
                 margin: theme.spacing(2),
             },
             quantLogo: {
                 marginRight: theme.spacing(2),
-                maxHeight: 20,
-                height: '100%',
+                maxHeight: '100%',
+                height: 30,
                 verticalAlign: 'middle',
             },
             textBox: {
@@ -70,18 +66,20 @@ const LockdropForm = ({ token, onSubmit, description, dusty }: InputProps) => {
                     <Typography variant="h4" component="h1" align="center">
                         {dusty ? 'Dusty Plasm' : 'Plasm Main'} Network Ethereum Lockdrop
                     </Typography>
-                    <Typography variant="body2" component="h2" align="center">
-                        Audited by{' '}
+                    <div>
+                        <Typography variant="body2" component="h2" align="center">
+                            Audited by
+                        </Typography>
                         <Link
                             color="inherit"
                             href="https://github.com/staketechnologies/lockdrop-ui/blob/16a2d495d85f2d311957b9cf366204fbfabadeaa/audit/quantstamp-audit.pdf"
                             rel="noopener noreferrer"
                             target="_blank"
                         >
-                            <img src={quantstampLogo} alt="" className={classes.quantLogo} />
+                            <IonImg src={quantstampLogo} alt="" className={classes.quantLogo} />
                         </Link>
-                    </Typography>
-                    {/* <IonLabel className={classes.formLabel}>About</IonLabel> */}
+                    </div>
+
                     {description ? (
                         <IonCard className={classes.textBox}>
                             <IonCardContent>{parse(description)}</IonCardContent>
@@ -135,7 +133,7 @@ const LockdropForm = ({ token, onSubmit, description, dusty }: InputProps) => {
                         ></IonInput>
                     </IonItem>
                     <Container>
-                        <IonButton expand="block" onClick={() => handleSubmit()} className={classes.txButton}>
+                        <IonButton expand="block" onClick={() => handleSubmit()}>
                             Submit Transaction
                         </IonButton>
                     </Container>

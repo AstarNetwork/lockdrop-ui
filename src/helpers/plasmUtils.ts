@@ -331,6 +331,27 @@ export async function getClaimStatus(api: ApiPromise, claimId: Uint8Array | H256
     return data;
 }
 
+export async function getLockdropAlpha(api: ApiPromise) {
+    const alpha = await api.query.plasmLockdrop.alpha();
+    // the queried data will always be a whole number, but the calculated data is between 0 ~ 1.
+    // so we need to manually convert them
+    return parseFloat('0.' + alpha.toString());
+}
+
+export function subscribeCoinRate(api: ApiPromise, subscribeCallback: (rate: [number, number]) => void) {
+    //const rate = ((await api.query.plasmLockdrop.dollarRate()) as unknown) as [number, number];
+    const unsub = api.query.plasmLockdrop.dollarRate(data => {
+        const _rate = (data as unknown) as [number, number];
+        subscribeCallback(_rate);
+    });
+    return unsub;
+}
+
+export async function getCoinRate(api: ApiPromise) {
+    const rate = ((await api.query.plasmLockdrop.dollarRate()) as unknown) as [number, number];
+    return rate;
+}
+
 /**
  * converts lockdrop parameter into a Lockdrop type
  * @param lockdropParam lockdrop parameter type in polakdot-js structure

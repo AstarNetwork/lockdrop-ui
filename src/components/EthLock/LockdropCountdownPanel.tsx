@@ -20,8 +20,19 @@ enum LockState {
     end,
 }
 
+const useStyles = makeStyles(theme => ({
+    container: {
+        padding: theme.spacing(0, 2, 4),
+        margin: theme.spacing(1),
+    },
+    headerText: {
+        padding: theme.spacing(1),
+    },
+}));
+
 const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData }) => {
     const now = moment().utc();
+    const classes = useStyles();
 
     const calculateTimeLeft = (): TimeFormat => {
         const tillStart = startTime.valueOf() - now.valueOf();
@@ -94,19 +105,16 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData 
         return (
             <>
                 <PanelWrapper>
-                    <div className="time">
+                    <div>
+                        <Typography variant="h2" component="h1" align="center" className={classes.headerText}>
+                            Lockdrop {lockState === LockState.notStart ? 'Starting' : 'Ending'} in:
+                        </Typography>
                         <Grid container spacing={2} justify="center">
-                            <Grid item>
-                                {lockState === LockState.notStart ? (
-                                    <Typography variant="h4" component="h2">
-                                        Lockdrop Starting in:
-                                    </Typography>
-                                ) : (
-                                    <Typography variant="h4" component="h2">
-                                        Lockdrop Ending in:
-                                    </Typography>
-                                )}
-                            </Grid>
+                            {/* <Grid item>
+                                <Typography variant="h2" component="h1" className={classes.headerText}>
+                                    Lockdrop {lockState === LockState.notStart ? 'Starting' : 'Ending'} in:
+                                </Typography>
+                            </Grid> */}
                             <Grid item>
                                 <h3>{timeLeft.days}</h3>
                                 <p>Days</p>
@@ -132,10 +140,10 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData 
         return (
             <>
                 <PanelWrapper>
-                    <Typography variant="h2" component="h1" align="center">
+                    <Typography variant="h2" component="h1" align="center" className={classes.headerText}>
                         Lockdrop has ended
                     </Typography>
-                    <Typography variant="h3" component="h3" align="center">
+                    <Typography variant="h3" component="h4" align="center">
                         Total Locked Value: {totalLockVal} ETH
                     </Typography>
                 </PanelWrapper>
@@ -147,13 +155,6 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData 
 export default LockdropCountdownPanel;
 
 const PanelWrapper: React.FC = ({ children }) => {
-    const useStyles = makeStyles(theme => ({
-        container: {
-            padding: theme.spacing(5, 2, 0),
-            margin: theme.spacing(1),
-        },
-    }));
-
     const classes = useStyles();
 
     return (

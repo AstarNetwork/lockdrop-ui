@@ -7,8 +7,9 @@ import twitter from '../resources/logo-twitter.svg';
 import discord from '../resources/logo-discord.svg';
 import telegram from '../resources/logo-telegram.svg';
 import github from '../resources/logo-github.svg';
-import { firstLock, secondLock, dustyLock } from '../data/lockInfo';
+import { firstLock, secondLock, dustyLock } from '../data/pages';
 import { LockMenu } from '../types/LockdropModels';
+import { calculator } from 'ionicons/icons';
 
 interface Props {
     headerText: string;
@@ -21,7 +22,7 @@ const MenuSection: React.FC<Props> = ({ headerText, menuItems }) => {
             {menuItems.map((i, index) => (
                 <IonRouterLink routerLink={i.uri} key={index}>
                     <IonItem button detail disabled={i.disabled}>
-                        <IonIcon src={i.icon} slot="start" />
+                        <IonIcon icon={i.icon} slot="start" />
                         <IonLabel>{i.title}</IonLabel>
                     </IonItem>
                 </IonRouterLink>
@@ -39,7 +40,7 @@ const SideMenu: React.FC = () => {
                     <IonList>
                         <IonRouterLink routerLink="/lock-form">
                             <IonItem button detail>
-                                <IonIcon src={homeIcon} slot="start" />
+                                <IonIcon icon={homeIcon} slot="start" />
                                 <IonLabel>Home</IonLabel>
                             </IonItem>
                         </IonRouterLink>
@@ -50,21 +51,31 @@ const SideMenu: React.FC = () => {
                     <MenuSection headerText="Dusty Lockdrop" menuItems={dustyLock} />
 
                     <IonList>
+                        <IonListHeader>Lockdrop Utility</IonListHeader>
+                        <IonRouterLink routerLink="/utils-calculator">
+                            <IonItem button detail>
+                                <IonIcon icon={calculator} slot="start" />
+                                <IonLabel>Lockdrop Calculator</IonLabel>
+                            </IonItem>
+                        </IonRouterLink>
+                    </IonList>
+
+                    <IonList>
                         <IonListHeader>External Links</IonListHeader>
                         <IonItem href={Links.discord} rel="noopener noreferrer" target="_blank" detail>
-                            <IonIcon src={discord} slot="start" />
+                            <IonIcon icon={discord} slot="start" />
                             <IonLabel>Discord</IonLabel>
                         </IonItem>
                         <IonItem href={Links.telegram} rel="noopener noreferrer" target="_blank" detail>
-                            <IonIcon src={telegram} slot="start" />
+                            <IonIcon icon={telegram} slot="start" />
                             <IonLabel>Telegram</IonLabel>
                         </IonItem>
                         <IonItem href={Links.twitter} rel="noopener noreferrer" target="_blank" detail>
-                            <IonIcon src={twitter} slot="start" />
+                            <IonIcon icon={twitter} slot="start" />
                             <IonLabel>Twitter</IonLabel>
                         </IonItem>
                         <IonItem href={Links.github} rel="noopener noreferrer" target="_blank" detail>
-                            <IonIcon src={github} slot="start" />
+                            <IonIcon icon={github} slot="start" />
                             <IonLabel>Github</IonLabel>
                         </IonItem>
                     </IonList>

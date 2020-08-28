@@ -1,7 +1,6 @@
-import { OptionItem, LockMenu } from '../types/LockdropModels';
+import { OptionItem } from '../types/LockdropModels';
 import moment from 'moment';
-import ethLogo from '../resources/ethereum_logo.svg';
-import btcLogo from '../resources/bitcoin_logo.svg';
+
 import Lockdrop from '../contracts/Lockdrop.json';
 
 const LOCKDROP_DURATION = 30; // days
@@ -71,50 +70,4 @@ export const btcDustyDurations: OptionItem[] = [
     { label: '3 Days', value: 3, rate: 24 },
     { label: '10 Days', value: 10, rate: 100 },
     { label: '30 Days', value: 30, rate: 360 },
-];
-
-export const firstLock: LockMenu[] = [
-    {
-        title: 'ETH Lock',
-        uri: '/lock-form/first',
-        icon: ethLogo,
-        startDate: firstLockdropStart,
-        endDate: firstLockdropEnd,
-    },
-];
-
-export const secondLock: LockMenu[] = [
-    {
-        title: 'ETH Lock',
-        //uri: '/lock-form/first',
-        icon: ethLogo,
-        startDate: secondLockdropStart,
-        endDate: secondLockdropEnd,
-        disabled: true,
-    },
-    // {
-    //     title: 'BTC Lock',
-    //     uri: '/lock-form/first',
-    //     icon: btcLogo,
-    //     startDate: secondLockdropStart,
-    //     endDate: secondLockdropEnd,
-    //     disabled: true,
-    // },
-];
-
-export const dustyLock: LockMenu[] = [
-    {
-        title: 'ETH Lock',
-        uri: '/lock-form/dusty-eth',
-        icon: ethLogo,
-        startDate: firstLockdropStart,
-        endDate: firstLockdropEnd,
-    },
-    {
-        title: 'BTC Lock',
-        uri: '/lock-form/dusty-btc',
-        icon: btcLogo,
-        startDate: firstLockdropStart,
-        endDate: firstLockdropEnd,
-    },
 ];
