@@ -97,7 +97,6 @@ const LockdropCalcPage = () => {
             const _lockVal = new BigNumber(tokenAmount).times(new BigNumber(_exRate));
             const total = _lockVal.times(new BigNumber(returnAlpha)).times(new BigNumber(lockDuration));
             if (total.isNaN()) throw new Error('Invalid value in the calculation');
-            console.log({ _exRate, _lockVal, returnAlpha, dur: lockDuration });
             return parseFloat(total.toFixed()).toLocaleString('en');
         } catch (e) {
             return '0';
