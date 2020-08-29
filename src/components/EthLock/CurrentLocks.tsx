@@ -205,7 +205,9 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
         } finally {
             setLoading(false);
         }
-    }, [address, lockInfo.lock, web3.eth]);
+        // we don't want to add web3 in here
+        // eslint-disable-next-line
+    }, [address, lockInfo.lock]);
 
     return (
         <>
