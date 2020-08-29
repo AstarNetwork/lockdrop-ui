@@ -22,7 +22,7 @@ import * as polkadotUtil from '@polkadot/util';
 import ClaimStatus from 'src/components/ClaimStatus';
 import moment from 'moment';
 import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
-import { lockdropContracts } from '../data/lockInfo';
+import { secondLockContract } from '../data/lockInfo';
 import Dropdown from 'react-dropdown';
 import 'react-dropdown/style.css';
 
@@ -69,16 +69,18 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
 
     const [web3, setWeb3] = useState<Web3>();
     const [plasmApi, setPlasmApi] = useState<ApiPromise>();
-    const [accounts, setAccounts] = useState<string[]>([]);
+    const [account, setAccount] = useState<string>('');
     const [contract, setContract] = useState<Contract>();
     // set default testnet contract address
     const [contractAddress, setContractAddress] = useState(() => {
-        const _mainContract = lockdropContracts.secondLock.main.address;
+        const _mainContract = secondLockContract.find(i => i.type === 'main')?.address;
         // always use the last contract as default if it's testnet
-        const _ropContract =
-            lockdropContracts.secondLock.ropsten[lockdropContracts.secondLock.ropsten.length - 1].address;
+        const _ropContract = secondLockContract.filter(i => i.type === 'ropsten')[1].address;
 
-        return isMainnetLock ? _mainContract : _ropContract;
+        const _addr = isMainnetLock ? _mainContract : _ropContract;
+        if (typeof _addr === 'undefined') throw new Error('Could not find the correct contract address');
+
+        return _addr;
     });
 
     const [isLoading, setLoading] = useState<{
@@ -113,6 +115,12 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         return started && !ended;
     }, [now, lockdropStart, lockdropEnd]);
 
+    const getAddressArray = useMemo(() => {
+        const _rop = secondLockContract.filter(i => i.type === 'ropsten');
+        const _addr = _rop.map(i => i.address);
+        return _addr;
+    }, []);
+
     const durationToEpoch = (duration: number) => {
         const epochDays = 60 * 60 * 24;
         return duration * epochDays;
@@ -123,7 +131,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
      */
     const getClaimParams = useCallback(
         (ethAccount: string) => {
-            if (publicKey) {
+            if (publicKey && allLockEvents.length > 0) {
                 const claimableLocks = allLockEvents.filter(i => {
                     const isOwnedLock = i.lockOwner === ethAccount;
                     // check if the lock as been confirmed for at least 10 blocks
@@ -148,31 +156,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         [publicKey, allLockEvents],
     );
 
-    // fetch lock data in the background
-    useEffect(() => {
-        const interval = setInterval(async () => {
-            try {
-                // get all the lock events from the chain
-                if (web3 && contract) {
-                    const _allLocks = await ethLockdrop.getAllLockEvents(web3, contract);
-                    setLockEvents(_allLocks);
-                    const _lockParam = getClaimParams(accounts[0]) || [];
-                    setLockParams(_lockParam);
-                }
-            } catch (error) {
-                toast.error(error.message);
-                console.log(error);
-            }
-        }, 5 * 1000);
-
-        // cleanup hook
-        return () => {
-            clearInterval(interval);
-            removeWeb3Event();
-        };
-    });
-
-    // load web3 instance
+    // initial API loading
     useEffect(() => {
         setLoading({
             loading: true,
@@ -180,32 +164,32 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         });
         (async function() {
             try {
-                const web3State = await ethLockdrop.connectWeb3(contractAddress);
-                const _netType = await web3State.web3.eth.net.getNetworkType();
+                const web3Inst = await ethLockdrop.connectWeb3();
+                const _netType = await web3Inst.eth.net.getNetworkType();
 
                 if (isMainnet(_netType) === isMainnetLock) {
+                    // get user account from injected web3
+                    const ethAddr = await ethLockdrop.fetchAllAddresses(web3Inst);
                     setCurrentNetwork(_netType);
+
+                    const _contract = await ethLockdrop.createContractInstance(web3Inst, contractAddress);
+
+                    // check contract start and end dates
+                    const _end = await ethLockdrop.getContractEndDate(_contract);
+                    const _start = await ethLockdrop.getContractStartDate(_contract);
+                    setLockdropEnd(_end);
+                    setLockdropStart(_start);
+                    const _allLocks = await ethLockdrop.getAllLockEvents(web3Inst, _contract);
+                    setLockEvents(_allLocks);
+
+                    setWeb3(web3Inst);
+                    setContract(_contract);
+                    setAccount(ethAddr[0]);
+                    // connect to plasm node
                     const plasmNode = await plasmUtils.createPlasmInstance(
                         isMainnetLock ? plasmUtils.PlasmNetwork.Main : plasmUtils.PlasmNetwork.Dusty,
                     );
                     setPlasmApi(plasmNode);
-
-                    // get the initial claim parameters
-                    const _lockParam = getClaimParams(web3State.accounts[0]) || [];
-                    setLockParams(_lockParam);
-
-                    // check contract start and end dates
-                    const _end = await ethLockdrop.getContractEndDate(web3State.contract);
-                    const _start = await ethLockdrop.getContractStartDate(web3State.contract);
-                    setLockdropEnd(_end);
-                    setLockdropStart(_start);
-
-                    setWeb3(web3State.web3);
-                    setContract(web3State.contract);
-                    setAccounts(web3State.accounts);
-
-                    const _allLocks = await ethLockdrop.getAllLockEvents(web3State.web3, web3State.contract);
-                    setLockEvents(_allLocks);
                 } else {
                     throw new Error('User is not connected to ' + plasmNetToEthNet);
                 }
@@ -220,6 +204,32 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         // eslint-disable-next-line
     }, []);
 
+    // fetch lock data in the background
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            try {
+                // get all the lock events from the chain
+                if (web3 && contract) {
+                    const _allLocks = await ethLockdrop.getAllLockEvents(web3, contract);
+                    if (_allLocks.length > allLockEvents.length) {
+                        setLockEvents(_allLocks);
+                        const _lockParam = getClaimParams(account) || [];
+                        setLockParams(_lockParam);
+                    }
+                }
+            } catch (error) {
+                toast.error(error.message);
+                console.log(error);
+            }
+        }, 5 * 1000);
+
+        // cleanup hook
+        return () => {
+            clearInterval(interval);
+        };
+    });
+
+    // refresh if contract reloads
     useEffect(() => {
         if (web3) {
             setLoading({
@@ -232,7 +242,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                 const _allLocks = await ethLockdrop.getAllLockEvents(web3, _contract);
                 setLockEvents(_allLocks);
                 // get the initial claim parameters
-                const _lockParam = getClaimParams(accounts[0]) || [];
+                const _lockParam = getClaimParams(account) || [];
                 setLockParams(_lockParam);
                 // check contract start and end dates
                 const _end = await ethLockdrop.getContractEndDate(_contract);
@@ -249,28 +259,36 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                     setLoading({ loading: false, message: '' });
                 });
         }
+        return () => {
+            removeWeb3Event();
+            if (plasmApi && plasmApi.hasSubscriptions) plasmApi.disconnect();
+        };
         // we disable next line to prevent change on getClaimParams
         // eslint-disable-next-line
-    }, [contractAddress, web3, accounts]);
+    }, [contractAddress, web3, account]);
 
     /**
      * called when the user changes MetaMask account
      */
-    // const handleAccountChange = () => {
-    //     // refresh the page
-    //     window.location.reload(false);
-    // };
+    const handleAccountChange = useCallback(
+        (accounts: string[]) => {
+            if (account !== accounts[0]) {
+                setAccount(accounts[0]);
+            }
+        },
+        [account],
+    );
 
-    // // handle metamask account change event handler
-    // useEffect(() => {
-    //     // checks if account has changed in MetaMask
-    //     if ((window as any).ethereum.on) {
-    //         (window as any).ethereum.on('accountsChanged', handleAccountChange);
-    //     }
-    //     return () => {
-    //         (window as any).ethereum.removeEventListener('accountsChanged', handleAccountChange);
-    //     };
-    // }, []);
+    // handle metamask account change event handler
+    useEffect(() => {
+        // checks if account has changed in MetaMask
+        if ((window as any).ethereum.on) {
+            (window as any).ethereum.on('accountsChanged', handleAccountChange);
+        }
+        return () => {
+            (window as any).ethereum.on && (window as any).ethereum.on('disconnect', handleAccountChange);
+        };
+    }, [handleAccountChange]);
 
     const handleGetPublicKey = useCallback(() => {
         if (!publicKey && web3) {
@@ -316,7 +334,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                     setPublicKey(_publicKey);
                 }
 
-                contract && (await ethLockdrop.submitLockTx(formInputVal, accounts[0], contract));
+                contract && (await ethLockdrop.submitLockTx(formInputVal, account, contract));
                 toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
             } catch (e) {
                 toast.error(e.message.toString());
@@ -325,7 +343,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
 
             setLoading({ loading: false, message: '' });
         },
-        [accounts, contract, publicKey, web3],
+        [account, contract, publicKey, web3],
     );
 
     const getClaimToSig = async (id: Uint8Array, sendAddr?: string) => {
@@ -365,7 +383,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                                             Lockdrop Contract Address
                                         </Typography>
                                         <Dropdown
-                                            options={lockdropContracts.secondLock.ropsten.map(addr => addr.address)}
+                                            options={getAddressArray}
                                             value={contractAddress}
                                             onChange={e => setContractAddress(e.value)}
                                             className={classes.addressDropdown}
@@ -401,7 +419,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                                     </>
                                 )}
                             </SectionCard>
-                            {web3 && <LockedEthList web3={web3} accounts={accounts} lockData={allLockEvents} />}
+                            {web3 && <LockedEthList web3={web3} account={account} lockData={allLockEvents} />}
                         </>
                     )}
                 </>

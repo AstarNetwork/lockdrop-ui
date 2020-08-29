@@ -13,6 +13,7 @@ import { PlmDrop } from '../../types/PlasmDrop';
 import Web3Utils from 'web3-utils';
 import * as ethereumUtils from 'ethereumjs-util';
 import EthCrypto from 'eth-crypto';
+import { firstLockContract, secondLockContract } from 'src/data/lockInfo';
 
 /**
  * exchange rate at the start of April 14 UTC (at the end of the first lockdrop)
@@ -79,6 +80,17 @@ export async function getPubKey(web3: Web3, message?: string) {
     return compressedPubKey;
 }
 
+export async function fetchAllAddresses(web3: Web3) {
+    // get user account from injected web3
+    let ethAddr = await web3.eth.requestAccounts();
+    // if it does not exists, try parsing from node
+    if (ethAddr.length === 0) ethAddr = await web3.eth.getAccounts();
+    // throw if the address is still 0
+    if (ethAddr.length === 0) throw new Error('Could not fetch address from wallet');
+
+    return ethAddr;
+}
+
 /**
  * returns an array of locked events for the lock contract
  * this function searches from the genesis block
@@ -86,8 +98,11 @@ export async function getPubKey(web3: Web3, message?: string) {
  * @param instance a contract instance to parse the contract events
  */
 export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<LockEvent[]> {
-    // todo: set this value as the block number of where the contract was deployed for each network
-    const mainnetStartBlock = 0;
+    const contractAddr = instance.options.address;
+    const allContractList = [...firstLockContract, ...secondLockContract];
+    // set the correct block number
+    const mainnetStartBlock = allContractList.find(i => i.address.toLowerCase() === contractAddr.toLowerCase())
+        ?.blockHeight;
 
     const ev = await instance.getPastEvents('Locked', { fromBlock: mainnetStartBlock });
 
@@ -293,21 +308,12 @@ export const getUnlockDate = (lockInfo: LockEvent) => {
  * returns the web3.js instance, list of active accounts and the contract instance
  * @param contractAddress the contract address that it should look for
  */
-export async function connectWeb3(contractAddress: string) {
+export async function connectWeb3() {
     // Get network provider and web3 instance.
     const web3 = await getWeb3();
 
     if (web3 instanceof Web3) {
-        // Use web3 to get the user's accounts.
-        const accounts = await web3.eth.getAccounts();
-
-        const contract = await createContractInstance(web3, contractAddress);
-
-        return {
-            web3: web3,
-            accounts: accounts,
-            contract,
-        };
+        return web3;
     } else {
         throw new Error('Cannot get Web3 instance from the client');
     }

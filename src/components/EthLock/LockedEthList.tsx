@@ -24,7 +24,7 @@ interface TabPanelProps {
 
 interface LockHistoryProps {
     web3: Web3;
-    accounts: string[]; // this will be used to get locks for a certain account
+    account: string; // this will be used to get locks for a certain account
     lockData: LockEvent[];
 }
 
@@ -62,7 +62,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 // component that displays the number of tokens and the duration for the lock via Web3
-const LockedEthList: React.FC<LockHistoryProps> = ({ web3, accounts, lockData }) => {
+const LockedEthList: React.FC<LockHistoryProps> = ({ web3, account, lockData }) => {
     const classes = useStyles();
     const theme = useTheme();
     const [value, setValue] = React.useState(0);
@@ -101,7 +101,7 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, accounts, lockData })
                             <GlobalLocks lockData={lockData} />
                         </TabPanel>
                         <TabPanel value={value} index={1} dir={theme.direction}>
-                            <CurrentLocks web3={web3} accounts={accounts} lockData={lockData} />
+                            <CurrentLocks web3={web3} account={account} lockData={lockData} />
                         </TabPanel>
                     </SwipeableViews>
                 </div>

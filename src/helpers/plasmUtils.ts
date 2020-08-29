@@ -79,7 +79,7 @@ export async function createPlasmInstance(network?: PlasmNetwork) {
 
     const wsProvider = new WsProvider(endpoint);
 
-    return await ApiPromise.create({
+    const api = await ApiPromise.create({
         provider: wsProvider,
         types: {
             ...types,
@@ -96,6 +96,8 @@ export async function createPlasmInstance(network?: PlasmNetwork) {
         // override duplicate type name
         typesAlias: { voting: { Tally: 'VotingTally' } },
     });
+
+    return await api.isReady;
 }
 
 /**

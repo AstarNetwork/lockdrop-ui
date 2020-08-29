@@ -9,6 +9,7 @@ async function web3Listener() {
             // Request account access if needed
             await (window as any).ethereum.enable();
             console.log('Dapp browser detected');
+
             // Accounts now exposed
             return web3;
         } catch (error) {

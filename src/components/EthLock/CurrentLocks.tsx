@@ -18,13 +18,14 @@ import {
     createStyles,
     makeStyles,
     Tooltip,
+    CircularProgress,
 } from '@material-ui/core';
 import LockIcon from '@material-ui/icons/Lock';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
-import CircularProgress from '@material-ui/core/CircularProgress';
 import { defaultAddress } from '../../data/affiliationProgram';
 import Web3Utils from 'web3-utils';
 import * as polkadotCryptoUtils from '@polkadot/util-crypto';
+import { toast } from 'react-toastify';
 
 const useStyles = makeStyles(theme =>
     createStyles({
@@ -60,7 +61,7 @@ const useStyles = makeStyles(theme =>
 
 interface CurrentLockProps {
     web3: Web3;
-    accounts: string[]; // this will be used to get locks for a certain account
+    account: string; // this will be used to get locks for a certain account
     lockData: LockEvent[];
 }
 
@@ -70,15 +71,15 @@ interface UnlockInfoProps {
     address: string;
 }
 // displays a list of locks tha the current user has locked
-const CurrentLocks: React.FC<CurrentLockProps> = ({ web3, accounts, lockData }) => {
+const CurrentLocks: React.FC<CurrentLockProps> = ({ web3, account, lockData }) => {
     const classes = useStyles();
     const [lockEvents, setEvents] = useState<LockEvent[]>([]);
     const [isLoadingComp, setLoadState] = useState(true);
 
     useEffect(() => {
-        setEvents(lockData.filter(i => i.lockOwner === accounts[0]));
+        setEvents(lockData.filter(i => i.lockOwner === account));
         setLoadState(false);
-    }, [lockData, accounts]);
+    }, [lockData, account]);
 
     return (
         <div className={classes.lockListPage}>
@@ -97,7 +98,7 @@ const CurrentLocks: React.FC<CurrentLockProps> = ({ web3, accounts, lockData }) 
                                         <Divider />
                                         {lockEvents.map(eventItem => (
                                             <div key={polkadotCryptoUtils.randomAsHex(5)}>
-                                                <UnlockInfo lockInfo={eventItem} web3={web3} address={accounts[0]} />
+                                                <UnlockInfo lockInfo={eventItem} web3={web3} address={account} />
                                                 <Divider />
                                             </div>
                                         ))}
@@ -185,35 +186,26 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
     }, [calculateTimeLeft, checkUnlock]);
 
     // click unlock ETH
-    const handleClick = () => {
+    const handleClick = useCallback(async () => {
         setLoading(true);
-        web3.eth
-            .sendTransaction({
+        try {
+            await web3.eth.sendTransaction({
                 from: address,
                 to: lockInfo.lock,
                 value: '0',
-            })
-            .catch(error => {
-                console.log(error);
-            })
-            .finally(() => {
-                // get contract balance
-                web3.eth
-                    .getBalance(lockInfo.lock)
-                    .then(lockBalance => {
-                        // check if the balance is 0 or not
-                        const lockClaimState = lockBalance === '0';
-
-                        setUnlockState(lockClaimState);
-                    })
-                    .catch(err => {
-                        console.log(err);
-                    })
-                    .finally(() => {
-                        setLoading(false);
-                    });
             });
-    };
+            // get contract balance
+            const lockBalance = await web3.eth.getBalance(lockInfo.lock);
+            // check if the balance is 0 or not
+            const lockClaimState = lockBalance === '0';
+            setUnlockState(lockClaimState);
+        } catch (e) {
+            console.log(e);
+            toast.error(e.message);
+        } finally {
+            setLoading(false);
+        }
+    }, [address, lockInfo.lock, web3.eth]);
 
     return (
         <>
@@ -274,6 +266,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
                                         aria-label="unlock"
                                         onClick={() => handleClick()}
                                         color="primary"
+                                        disabled={isLoading}
                                     >
                                         <LockOpenIcon />
                                     </IconButton>
