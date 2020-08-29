@@ -40,7 +40,7 @@ const firstEthIntroducer = [
     '0x0def9b4811e4c4e9da5acf82d421c97b5e9c152f',
 ];
 
-const secondEthIntroducer = ['add Ethereum addresses'];
+const secondEthIntroducer = ['0x6C7e7fbFa69f4B5A5Ade1C27BC74fa4290a3b8A3'];
 
 const secondBtcIntroducer = ['add Bitcoin addresses'];
 
