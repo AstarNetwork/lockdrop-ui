@@ -324,7 +324,14 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                 message: 'Submitting transaction...',
             });
             try {
-                if (!publicKey && web3) {
+                if (typeof web3 === 'undefined') {
+                    throw new Error('Could not find a Web3 instance');
+                }
+                if (typeof contract === 'undefined') {
+                    throw new Error('Could not find a contract instance');
+                }
+
+                if (!publicKey) {
                     const _publicKey = await ethLockdrop.getPubKey(
                         web3,
                         `Sign this message to submit a lock request.
@@ -334,7 +341,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                     setPublicKey(_publicKey);
                 }
 
-                contract && (await ethLockdrop.submitLockTx(formInputVal, account, contract));
+                await ethLockdrop.submitLockTx(formInputVal, account, contract);
                 toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
             } catch (e) {
                 toast.error(e.message.toString());
