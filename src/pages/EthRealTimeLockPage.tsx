@@ -370,7 +370,12 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                             </SectionCard>
 
                             {isLockdropOpen && (
-                                <LockdropForm token="ETH" onSubmit={handleSubmit} description={formInfo} dusty />
+                                <LockdropForm
+                                    token="ETH"
+                                    onSubmit={handleSubmit}
+                                    description={formInfo}
+                                    dusty={!isMainnetLock}
+                                />
                             )}
 
                             <SectionCard maxWidth="lg">
