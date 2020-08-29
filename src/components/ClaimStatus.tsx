@@ -90,6 +90,7 @@ const useStyles = makeStyles(theme =>
             alignItems: 'center',
             justifyContent: 'center',
             margin: 'auto',
+            padding: theme.spacing(3, 0),
         },
         claimVoteIcon: {
             margin: theme.spacing(1),
@@ -124,15 +125,19 @@ const ClaimStatus: React.FC<Props> = ({
         return plasmUtils.generatePlmAddress(publicKey);
     }, [publicKey]);
 
+    // global lockdrop claim requirements
     const [positiveVotes, setPositiveVotes] = useState(0);
     const [voteThreshold, setVoteThreshold] = useState(0);
+
     const [isLoadingBal, setLoadingBal] = useState(true);
     const [isLoadingClaims, setLoadingClaims] = useState(true);
-    const [balance, setBalance] = useState('');
-    const [claims, setClaims] = useState<(Claim | undefined)[]>([]);
+    const [addrEditMode, setAddrEditMode] = useState(false);
+
     const [plasmAddr, setPlasmAddr] = useState(defaultAddr);
     const [customClaimAddr, setCustomClaimAddr] = useState<string>();
-    const [addrEditMode, setAddrEditMode] = useState(false);
+    const [balance, setBalance] = useState('');
+
+    const [claims, setClaims] = useState<(Claim | undefined)[]>([]);
 
     const fetchLockData = useCallback(async () => {
         // create claims IDs from all the lock parameters
@@ -158,13 +163,6 @@ const ClaimStatus: React.FC<Props> = ({
         setClaims(_claims);
     }, [claimParams, plasmApi]);
 
-    // initial set claim status
-    useEffect(() => {
-        fetchLockData().finally(() => {
-            setLoadingClaims(false);
-        });
-    }, [fetchLockData]);
-
     // initial plasm address balance fetch
     useEffect(() => {
         (async () => {
@@ -183,9 +181,10 @@ const ClaimStatus: React.FC<Props> = ({
             setBalance(formatBal);
             setPositiveVotes(_voteReq.positiveVotes);
             setVoteThreshold(_voteReq.voteThreshold);
-            isLoadingBal && setLoadingBal(false);
 
             await fetchLockData();
+            setLoadingClaims(false);
+            isLoadingBal && setLoadingBal(false);
         }, 3000);
 
         // cleanup hook
@@ -359,6 +358,8 @@ const ClaimItem: React.FC<ItemProps> = ({
     const [showApproves, setShowApproves] = useState(false);
     const [showDeclines, setShowDeclines] = useState(false);
 
+    const [claimConfirm, setClaimConfirm] = useState(false);
+
     const setVoteList = (_claim: Claim) => {
         const approves = _claim.approve.toJSON() as string[];
         setApproveList(approves);
@@ -383,8 +384,6 @@ const ClaimItem: React.FC<ItemProps> = ({
     const plasmDefaultAddress = useMemo(() => {
         return plasmUtils.generatePlmAddress(lockParam.publicKey.toHex());
     }, [lockParam]);
-
-    const [claimConfirm, setClaimConfirm] = useState(false);
 
     /**
      * sends a lockdrop claim request to the plasm node by the given lockdrop parameter
