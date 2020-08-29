@@ -165,7 +165,7 @@ const ClaimStatus: React.FC<Props> = ({
         });
     }, [fetchLockData]);
 
-    // update plasm address balance
+    // initial plasm address balance fetch
     useEffect(() => {
         (async () => {
             const _bal = (await plasmUtils.getAddressBalance(plasmApi, plasmAddr, true)).toFixed(3);

@@ -7,7 +7,8 @@ import * as polkadotUtils from '@polkadot/util';
 import { u8aConcat } from '@polkadot/util';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
 import * as plasmDefinitions from '@plasm/types/interfaces/definitions';
-import { LockdropType, Claim, Lockdrop } from 'src/types/LockdropModels';
+import { LockdropType, Claim, Lockdrop, LockEvent } from 'src/types/LockdropModels';
+import moment from 'moment';
 
 /**
  * Plasm network enum
@@ -152,15 +153,6 @@ export function createLockParam(
         },
     );
 
-    // console.log({
-    //     type: network, // enum is converted to number
-    //     transactionHash: transactionHash,
-    //     publicKey: new U8aFixed(plasmTypeReg, publicKey, 264).toHex(),
-    //     duration: new u64(plasmTypeReg, duration).toString(),
-    //     value: new u128(plasmTypeReg, value).toString(),
-    //     nonce: polkadotUtil.u8aToHex(claimPowNonce(lockParam.hash)),
-    // });
-
     return lockParam;
 }
 
@@ -250,7 +242,14 @@ export function generatePlmAddress(publicKey: string) {
  * @param plasmAddress Plasm network address
  * @param asPlm if the output value should be in PLM. Default denominator is in femto
  */
-export async function getAddressBalance(api: ApiPromise, plasmAddress: string, asPlm?: boolean) {
+export async function getAddressBalance(api: ApiPromise, plasmAddress: string | Uint8Array, asPlm?: boolean) {
+    const encodedAddr =
+        plasmAddress instanceof Uint8Array ? polkadotUtilCrypto.encodeAddress(plasmAddress) : plasmAddress;
+    const addrCheck = polkadotUtilCrypto.checkAddress(encodedAddr, 5);
+    if (!addrCheck[0]) {
+        throw new Error('Plasm address check error: ' + addrCheck[1]);
+    }
+
     const { data: balance } = await api.query.system.account(plasmAddress);
     let _bal = new BigNumber(balance.free.toString());
     if (asPlm) {
@@ -371,3 +370,43 @@ export function structToLockdrop(lockdropParam: Struct) {
 
     return param;
 }
+
+const durationToEpoch = (duration: number) => {
+    const epochDays = 60 * 60 * 24;
+    return duration * epochDays;
+};
+
+/**
+ * converts all lockdrops on ethereum into plasm lockdrop claim parameter
+ * @param pubKey the public key of the locker
+ * @param locks
+ */
+export const getClaimParamsFromEth = (pubKey: string, locks: LockEvent[]) => {
+    if (typeof pubKey === 'undefined' || pubKey === '') {
+        throw new Error('No public key was provided');
+    }
+
+    if (locks.length === 0) {
+        throw new Error('No lock events found');
+    }
+
+    const claimableLocks = locks.filter(i => {
+        // check if the lock as been confirmed for at least 20 blocks
+        const hasTimePast = moment.utc().valueOf() > parseInt(i.timestamp) + 35 * 20;
+        return hasTimePast;
+    });
+
+    const claimIDs = claimableLocks.map(lock => {
+        const _param = createLockParam(
+            LockdropType.Ethereum,
+            lock.transactionHash,
+            pubKey,
+            durationToEpoch(lock.duration).toString(),
+            lock.eth.toString(),
+        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return structToLockdrop(_param as any);
+    });
+
+    return claimIDs;
+};

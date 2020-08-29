@@ -8,7 +8,7 @@ import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
-import { LockInput, LockEvent, LockdropType, Lockdrop } from '../types/LockdropModels';
+import { LockInput, LockEvent } from '../types/LockdropModels';
 import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -93,7 +93,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
 
     const [currentNetwork, setCurrentNetwork] = useState('');
     const [allLockEvents, setLockEvents] = useState<LockEvent[]>([]);
-    const [lockParams, setLockParams] = useState<Lockdrop[]>([]);
+
     const [publicKey, setPublicKey] = useState<string>();
 
     const [lockdropStart, setLockdropStart] = useState('0');
@@ -121,40 +121,16 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         return _addr;
     }, []);
 
-    const durationToEpoch = (duration: number) => {
-        const epochDays = 60 * 60 * 24;
-        return duration * epochDays;
-    };
+    // lockdrop parameter for real-time lockdrop rewards
+    const lockParams = useMemo(() => {
+        if (typeof publicKey === 'undefined') return [];
 
-    /**
-     * Obtains list of lockdrop claim parameters
-     */
-    const getClaimParams = useCallback(
-        (ethAccount: string) => {
-            if (publicKey && allLockEvents.length > 0) {
-                const claimableLocks = allLockEvents.filter(i => {
-                    const isOwnedLock = i.lockOwner === ethAccount;
-                    // check if the lock as been confirmed for at least 10 blocks
-                    const hasTimePast = moment.utc().valueOf() > parseInt(i.timestamp) + 35 * 10;
-                    return isOwnedLock && hasTimePast;
-                });
+        const myLocks = allLockEvents.filter(lock => {
+            return lock.lockOwner.toLowerCase() === account.toLowerCase();
+        });
 
-                const claimIDs = claimableLocks.map(lock => {
-                    const _param = plasmUtils.createLockParam(
-                        LockdropType.Ethereum,
-                        lock.transactionHash,
-                        publicKey,
-                        durationToEpoch(lock.duration).toString(),
-                        lock.eth.toString(),
-                    );
-                    return plasmUtils.structToLockdrop(_param as any);
-                });
-
-                return claimIDs;
-            }
-        },
-        [publicKey, allLockEvents],
-    );
+        return plasmUtils.getClaimParamsFromEth(publicKey, myLocks);
+    }, [allLockEvents, account, publicKey]);
 
     // initial API loading
     useEffect(() => {
@@ -208,13 +184,10 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
     useEffect(() => {
         const interval = setInterval(async () => {
             try {
-                // get all the lock events from the chain
                 if (web3 && contract) {
                     const _allLocks = await ethLockdrop.getAllLockEvents(web3, contract);
                     if (_allLocks.length > allLockEvents.length) {
                         setLockEvents(_allLocks);
-                        const _lockParam = getClaimParams(account) || [];
-                        setLockParams(_lockParam);
                     }
                 }
             } catch (error) {
@@ -241,9 +214,6 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
 
                 const _allLocks = await ethLockdrop.getAllLockEvents(web3, _contract);
                 setLockEvents(_allLocks);
-                // get the initial claim parameters
-                const _lockParam = getClaimParams(account) || [];
-                setLockParams(_lockParam);
                 // check contract start and end dates
                 const _end = await ethLockdrop.getContractEndDate(_contract);
                 const _start = await ethLockdrop.getContractStartDate(_contract);
