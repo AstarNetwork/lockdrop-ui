@@ -13,6 +13,7 @@ import { PlmDrop } from '../../types/PlasmDrop';
 import Web3Utils from 'web3-utils';
 import * as ethereumUtils from 'ethereumjs-util';
 import EthCrypto from 'eth-crypto';
+import { firstLockContract, secondLockContract } from 'src/data/lockInfo';
 
 /**
  * exchange rate at the start of April 14 UTC (at the end of the first lockdrop)
@@ -23,12 +24,6 @@ export const ethFinalExRate = 205.56;
 // the total amount of issueing PLMs at 1st Lockdrop.
 const totalAmountOfPLMs = new BigNumber('500000000.000000000000000');
 const totalAmountOfPLMsForLockdrop = totalAmountOfPLMs.times(new BigNumber('17').div(new BigNumber('20')));
-
-export async function getMessageSignature<T extends boolean>(
-    web3: Web3,
-    message: string,
-    asSigParam: T,
-): Promise<T extends true ? ethereumUtils.ECDSASignature : string>;
 /**
  * retrieves the ECDSA signature from the given message via Web3js client call.
  * this will either return the v, r, s values, or the full sig in hex string
@@ -36,6 +31,12 @@ export async function getMessageSignature<T extends boolean>(
  * @param message message string to sign
  * @param asSigParam return ECDSA sig param if true (i.e. only v, r, s values)
  */
+export async function getMessageSignature<T extends boolean>(
+    web3: Web3,
+    message: string,
+    asSigParam: T,
+): Promise<T extends true ? ethereumUtils.ECDSASignature : string>;
+
 export async function getMessageSignature(web3: Web3, message: string, asSigParam: boolean) {
     const addresses = await web3.eth.getAccounts();
 
@@ -47,8 +48,6 @@ export async function getMessageSignature(web3: Web3, message: string, asSigPara
     if (!ethereumUtils.isValidSignature(res.v, res.r, res.s)) {
         throw new Error('Invalid signature');
     }
-
-    console.log({ res, sig });
 
     if (asSigParam) {
         return res;
@@ -81,6 +80,17 @@ export async function getPubKey(web3: Web3, message?: string) {
     return compressedPubKey;
 }
 
+export async function fetchAllAddresses(web3: Web3) {
+    // get user account from injected web3
+    let ethAddr = await web3.eth.requestAccounts();
+    // if it does not exists, try parsing from node
+    if (ethAddr.length === 0) ethAddr = await web3.eth.getAccounts();
+    // throw if the address is still 0
+    if (ethAddr.length === 0) throw new Error('Could not fetch address from wallet');
+
+    return ethAddr;
+}
+
 /**
  * returns an array of locked events for the lock contract
  * this function searches from the genesis block
@@ -88,11 +98,13 @@ export async function getPubKey(web3: Web3, message?: string) {
  * @param instance a contract instance to parse the contract events
  */
 export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<LockEvent[]> {
-    // todo: set this value as the block number of where the contract was deployed for each network
-    const mainnetStartBlock = 0;
-    const ev = await instance.getPastEvents('Locked', {
-        fromBlock: mainnetStartBlock,
-    });
+    const contractAddr = instance.options.address;
+    const allContractList = [...firstLockContract, ...secondLockContract];
+    // set the correct block number
+    const mainnetStartBlock = allContractList.find(i => i.address.toLowerCase() === contractAddr.toLowerCase())
+        ?.blockHeight;
+
+    const ev = await instance.getPastEvents('Locked', { fromBlock: mainnetStartBlock });
 
     const eventHashes = await Promise.all(
         ev.map(async e => {
@@ -116,7 +128,6 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
                 blockNo: blockHash.blockNumber,
                 timestamp: time,
                 lockOwner: blockHash.from,
-                blockHash: blockHash.blockHash,
                 transactionHash: blockHash.hash,
             } as LockEvent;
         }),
@@ -297,28 +308,19 @@ export const getUnlockDate = (lockInfo: LockEvent) => {
  * returns the web3.js instance, list of active accounts and the contract instance
  * @param contractAddress the contract address that it should look for
  */
-export async function connectWeb3(contractAddress: string) {
+export async function connectWeb3() {
     // Get network provider and web3 instance.
     const web3 = await getWeb3();
 
     if (web3 instanceof Web3) {
-        // Use web3 to get the user's accounts.
-        const accounts = await web3.eth.getAccounts();
-
-        const contract = await createContractInstance(web3, contractAddress);
-
-        return {
-            web3: web3,
-            accounts: accounts,
-            contract,
-        };
+        return web3;
     } else {
         throw new Error('Cannot get Web3 instance from the client');
     }
 }
 
 /**
- * returns the UTC date in epoch string of when the lockdrop smart contract will end
+ * returns the UTC (in seconds) epoch string of when the lockdrop smart contract will end
  * @param contract the lockdrop contract instance
  */
 export async function getContractEndDate(contract: Contract) {
@@ -327,7 +329,7 @@ export async function getContractEndDate(contract: Contract) {
 }
 
 /**
- * returns the UTC date of when the lockdrop smart contract will start
+ * returns the UTC (in seconds) epoch string of when the lockdrop smart contract will start
  * @param contract the lockdrop contract instance
  */
 export async function getContractStartDate(contract: Contract) {

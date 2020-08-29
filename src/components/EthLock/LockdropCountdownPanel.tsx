@@ -106,30 +106,25 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData 
             <>
                 <PanelWrapper>
                     <div>
-                        <Typography variant="h2" component="h1" align="center" className={classes.headerText}>
+                        <Typography variant="h4" component="h3" align="center" className={classes.headerText}>
                             Lockdrop {lockState === LockState.notStart ? 'Starting' : 'Ending'} in:
                         </Typography>
                         <Grid container spacing={2} justify="center">
-                            {/* <Grid item>
-                                <Typography variant="h2" component="h1" className={classes.headerText}>
-                                    Lockdrop {lockState === LockState.notStart ? 'Starting' : 'Ending'} in:
-                                </Typography>
-                            </Grid> */}
                             <Grid item>
-                                <h3>{timeLeft.days}</h3>
-                                <p>Days</p>
+                                <h2>{timeLeft.days}</h2>
+                                <h4>Days</h4>
                             </Grid>
                             <Grid item>
-                                <h3>{timeLeft.hours}</h3>
-                                <p>Hours</p>
+                                <h2>{timeLeft.hours}</h2>
+                                <h4>Hours</h4>
                             </Grid>
                             <Grid item>
-                                <h3>{timeLeft.minutes}</h3>
-                                <p>Minutes</p>
+                                <h2>{timeLeft.minutes}</h2>
+                                <h4>Minutes</h4>
                             </Grid>
                             <Grid item>
-                                <h3>{timeLeft.seconds}</h3>
-                                <p>Seconds</p>
+                                <h2>{timeLeft.seconds}</h2>
+                                <h4>Seconds</h4>
                             </Grid>
                         </Grid>
                     </div>

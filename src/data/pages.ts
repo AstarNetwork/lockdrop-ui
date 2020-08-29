@@ -16,11 +16,10 @@ export const firstLock: LockMenu[] = [
 export const secondLock: LockMenu[] = [
     {
         title: 'ETH Lock',
-        //uri: '/lock-form/first',
+        uri: '/lock-form/second-eth',
         icon: ethLogo,
         startDate: secondLockdropStart,
         endDate: secondLockdropEnd,
-        disabled: true,
     },
     // {
     //     title: 'BTC Lock',

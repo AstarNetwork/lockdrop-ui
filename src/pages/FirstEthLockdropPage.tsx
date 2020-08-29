@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
 import { IonContent, IonPage, IonLoading } from '@ionic/react';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as ethLockdrop from '../helpers/lockdrop/EthereumLockdrop';
 import Web3 from 'web3';
 import Navbar from '../components/Navbar';
@@ -21,18 +21,9 @@ import 'react-dropdown/style.css';
 import LockdropResult from 'src/components/EthLock/LockdropResult';
 import AffiliationList from 'src/components/EthLock/AffiliationList';
 
-toast.configure({
-    position: 'top-right',
-    autoClose: 5000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-});
-
-const EthLockdropPage: React.FC = () => {
+const FirstEthLockdropPage: React.FC = () => {
     const [web3, setWeb3] = useState<Web3>();
-    const [accounts, setAccounts] = useState<string[]>([]);
+    const [account, setAccount] = useState<string>('');
     const [contract, setContract] = useState<Contract>();
 
     const [isLoading, setLoading] = useState<{
@@ -49,9 +40,9 @@ const EthLockdropPage: React.FC = () => {
     const [lockdropStart, setLockdropStart] = useState('0');
     const [lockdropEnd, setLockdropEnd] = useState('0');
 
-    const isMainnet = useMemo(() => {
-        return networkType === 'main';
-    }, [networkType]);
+    const isMainnet = (currentNetwork: string) => {
+        return currentNetwork === 'main';
+    };
 
     // fetch lock data in the background
     useEffect(() => {
@@ -83,22 +74,30 @@ const EthLockdropPage: React.FC = () => {
         });
         (async function() {
             try {
-                const web3State = await ethLockdrop.connectWeb3(lockdropContracts.firstLock.main);
+                const web3State = await ethLockdrop.connectWeb3();
+                const _netType = await web3State.eth.net.getNetworkType();
+                setNetworkType(_netType);
+                if (isMainnet(_netType)) {
+                    const _contract = await ethLockdrop.createContractInstance(
+                        web3State,
+                        lockdropContracts.firstLock.main.address,
+                    );
 
-                setNetworkType(await web3State.web3.eth.net.getNetworkType());
+                    const ethAddr = await ethLockdrop.fetchAllAddresses(web3State);
 
-                // check contract start and end dates
-                const _end = await ethLockdrop.getContractEndDate(web3State.contract);
-                const _start = await ethLockdrop.getContractStartDate(web3State.contract);
-                setLockdropEnd(_end);
-                setLockdropStart(_start);
+                    // check contract start and end dates
+                    const _end = await ethLockdrop.getContractEndDate(_contract);
+                    const _start = await ethLockdrop.getContractStartDate(_contract);
+                    setLockdropEnd(_end);
+                    setLockdropStart(_start);
 
-                setWeb3(web3State.web3);
-                setContract(web3State.contract);
-                setAccounts(web3State.accounts);
+                    setWeb3(web3State);
+                    setContract(_contract);
+                    setAccount(ethAddr[0]);
 
-                const _allLocks = await ethLockdrop.getAllLockEvents(web3State.web3, web3State.contract);
-                setLockEvents(_allLocks);
+                    const _allLocks = await ethLockdrop.getAllLockEvents(web3State, _contract);
+                    setLockEvents(_allLocks);
+                }
             } catch (e) {
                 toast.error(e.message);
                 console.log(e);
@@ -116,7 +115,7 @@ const EthLockdropPage: React.FC = () => {
             <IonContent>
                 <>
                     <IonLoading isOpen={isLoading.loading} message={isLoading.message} />
-                    {!isMainnet ? (
+                    {!isMainnet(networkType) ? (
                         <SectionCard maxWidth="lg">
                             <Typography variant="h2" component="h4" align="center">
                                 Please access this page with a Mainnet wallet
@@ -140,7 +139,7 @@ const EthLockdropPage: React.FC = () => {
 
                             <AffiliationList lockData={allLockEvents} />
 
-                            {web3 && <LockedEthList web3={web3} accounts={accounts} lockData={allLockEvents} />}
+                            {web3 && <LockedEthList web3={web3} account={account} lockData={allLockEvents} />}
                         </>
                     )}
                 </>
@@ -149,4 +148,4 @@ const EthLockdropPage: React.FC = () => {
         </IonPage>
     );
 };
-export default EthLockdropPage;
+export default FirstEthLockdropPage;

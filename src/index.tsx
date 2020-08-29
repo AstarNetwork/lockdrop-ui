@@ -6,6 +6,7 @@ import * as serviceWorker from './serviceWorker';
 import { MuiThemeProvider, createMuiTheme, responsiveFontSizes } from '@material-ui/core/styles';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
+import { toast } from 'react-toastify';
 
 // define web3 instance as a global variable
 declare global {
@@ -14,6 +15,15 @@ declare global {
         contract: Contract;
     }
 }
+toast.configure({
+    position: 'top-right',
+    autoClose: 5000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+});
+
 window.contract = window.contract || {};
 window.web3 = window.web3 || {};
 

@@ -8,16 +8,6 @@ import quantstampLogo from '../resources/quantstamp-logo.png';
 import BtcRawSignature from '../components/BtcLock/BtcRawSignature';
 //import TrezorConnect, { DEVICE } from 'trezor-connect';
 import * as bitcoinjs from 'bitcoinjs-lib';
-import { toast } from 'react-toastify';
-
-toast.configure({
-    position: 'top-right',
-    autoClose: 5000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-});
 
 const useStyles = makeStyles(theme =>
     createStyles({

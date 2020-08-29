@@ -50,15 +50,6 @@ interface Props {
     getLockerSig: (id: Uint8Array, sendToAddr: string) => Promise<string> | string;
 }
 
-toast.configure({
-    position: 'top-right',
-    autoClose: 5000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-});
-
 const useStyles = makeStyles(theme =>
     createStyles({
         listRoot: {

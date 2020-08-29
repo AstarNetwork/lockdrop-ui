@@ -70,7 +70,6 @@ export interface LockEvent {
     blockNo: number;
     timestamp: string; // in Unix epoch seconds
     lockOwner: string; // locker's address
-    blockHash: string;
     transactionHash: string;
 }
 
