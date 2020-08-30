@@ -8,7 +8,6 @@ import { u8aConcat } from '@polkadot/util';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
 import * as plasmDefinitions from '@plasm/types/interfaces/definitions';
 import { LockdropType, Claim, Lockdrop, LockEvent } from 'src/types/LockdropModels';
-import moment from 'moment';
 
 /**
  * Plasm network enum
@@ -379,9 +378,10 @@ const durationToEpoch = (duration: number) => {
 /**
  * converts all lockdrops on ethereum into plasm lockdrop claim parameter
  * @param pubKey the public key of the locker
- * @param locks
+ * @param locks the lock event that has been parsed from the chain
+ * @param latestBlock the current highest ethereum block number
  */
-export const getClaimParamsFromEth = (pubKey: string, locks: LockEvent[]) => {
+export const getClaimParamsFromEth = (pubKey: string, locks: LockEvent[], latestBlock: number) => {
     if (typeof pubKey === 'undefined' || pubKey === '') {
         throw new Error('No public key was provided');
     }
@@ -391,9 +391,9 @@ export const getClaimParamsFromEth = (pubKey: string, locks: LockEvent[]) => {
     }
 
     const claimableLocks = locks.filter(i => {
-        // check if the lock as been confirmed for at least 20 blocks
-        const hasTimePast = moment.utc().valueOf() > parseInt(i.timestamp) + 35 * 20;
-        return hasTimePast;
+        // check if the lock as been confirmed for at least 5 blocks
+        const blockPassed = i.blockNo + 5 < latestBlock;
+        return blockPassed;
     });
 
     const claimIDs = claimableLocks.map(lock => {
