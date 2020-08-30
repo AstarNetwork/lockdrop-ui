@@ -71,6 +71,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
     const [plasmApi, setPlasmApi] = useState<ApiPromise>();
     const [account, setAccount] = useState<string>('');
     const [contract, setContract] = useState<Contract>();
+    const [latestBlock, setLatestBlock] = useState(0);
     // set default testnet contract address
     const [contractAddress, setContractAddress] = useState(() => {
         const _mainContract = secondLockContract.find(i => i.type === 'main')?.address;
@@ -123,14 +124,18 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
 
     // lockdrop parameter for real-time lockdrop rewards
     const lockParams = useMemo(() => {
-        if (typeof publicKey === 'undefined') return [];
+        if (typeof publicKey === 'undefined' || typeof web3 === 'undefined') return [];
 
         const myLocks = allLockEvents.filter(lock => {
             return lock.lockOwner.toLowerCase() === account.toLowerCase();
         });
 
-        return plasmUtils.getClaimParamsFromEth(publicKey, myLocks);
-    }, [allLockEvents, account, publicKey]);
+        if (myLocks.length > 0) {
+            return plasmUtils.getClaimParamsFromEth(publicKey, myLocks, latestBlock);
+        } else {
+            return [];
+        }
+    }, [allLockEvents, account, publicKey, latestBlock, web3]);
 
     // initial API loading
     useEffect(() => {
@@ -147,6 +152,8 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                     // get user account from injected web3
                     const ethAddr = await ethLockdrop.fetchAllAddresses(web3Inst);
                     setCurrentNetwork(_netType);
+                    const _latest = await web3Inst.eth.getBlockNumber();
+                    setLatestBlock(_latest);
 
                     const _contract = await ethLockdrop.createContractInstance(web3Inst, contractAddress);
 
@@ -176,6 +183,9 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         })().finally(() => {
             setLoading({ loading: false, message: '' });
         });
+        return () => {
+            plasmApi && plasmApi.disconnect();
+        };
         // we disable this because we want this to only call once (on component mount)
         // eslint-disable-next-line
     }, []);
@@ -188,6 +198,10 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                     const _allLocks = await ethLockdrop.getAllLockEvents(web3, contract);
                     if (_allLocks.length > allLockEvents.length) {
                         setLockEvents(_allLocks);
+                    }
+                    const _latest = await web3.eth.getBlockNumber();
+                    if (_latest !== latestBlock) {
+                        setLatestBlock(_latest);
                     }
                 }
             } catch (error) {
@@ -316,9 +330,9 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
             } catch (e) {
                 toast.error(e.message.toString());
                 console.log(e);
+            } finally {
+                setLoading({ loading: false, message: '' });
             }
-
-            setLoading({ loading: false, message: '' });
         },
         [account, contract, publicKey, web3],
     );

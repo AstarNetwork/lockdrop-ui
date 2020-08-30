@@ -53,7 +53,7 @@ const LockdropCalcPage = () => {
     useEffect(() => {
         setIsLoading({ loading: true, message: 'Connecting to Plasm Network' });
         (async () => {
-            const api = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Dusty);
+            const api = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Main);
             setPlasmApi(api);
 
             const networkAlpha = await plasmUtils.getLockdropAlpha(api);
@@ -63,7 +63,10 @@ const LockdropCalcPage = () => {
         })().finally(() => {
             setIsLoading({ loading: false, message: '' });
         });
-    }, []);
+        return () => {
+            plasmApi && plasmApi.disconnect();
+        };
+    }, [plasmApi]);
 
     // fetch lock data in the background
     useEffect(() => {
