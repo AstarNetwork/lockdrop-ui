@@ -184,8 +184,31 @@ const ClaimStatus: React.FC<Props> = ({
 
             await fetchLockData();
             setLoadingClaims(false);
+            // const _dat = claimParams.map(c => {
+            //     const param = plasmUtils.createLockParam(
+            //         c.type,
+            //         c.transactionHash.toHex(),
+            //         c.publicKey.toHex(),
+            //         c.duration.toString(),
+            //         c.value.toString(),
+            //     );
+            //     const id = param.hash;
+
+            //     const nonce = polkadotUtils.u8aToHex(plasmUtils.claimPowNonce(id));
+            //     return {
+            //         type: c.type.toString(),
+            //         transactionHash: c.transactionHash.toHex(),
+            //         publicKey: c.publicKey.toHex(),
+            //         duration: c.duration.toString(),
+            //         value: c.value.toString(),
+            //         nonce,
+            //         id: id.toHex(),
+            //     };
+            // });
+            // console.log(_dat);
+
             isLoadingBal && setLoadingBal(false);
-        }, 3000);
+        }, 10000);
 
         // cleanup hook
         return () => {

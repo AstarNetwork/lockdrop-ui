@@ -177,7 +177,7 @@ describe('Plasm lockdrop RPC tests', () => {
         const _voteThreshold = Number.parseInt((await api.query.plasmLockdrop.voteThreshold()).toString());
         const _positiveVotes = Number.parseInt((await api.query.plasmLockdrop.positiveVotes()).toString());
 
-        expect(_voteThreshold).toEqual(4);
+        expect(_voteThreshold).toEqual(5);
         expect(_positiveVotes).toEqual(4);
     });
 });

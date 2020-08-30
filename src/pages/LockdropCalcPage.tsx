@@ -50,6 +50,7 @@ const LockdropCalcPage = () => {
         }
     }, [tokenType]);
 
+    // initial API setup
     useEffect(() => {
         setIsLoading({ loading: true, message: 'Connecting to Plasm Network' });
         (async () => {
@@ -66,7 +67,8 @@ const LockdropCalcPage = () => {
         return () => {
             plasmApi && plasmApi.disconnect();
         };
-    }, [plasmApi]);
+        // eslint-disable-next-line
+    }, []);
 
     // fetch lock data in the background
     useEffect(() => {
