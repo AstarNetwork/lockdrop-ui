@@ -82,9 +82,8 @@ export async function getPubKey(web3: Web3, message?: string) {
 
 export async function fetchAllAddresses(web3: Web3) {
     // get user account from injected web3
-    let ethAddr = await web3.eth.requestAccounts();
-    // if it does not exists, try parsing from node
-    if (ethAddr.length === 0) ethAddr = await web3.eth.getAccounts();
+    const ethAddr = await web3.eth.getAccounts();
+
     // throw if the address is still 0
     if (ethAddr.length === 0) throw new Error('Could not fetch address from wallet');
 
