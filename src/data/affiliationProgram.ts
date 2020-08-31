@@ -307,8 +307,8 @@ const secondEthIntroducer = [
 ];
 
 const specialCommunityCommitter = [
-    '0x6C7e7fbFa69f4B5A5Ade1C27BC74fa4290a3b8A3', // Chinese ambassador
-    '0xF5d7D97B33C4090a8CAce5F7C5a1CC54C5740930', // Russian lockdrop movie introducer.
+    '0x6c7e7fbfa69f4b5a5ade1c27bc74fa4290a3b8a3', // Chinese ambassador
+    '0xf5d7d97b33c4090a8cace5f7c5a1cc54c5740930', // Russian lockdrop movie introducer.
 ];
 
 const secondBtcIntroducer = ['add Bitcoin addresses'];
