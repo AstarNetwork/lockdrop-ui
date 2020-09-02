@@ -71,7 +71,7 @@ const secondEthIntroducer = [
     '0x7ba00c82c5b19b2ec77836b23a2289fb32558e88',
     '0xd5aa581ee5d9033b2e36811869781043b1d571a6',
     '0xbdde562d6c0a3440806e13fd69d6e28c0cb452ca',
-    '0x6c7e7fbfa69f4b5a5ade1c27bc74fa4290a3b8a3',
+    '0x6c7e7fbfa69f4b5a5ade1c27bc74fa4290a3b8a3', // Chinese ambassador.
     '0x1fef0f8a5ac51790de232f0ae3e1bfa47eadbacd',
     '0xaec05c2a88f2b7896005086adbaba3cfd81b63be',
     '0x6b924183307ef2e529db662f80200611328a0cbd',
@@ -294,7 +294,7 @@ const secondEthIntroducer = [
     '0xa3587c55f1d2f8458cbb70cfb432203ac566fffa',
     '0x0e5dc416760b2bd2c1ca953e437f7a58798531f1',
     '0xd220d187d5cc56ef262fb02f381a06a7bc69f3ee',
-    '0x2d165e5191ef0674da2637b421a765bdb1f8d346',
+    '0x2d165e5191ef0674da2637b421a765bdb1f8d346', //  Community Manager and Italian ambassador.
     '0xc49b6c714feaf22b12eb02a01521dab6edd1fcbd',
     '0x6b418a0a93532a660fcfdfcbc74078dae1e43dec',
     '0x504361604c519a16cc19a628f3de1993996f2a7c',
@@ -307,8 +307,8 @@ const secondEthIntroducer = [
 ];
 
 const specialCommunityCommitter = [
-    '0x6c7e7fbfa69f4b5a5ade1c27bc74fa4290a3b8a3', // Chinese ambassador
     '0xf5d7d97b33c4090a8cace5f7c5a1cc54c5740930', // Russian lockdrop movie introducer.
+    '0xa451fd5fcc0d389e0c27ff22845c0e17153f7dc8', // Community Manager.
 ];
 
 const secondBtcIntroducer = ['add Bitcoin addresses'];
