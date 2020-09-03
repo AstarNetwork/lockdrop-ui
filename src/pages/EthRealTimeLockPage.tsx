@@ -213,7 +213,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                 toast.error(error.message);
                 console.log(error);
             }
-        }, 5 * 1000);
+        }, 25 * 1000);
 
         // cleanup hook
         return () => {
