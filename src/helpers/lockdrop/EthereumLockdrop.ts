@@ -111,6 +111,8 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
         }),
     );
 
+    console.log('calling ethereum');
+
     return Promise.all(
         eventHashes.map(async e => {
             // e[0] is lock event and e[1] is block hash

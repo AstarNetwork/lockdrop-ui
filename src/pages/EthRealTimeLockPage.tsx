@@ -200,10 +200,10 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         const interval = setInterval(async () => {
             try {
                 if (web3 && contract) {
-                    const _allLocks = await ethLockdrop.getAllLockEvents(web3, contract);
-                    if (_allLocks.length > allLockEvents.length) {
-                        setLockEvents(_allLocks);
-                    }
+                    // const _allLocks = await ethLockdrop.getAllLockEvents(web3, contract);
+                    // if (_allLocks.length > allLockEvents.length) {
+                    //     setLockEvents(_allLocks);
+                    // }
                     const _latest = await web3.eth.getBlockNumber();
                     if (_latest !== latestBlock) {
                         setLatestBlock(_latest);
@@ -254,7 +254,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         };
         // we disable next line to prevent change on getClaimParams
         // eslint-disable-next-line
-    }, [contractAddress, web3, account]);
+    }, [contractAddress, account]);
 
     /**
      * called when the user changes MetaMask account
@@ -331,6 +331,8 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                 }
 
                 await ethLockdrop.submitLockTx(formInputVal, account, contract);
+                const _allLocks = await ethLockdrop.getAllLockEvents(web3, contract);
+                setLockEvents(_allLocks);
                 toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
             } catch (e) {
                 toast.error(e.message.toString());
