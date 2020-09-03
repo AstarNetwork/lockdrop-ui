@@ -309,6 +309,7 @@ const secondEthIntroducer = [
 const specialCommunityCommitter = [
     '0xf5d7d97b33c4090a8cace5f7c5a1cc54c5740930', // Russian lockdrop movie introducer.
     '0xa451fd5fcc0d389e0c27ff22845c0e17153f7dc8', // Community Manager.
+    '0x3937B5F83f8e3DB413bD202bAf4da5A64879690F', // Korean lockdrop manual translator + community manager
 ];
 
 const secondBtcIntroducer = ['add Bitcoin addresses'];
