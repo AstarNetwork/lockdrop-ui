@@ -326,9 +326,12 @@ export const validBtcAddressList = [...secondBtcIntroducer];
 /**
  * Checks if the given introducer address is listed as a valid introducer for the lockdrop
  * @param introducer a bitcoin or ethereum address
+ * @param tokenType what blockchain network the given address belongs to. Default is ETH
  */
-export function isValidIntroducerAddress(introducer: string) {
-    return (
-        validEthAddressList.includes(introducer.toLowerCase()) || validBtcAddressList.includes(introducer.toLowerCase())
-    );
+export function isValidIntroducerAddress(introducer: string, tokenType: 'BTC' | 'ETH' = 'ETH') {
+    const validIntroducer =
+        tokenType === 'ETH'
+            ? validEthAddressList.find(i => introducer.toLowerCase().match(i.toLowerCase()))
+            : validBtcAddressList.find(i => introducer.toLowerCase().match(i.toLowerCase()));
+    return typeof validIntroducer === 'string';
 }
