@@ -26,6 +26,7 @@ interface LockHistoryProps {
     web3: Web3;
     account: string; // this will be used to get locks for a certain account
     lockData: LockEvent[];
+    onClickRefresh?: () => Promise<void>;
 }
 
 // function TabPanel(props: TabPanelProps) {
@@ -62,7 +63,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 // component that displays the number of tokens and the duration for the lock via Web3
-const LockedEthList: React.FC<LockHistoryProps> = ({ web3, account, lockData }) => {
+const LockedEthList: React.FC<LockHistoryProps> = ({ web3, account, lockData, onClickRefresh }) => {
     const classes = useStyles();
     //const theme = useTheme();
     //const [value, setValue] = React.useState(0);
@@ -104,7 +105,7 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, account, lockData }) 
                             <CurrentLocks web3={web3} account={account} lockData={lockData} />
                         </TabPanel>
                     </SwipeableViews> */}
-                    <CurrentLocks web3={web3} account={account} lockData={lockData} />
+                    <CurrentLocks web3={web3} account={account} lockData={lockData} onClickRefresh={onClickRefresh} />
                 </div>
             </SectionCard>
         </>

@@ -111,7 +111,7 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
         }),
     );
 
-    console.log('calling ethereum');
+    console.log('talking to ethereum');
 
     return Promise.all(
         eventHashes.map(async e => {
@@ -121,6 +121,7 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
 
             const transactionString = await Promise.resolve(web3.eth.getBlock(blockHash.blockNumber as number));
             const time = transactionString.timestamp.toString();
+            const _currentFund = await web3.eth.getBalance(lockEvent.lock);
             return {
                 eth: lockEvent.eth as BN,
                 duration: lockEvent.duration as number,
@@ -130,6 +131,7 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
                 timestamp: time,
                 lockOwner: blockHash.from,
                 transactionHash: blockHash.hash,
+                currentBalance: new BN(_currentFund),
             } as LockEvent;
         }),
     );

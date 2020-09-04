@@ -137,6 +137,17 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         }
     }, [allLockEvents, account, publicKey, latestBlock, web3]);
 
+    const handleFetchLockEvents = useCallback(
+        async (web3Api: Web3, contractInst: Contract) => {
+            !isLoading.loading && setLoading({ loading: true, message: 'Fetching contract events...' });
+
+            const _allLocks = await ethLockdrop.getAllLockEvents(web3Api, contractInst);
+            setLockEvents(_allLocks);
+            !isLoading.loading && setLoading({ loading: false, message: '' });
+        },
+        [isLoading.loading],
+    );
+
     // initial API loading
     useEffect(() => {
         setLoading({
@@ -162,8 +173,8 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                     const _start = await ethLockdrop.getContractStartDate(_contract);
                     setLockdropEnd(_end);
                     setLockdropStart(_start);
-                    const _allLocks = await ethLockdrop.getAllLockEvents(web3Inst, _contract);
-                    setLockEvents(_allLocks);
+
+                    await handleFetchLockEvents(web3Inst, _contract);
 
                     setWeb3(web3Inst);
                     setContract(_contract);
@@ -231,8 +242,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
             (async function() {
                 const _contract = await ethLockdrop.createContractInstance(web3, contractAddress);
 
-                const _allLocks = await ethLockdrop.getAllLockEvents(web3, _contract);
-                setLockEvents(_allLocks);
+                await handleFetchLockEvents(web3, _contract);
                 // check contract start and end dates
                 const _end = await ethLockdrop.getContractEndDate(_contract);
                 const _start = await ethLockdrop.getContractStartDate(_contract);
@@ -254,7 +264,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         };
         // we disable next line to prevent change on getClaimParams
         // eslint-disable-next-line
-    }, [contractAddress, account]);
+    }, [contractAddress]);
 
     /**
      * called when the user changes MetaMask account
@@ -331,9 +341,8 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                 }
 
                 await ethLockdrop.submitLockTx(formInputVal, account, contract);
-                const _allLocks = await ethLockdrop.getAllLockEvents(web3, contract);
-                setLockEvents(_allLocks);
                 toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
+                await handleFetchLockEvents(web3, contract);
             } catch (e) {
                 toast.error(e.message.toString());
                 console.log(e);
@@ -341,7 +350,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                 setLoading({ loading: false, message: '' });
             }
         },
-        [account, contract, publicKey, web3],
+        [account, contract, publicKey, web3, handleFetchLockEvents],
     );
 
     const getClaimToSig = async (id: Uint8Array, sendAddr?: string) => {
@@ -422,7 +431,14 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                                     </>
                                 )}
                             </SectionCard>
-                            {web3 && <LockedEthList web3={web3} account={account} lockData={allLockEvents} />}
+                            {web3 && (
+                                <LockedEthList
+                                    web3={web3}
+                                    account={account}
+                                    lockData={allLockEvents}
+                                    onClickRefresh={contract ? () => handleFetchLockEvents(web3, contract) : undefined}
+                                />
+                            )}
                         </>
                     )}
                 </>
