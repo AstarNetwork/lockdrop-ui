@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect } from 'react';
-import { validEthAddressList, defaultAddress } from '../../data/affiliationProgram';
+import { firstEthIntroducer, defaultAddress } from '../../data/affiliationProgram';
 import { LockEvent } from '../../types/LockdropModels';
 import { PlmDrop } from '../../types/PlasmDrop';
 import { calculateTotalPlm } from '../../helpers/lockdrop/EthereumLockdrop';
@@ -51,7 +51,7 @@ const AffiliationList: React.FC<Props> = ({ lockData }) => {
 
     function getAffiliationResults(lockData: LockEvent[]) {
         // filter out the 0x00 address from the list
-        const validAddresses = validEthAddressList.filter(address => address !== defaultAddress);
+        const validAddresses = firstEthIntroducer.filter(address => address !== defaultAddress);
 
         // get the lockdrop result
         const lockResults = validAddresses.map(i => {
@@ -81,7 +81,7 @@ const AffiliationList: React.FC<Props> = ({ lockData }) => {
                 <List component="nav" className={classes.listRoot} subheader={<li />}>
                     <li className={classes.listSection}>
                         <ul className={classes.ul}>
-                            <ListSubheader>There are {validEthAddressList.length - 1} affiliators</ListSubheader>
+                            <ListSubheader>There are {firstEthIntroducer.length - 1} introducers</ListSubheader>
                             <Divider />
                             {lockdropResult.map(i => (
                                 <IntroducerBonusesItems key={i.receiver} lockResult={i} />
