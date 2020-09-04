@@ -6,7 +6,6 @@ import * as ethLockdrop from '../helpers/lockdrop/EthereumLockdrop';
 import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { Contract } from 'web3-eth-contract';
 import { LockEvent } from '../types/LockdropModels';
 import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
@@ -16,7 +15,7 @@ import SectionCard from '../components/SectionCard';
 import { Typography, Divider } from '@material-ui/core';
 import moment from 'moment';
 import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
-import { lockdropContracts } from '../data/lockInfo';
+import { firstLockContract } from '../data/lockInfo';
 import 'react-dropdown/style.css';
 import LockdropResult from 'src/components/EthLock/LockdropResult';
 import AffiliationList from 'src/components/EthLock/AffiliationList';
@@ -24,7 +23,6 @@ import AffiliationList from 'src/components/EthLock/AffiliationList';
 const FirstEthLockdropPage: React.FC = () => {
     const [web3, setWeb3] = useState<Web3>();
     const [account, setAccount] = useState<string>('');
-    const [contract, setContract] = useState<Contract>();
 
     const [isLoading, setLoading] = useState<{
         loading: boolean;
@@ -44,28 +42,6 @@ const FirstEthLockdropPage: React.FC = () => {
         return currentNetwork === 'main';
     };
 
-    // fetch lock data in the background
-    useEffect(() => {
-        const interval = setInterval(async () => {
-            try {
-                // get all the lock events from the chain
-                if (web3 && contract) {
-                    const _allLocks = await ethLockdrop.getAllLockEvents(web3, contract);
-                    setLockEvents(_allLocks);
-                }
-            } catch (error) {
-                toast.error(error.message);
-                console.log(error);
-            }
-        }, 5 * 1000);
-
-        // cleanup hook
-        return () => {
-            clearInterval(interval);
-            removeWeb3Event();
-        };
-    });
-
     // load web3 instance
     useEffect(() => {
         setLoading({
@@ -78,10 +54,12 @@ const FirstEthLockdropPage: React.FC = () => {
                 const _netType = await web3State.eth.net.getNetworkType();
                 setNetworkType(_netType);
                 if (isMainnet(_netType)) {
-                    const _contract = await ethLockdrop.createContractInstance(
-                        web3State,
-                        lockdropContracts.firstLock.main.address,
-                    );
+                    const contAddr = firstLockContract.find(i => i.type === 'main')?.address;
+                    if (typeof contAddr === 'undefined') {
+                        throw new Error('Could not find lockdrop contract');
+                    }
+
+                    const _contract = await ethLockdrop.createContractInstance(web3State, contAddr);
 
                     const ethAddr = await ethLockdrop.fetchAllAddresses(web3State);
 
@@ -92,7 +70,6 @@ const FirstEthLockdropPage: React.FC = () => {
                     setLockdropStart(_start);
 
                     setWeb3(web3State);
-                    setContract(_contract);
                     setAccount(ethAddr[0]);
 
                     const _allLocks = await ethLockdrop.getAllLockEvents(web3State, _contract);
@@ -105,6 +82,9 @@ const FirstEthLockdropPage: React.FC = () => {
         })().finally(() => {
             setLoading({ loading: false, message: '' });
         });
+        return () => {
+            removeWeb3Event();
+        };
         // we disable this because we want this to only call once (on component mount)
         // eslint-disable-next-line
     }, []);

@@ -18,13 +18,11 @@ import {
     createStyles,
     makeStyles,
     Tooltip,
-    CircularProgress,
 } from '@material-ui/core';
 import LockIcon from '@material-ui/icons/Lock';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
 import { defaultAddress } from '../../data/affiliationProgram';
 import Web3Utils from 'web3-utils';
-import * as polkadotCryptoUtils from '@polkadot/util-crypto';
 import { toast } from 'react-toastify';
 
 const useStyles = makeStyles(theme =>
@@ -63,55 +61,54 @@ interface CurrentLockProps {
     web3: Web3;
     account: string; // this will be used to get locks for a certain account
     lockData: LockEvent[];
+    onClickRefresh?: () => Promise<void>;
 }
 
 interface UnlockInfoProps {
     lockInfo: LockEvent;
     web3: Web3;
     address: string;
+    onClickRefresh?: () => Promise<void>;
 }
 // displays a list of locks tha the current user has locked
-const CurrentLocks: React.FC<CurrentLockProps> = ({ web3, account, lockData }) => {
+const CurrentLocks: React.FC<CurrentLockProps> = ({ web3, account, lockData, onClickRefresh }) => {
     const classes = useStyles();
-    const [lockEvents, setEvents] = useState<LockEvent[]>([]);
-    const [isLoadingComp, setLoadState] = useState(true);
+    const [lockEvents, setEvents] = useState<LockEvent[]>(lockData.filter(i => i.lockOwner === account));
 
     useEffect(() => {
         setEvents(lockData.filter(i => i.lockOwner === account));
-        setLoadState(false);
     }, [lockData, account]);
 
     return (
         <div className={classes.lockListPage}>
-            {isLoadingComp ? (
-                <CircularProgress />
+            {lockEvents.length > 0 ? (
+                <>
+                    <h1>Your Locks</h1>
+                    <h3>{getTotalLockVal(lockEvents)} ETH locked</h3>
+                    <List className={classes.listRoot} subheader={<li />}>
+                        <li className={classes.listSection}>
+                            <ul className={classes.ul}>
+                                <ListSubheader>You have {lockEvents.length} locks</ListSubheader>
+                                <Divider />
+                                {lockEvents.map((eventItem, index) => (
+                                    <div key={index}>
+                                        <UnlockInfo
+                                            lockInfo={eventItem}
+                                            web3={web3}
+                                            address={account}
+                                            onClickRefresh={onClickRefresh}
+                                        />
+                                        <Divider />
+                                    </div>
+                                ))}
+                            </ul>
+                        </li>
+                    </List>
+                </>
             ) : (
                 <>
-                    {lockEvents.length > 0 ? (
-                        <>
-                            <h1>Your Locks</h1>
-                            <h3>{getTotalLockVal(lockEvents)} ETH locked</h3>
-                            <List className={classes.listRoot} subheader={<li />}>
-                                <li className={classes.listSection}>
-                                    <ul className={classes.ul}>
-                                        <ListSubheader>You have {lockEvents.length} locks</ListSubheader>
-                                        <Divider />
-                                        {lockEvents.map(eventItem => (
-                                            <div key={polkadotCryptoUtils.randomAsHex(5)}>
-                                                <UnlockInfo lockInfo={eventItem} web3={web3} address={account} />
-                                                <Divider />
-                                            </div>
-                                        ))}
-                                    </ul>
-                                </li>
-                            </List>
-                        </>
-                    ) : (
-                        <>
-                            <h1>No Locks</h1>
-                            <h4>Please lock some ETH!</h4>
-                        </>
-                    )}
+                    <h1>No Locks</h1>
+                    <h4>Please lock some ETH!</h4>
                 </>
             )}
         </div>
@@ -119,7 +116,7 @@ const CurrentLocks: React.FC<CurrentLockProps> = ({ web3, account, lockData }) =
 };
 
 // the individual lock item
-const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
+const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address, onClickRefresh }) => {
     const classes = useStyles();
     // 24 hours in epoch
     const epochDayMil = 86400000;
@@ -158,14 +155,12 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
 
         const unlockDate = lockedDay + lockInfo.duration * epochDayMil;
 
-        // get contract balance
-        const lockBalance = await web3.eth.getBalance(lockInfo.lock);
         // check if the balance is 0 or not
-        const lockClaimState = lockBalance === '0';
+        const lockClaimState = lockInfo.currentBalance.toString() === '0';
         // console.log(lockBalance);
         setUnlockState(lockClaimState);
         return today > unlockDate;
-    }, [lockInfo, web3]);
+    }, [lockInfo]);
 
     // update time value every second
     useEffect(() => {
@@ -194,10 +189,9 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address }) => {
                 to: lockInfo.lock,
                 value: '0',
             });
-            // get contract balance
-            const lockBalance = await web3.eth.getBalance(lockInfo.lock);
+            onClickRefresh && (await onClickRefresh());
             // check if the balance is 0 or not
-            const lockClaimState = lockBalance === '0';
+            const lockClaimState = lockInfo.currentBalance.toString() === '0';
             setUnlockState(lockClaimState);
         } catch (e) {
             console.log(e);
