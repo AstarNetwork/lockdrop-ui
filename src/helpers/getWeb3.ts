@@ -7,7 +7,7 @@ async function web3Listener() {
         const web3 = new Web3((window as any).ethereum);
         try {
             // Request account access if needed
-            await (window as any).ethereum.eth_requestAccounts;
+            await (window as any).ethereum.enable();
             console.log('Dapp browser detected');
 
             // Accounts now exposed

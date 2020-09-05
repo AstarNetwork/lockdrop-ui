@@ -61,7 +61,7 @@ export async function getMessageSignature(web3: Web3, message: string, asSigPara
  * finds the highest block number from the given lock event
  * @param lockEvents lock event list
  */
-export function getLatestBlockNo(lockEvents: LockEvent[]) {
+export function getHighestBlockNo(lockEvents: LockEvent[]) {
     const latestBlock = Math.max(
         ...lockEvents.map(o => {
             return o.blockNo;
@@ -95,8 +95,17 @@ export async function getPubKey(web3: Web3, message?: string) {
 }
 
 export async function fetchAllAddresses(web3: Web3) {
+    let ethAddr: string[];
     // get user account from injected web3
-    const ethAddr = await web3.eth.getAccounts();
+    try {
+        ethAddr = await web3.eth.getAccounts();
+    } catch (e) {
+        try {
+            ethAddr = await web3.eth.requestAccounts();
+        } catch (e) {
+            throw new Error(e);
+        }
+    }
 
     // throw if the address is still 0
     if (ethAddr.length === 0) throw new Error('Could not fetch address from wallet');
@@ -118,7 +127,7 @@ export async function getAllLockEvents(web3: Web3, instance: Contract, prevEvent
     const mainnetStartBlock =
         prevEvents.length === 0 || !Array.isArray(prevEvents)
             ? allContractList.find(i => i.address.toLowerCase() === contractAddr.toLowerCase())?.blockHeight
-            : getLatestBlockNo(prevEvents);
+            : getHighestBlockNo(prevEvents);
 
     const ev = await instance.getPastEvents('Locked', { fromBlock: mainnetStartBlock });
 
@@ -297,6 +306,7 @@ export function calculateTotalPlm(address: string, lockData: LockEvent[]): PlmDr
  */
 export function serializeLockEvents(lockEvents: LockEvent[]) {
     const _ev = JSON.stringify(lockEvents);
+    console.log('Serializing lock events');
     // encode utf-8 JSON to base 64 string
     return Buffer.from(_ev).toString('base64');
 }
@@ -307,7 +317,9 @@ export function serializeLockEvents(lockEvents: LockEvent[]) {
  */
 export function deserializeLockEvents(lockEvents: string) {
     const eventJson = Buffer.from(lockEvents, 'base64').toString('utf-8');
+
     const locks: LockEvent[] = JSON.parse(eventJson);
+    console.log('Deserializing lock events');
     return locks;
 }
 
