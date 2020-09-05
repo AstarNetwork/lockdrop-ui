@@ -14,6 +14,7 @@ import Web3Utils from 'web3-utils';
 import * as ethereumUtils from 'ethereumjs-util';
 import EthCrypto from 'eth-crypto';
 import { firstLockContract, secondLockContract } from 'src/data/lockInfo';
+import _ from 'lodash';
 
 /**
  * exchange rate at the start of April 14 UTC (at the end of the first lockdrop)
@@ -57,6 +58,19 @@ export async function getMessageSignature(web3: Web3, message: string, asSigPara
 }
 
 /**
+ * finds the highest block number from the given lock event
+ * @param lockEvents lock event list
+ */
+export function getLatestBlockNo(lockEvents: LockEvent[]) {
+    const latestBlock = Math.max(
+        ...lockEvents.map(o => {
+            return o.blockNo;
+        }),
+    );
+    return latestBlock;
+}
+
+/**
  * asks the user to sign a hashed message from their dApp browser to recover the user's public key.
  * This will return a compressed public key.
  * @param web3 a web3.js instance to access the user's wallet information
@@ -91,17 +105,20 @@ export async function fetchAllAddresses(web3: Web3) {
 }
 
 /**
- * returns an array of locked events for the lock contract
- * this function searches from the genesis block
+ * returns an array of locked events for the lock contract from the latest event block number.
+ * This function will return the full list (i.e. previous events + new events)
  * @param web3 a web3.js instance to interact with the blockchain
  * @param instance a contract instance to parse the contract events
+ * @param prevEvents previous lock events
  */
-export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<LockEvent[]> {
+export async function getAllLockEvents(web3: Web3, instance: Contract, prevEvents: LockEvent[]): Promise<LockEvent[]> {
     const contractAddr = instance.options.address;
     const allContractList = [...firstLockContract, ...secondLockContract];
-    // set the correct block number
-    const mainnetStartBlock = allContractList.find(i => i.address.toLowerCase() === contractAddr.toLowerCase())
-        ?.blockHeight;
+    // set the correct block number either based on the create block or the latest event block
+    const mainnetStartBlock =
+        prevEvents.length === 0 || !Array.isArray(prevEvents)
+            ? allContractList.find(i => i.address.toLowerCase() === contractAddr.toLowerCase())?.blockHeight
+            : getLatestBlockNo(prevEvents);
 
     const ev = await instance.getPastEvents('Locked', { fromBlock: mainnetStartBlock });
 
@@ -111,9 +128,7 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
         }),
     );
 
-    console.log('talking to ethereum');
-
-    return Promise.all(
+    const newEvents = await Promise.all(
         eventHashes.map(async e => {
             // e[0] is lock event and e[1] is block hash
             const blockHash = e[1];
@@ -135,6 +150,21 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
             } as LockEvent;
         }),
     );
+
+    const allEvents = [...prevEvents, ...newEvents];
+
+    // filter objects so that the list only contains unique transaction hashes
+    const uniqueEvents = _.uniqBy(allEvents, i => {
+        return i.transactionHash;
+    });
+
+    if (uniqueEvents.length === prevEvents.length) return prevEvents;
+
+    console.log('fetched all lock events');
+
+    return _.sortBy(uniqueEvents, e => {
+        return e.blockNo;
+    });
 }
 
 /**
@@ -262,12 +292,32 @@ export function calculateTotalPlm(address: string, lockData: LockEvent[]): PlmDr
 }
 
 /**
+ * serializes ethereum lock event list and encodes them into base64 string
+ * @param lockEvents smart contract lock event
+ */
+export function serializeLockEvents(lockEvents: LockEvent[]) {
+    const _ev = JSON.stringify(lockEvents);
+    // encode utf-8 JSON to base 64 string
+    return Buffer.from(_ev).toString('base64');
+}
+
+/**
+ * deserialize the base64 string into a lock event list
+ * @param lockEvents lock event list in base64 string
+ */
+export function deserializeLockEvents(lockEvents: string) {
+    const eventJson = Buffer.from(lockEvents, 'base64').toString('utf-8');
+    const locks: LockEvent[] = JSON.parse(eventJson);
+    return locks;
+}
+
+/**
  * parses through the given lock events to calculate the total amount of locked ETH
  * @param locks a list of lockdrop contract events
  */
 export function getTotalLockVal(locks: LockEvent[]): string {
     let totalVal = new BigNumber(0);
-    if (locks.length > 0) {
+    if (locks.length > 0 && Array.isArray(locks)) {
         for (let i = 0; i < locks.length; i++) {
             const currentEth = new BigNumber(locks[i].eth.toString());
             totalVal = totalVal.plus(currentEth);

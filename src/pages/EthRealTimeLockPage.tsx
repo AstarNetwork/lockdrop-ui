@@ -93,7 +93,11 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
     });
 
     const [currentNetwork, setCurrentNetwork] = useState('');
-    const [allLockEvents, setLockEvents] = useState<LockEvent[]>([]);
+    const [allLockEvents, setLockEvents] = useState<LockEvent[]>(
+        typeof localStorage.getItem(`id:${contractAddress}`) === 'string'
+            ? ethLockdrop.deserializeLockEvents(localStorage.getItem(`id:${contractAddress}`) as string)
+            : [],
+    );
 
     const [publicKey, setPublicKey] = useState<string>();
 
@@ -141,18 +145,25 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         async (web3Api: Web3, contractInst: Contract) => {
             !isLoading.loading && setLoading({ loading: true, message: 'Fetching contract events...' });
 
-            const _allLocks = await ethLockdrop.getAllLockEvents(web3Api, contractInst);
+            const _allLocks = await ethLockdrop.getAllLockEvents(web3Api, contractInst, allLockEvents);
             setLockEvents(_allLocks);
             !isLoading.loading && setLoading({ loading: false, message: '' });
         },
-        [isLoading.loading],
+        [isLoading.loading, allLockEvents],
     );
+
+    // store all lock events to local storage
+    useEffect(() => {
+        if (allLockEvents.length > 0 && Array.isArray(allLockEvents)) {
+            localStorage.setItem(`id:${contractAddress}`, ethLockdrop.serializeLockEvents(allLockEvents));
+        }
+    }, [allLockEvents, contractAddress]);
 
     // initial API loading
     useEffect(() => {
         setLoading({
             loading: true,
-            message: 'Connecting to Web3 instance...',
+            message: 'Syncing with Ethereum...',
         });
         (async function() {
             try {
@@ -206,15 +217,11 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         // eslint-disable-next-line
     }, []);
 
-    // fetch lock data in the background
+    // fetch ethereum block header in the background
     useEffect(() => {
         const interval = setInterval(async () => {
             try {
                 if (web3 && contract) {
-                    // const _allLocks = await ethLockdrop.getAllLockEvents(web3, contract);
-                    // if (_allLocks.length > allLockEvents.length) {
-                    //     setLockEvents(_allLocks);
-                    // }
                     const _latest = await web3.eth.getBlockNumber();
                     if (_latest !== latestBlock) {
                         setLatestBlock(_latest);
