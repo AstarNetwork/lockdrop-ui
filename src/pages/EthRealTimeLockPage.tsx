@@ -133,11 +133,11 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                 allLockEvents.length === 0 ||
                 (latestBlock !== 0 && ethLockdrop.getHighestBlockNo(allLockEvents) <= latestBlock)
             ) {
-                const _allLocks = await ethLockdrop.getAllLockEvents(web3Api, contractInst);
+                const _allLocks = await ethLockdrop.getAllLockEvents(web3Api, contractInst, !isMainnetLock);
                 setLockEvents(_allLocks);
             }
         },
-        [latestBlock, allLockEvents],
+        [latestBlock, allLockEvents, isMainnetLock],
     );
 
     // initial API loading

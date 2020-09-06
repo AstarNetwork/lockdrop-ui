@@ -15,6 +15,7 @@ import * as ethereumUtils from 'ethereumjs-util';
 import EthCrypto from 'eth-crypto';
 import { firstLockContract, secondLockContract } from 'src/data/lockInfo';
 import _ from 'lodash';
+import { EtherScanApi } from 'src/types/EtherScanTypes';
 
 /**
  * exchange rate at the start of April 14 UTC (at the end of the first lockdrop)
@@ -145,12 +146,88 @@ export function deserializeLockEvents(lockEvents: string) {
 }
 
 /**
+ * fetch contract logs from etherscan. Because there is no API keys, the fetch will be limited to 1 time ever second
+ * @param contractAddress lockdrop smart contract address
+ * @param fromBlock which block to search from
+ * @param toBlock up to what block the API should fetch for
+ * @param ropsten pass true to search for ropsten network
+ */
+export async function fetchLockdropEvents(
+    web3: Web3,
+    contractAddress: string,
+    fromBlock: number | 'latest' | 'pending' | 'earliest' | 'genesis' = 'genesis',
+    toBlock: number | 'latest' | 'pending' | 'earliest' | 'genesis' = 'latest',
+    ropsten?: boolean,
+) {
+    function wait(ms: number) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    const networkToken = ropsten ? 'api-ropsten' : 'api';
+    const api = `https://${networkToken}.etherscan.io/api?module=logs&action=getLogs&fromBlock=${fromBlock}&toBlock=${toBlock}&address=${contractAddress}&apikey=YourApiKeyToken`;
+
+    // delay for 3 seconds to prevent IP ban
+    await wait(3000);
+    const res = await (await fetch(api)).text();
+    const logs: EtherScanApi.Response = JSON.parse(res);
+
+    if (logs.status === '0') {
+        throw new Error(logs.message);
+    }
+
+    const lockdropAbiInputs = [
+        {
+            indexed: true,
+            internalType: 'uint256',
+            name: 'eth',
+            type: 'uint256',
+        },
+        {
+            indexed: true,
+            internalType: 'uint256',
+            name: 'duration',
+            type: 'uint256',
+        },
+        {
+            indexed: false,
+            internalType: 'address',
+            name: 'lock',
+            type: 'address',
+        },
+        {
+            indexed: false,
+            internalType: 'address',
+            name: 'introducer',
+            type: 'address',
+        },
+    ];
+
+    const lockEvents = logs.result.map(async event => {
+        const decoded = web3.eth.abi.decodeLog(lockdropAbiInputs, event.data, event.topics);
+        const senderTx = await web3.eth.getTransaction(event.transactionHash);
+
+        const ev = {
+            eth: new BN(senderTx.value),
+            duration: Web3Utils.hexToNumber(event.topics[2]),
+            lock: decoded['lock'],
+            introducer: decoded['introducer'],
+            blockNo: Web3Utils.hexToNumber(event.blockNumber),
+            timestamp: Web3Utils.hexToNumber(event.timeStamp).toFixed(),
+            lockOwner: senderTx.from,
+            transactionHash: event.transactionHash,
+        } as LockEvent;
+        return ev;
+    });
+
+    return Promise.all(lockEvents);
+}
+
+/**
  * returns an array of locked events for the lock contract from the latest event block number.
  * This function will return the full list (i.e. previous events + new events) and handle caching as well
  * @param web3 a web3.js instance to interact with the blockchain
  * @param instance a contract instance to parse the contract events
  */
-export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<LockEvent[]> {
+export async function getAllLockEvents(web3: Web3, instance: Contract, isDusty?: boolean): Promise<LockEvent[]> {
     const contractAddr = instance.options.address;
 
     const lockStoreKey = `id:${contractAddr}`;
@@ -167,38 +244,42 @@ export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<
               )?.blockHeight
             : getHighestBlockNo(prevEvents);
 
-    const ev = await instance.getPastEvents('Locked', { fromBlock: mainnetStartBlock });
+    const newEvents = await fetchLockdropEvents(web3, contractAddr, mainnetStartBlock, 'latest', isDusty);
+    // const ev = await instance.getPastEvents('Locked', {
+    //     fromBlock: mainnetStartBlock,
+    //     toBlock: 'latest',
+    // });
 
     // skip events on the same block
-    if (ev.length < 2) return prevEvents;
+    if (newEvents.length < 2) return prevEvents;
 
-    const eventHashes = await Promise.all(
-        ev.map(async e => {
-            return Promise.all([Promise.resolve(e.returnValues), web3.eth.getTransaction(e.transactionHash)]);
-        }),
-    );
+    // const eventHashes = await Promise.all(
+    //     ev.map(async e => {
+    //         return Promise.all([Promise.resolve(e.returnValues), web3.eth.getTransaction(e.transactionHash)]);
+    //     }),
+    // );
 
-    const newEvents = await Promise.all(
-        eventHashes.map(async e => {
-            // e[0] is lock event and e[1] is block hash
-            const blockHash = e[1];
-            const lockEvent = e[0];
+    // const newEvents = await Promise.all(
+    //     eventHashes.map(async e => {
+    //         // e[0] is lock event and e[1] is block hash
+    //         const blockHash = e[1];
+    //         const lockEvent = e[0];
 
-            const transactionString = await web3.eth.getBlock(blockHash.blockNumber as number);
-            const time = transactionString.timestamp.toString();
+    //         const transactionString = await web3.eth.getBlock(blockHash.blockNumber as number);
+    //         const time = transactionString.timestamp.toString();
 
-            return {
-                eth: lockEvent.eth as BN,
-                duration: lockEvent.duration as number,
-                lock: lockEvent.lock as string,
-                introducer: lockEvent.introducer as string,
-                blockNo: blockHash.blockNumber,
-                timestamp: time,
-                lockOwner: blockHash.from,
-                transactionHash: blockHash.hash,
-            } as LockEvent;
-        }),
-    );
+    //         return {
+    //             eth: lockEvent.eth as BN,
+    //             duration: lockEvent.duration as number,
+    //             lock: lockEvent.lock as string,
+    //             introducer: lockEvent.introducer as string,
+    //             blockNo: blockHash.blockNumber,
+    //             timestamp: time,
+    //             lockOwner: blockHash.from,
+    //             transactionHash: blockHash.hash,
+    //         } as LockEvent;
+    //     }),
+    // );
 
     const allEvents = [...prevEvents, ...newEvents];
 
@@ -346,16 +427,24 @@ export function calculateTotalPlm(address: string, lockData: LockEvent[]): PlmDr
 /**
  * parses through the given lock events to calculate the total amount of locked ETH
  * @param locks a list of lockdrop contract events
+ * @param roundTo
  */
-export function getTotalLockVal(locks: LockEvent[]): string {
-    let totalVal = new BigNumber(0);
+export function getTotalLockVal(locks: LockEvent[], roundTo?: number): string {
+    //let totalVal = new BigNumber(0);
     if (locks.length > 0 && Array.isArray(locks)) {
-        for (let i = 0; i < locks.length; i++) {
-            const currentEth = new BigNumber(locks[i].eth.toString());
-            totalVal = totalVal.plus(currentEth);
-        }
+        const allVal = locks.map(e => {
+            // we have to manually prefix it with 0x for BigNumber to read
+            return new BigNumber('0x' + e.eth.toString('hex'));
+        });
+
+        const totalVal = allVal.reduce((a, b) => a.plus(b), new BigNumber(0));
+
+        const _eth = Web3Utils.fromWei(totalVal.toFixed(), 'ether');
+
+        if (roundTo) return new BigNumber(_eth).toFixed(roundTo, 5);
+        return new BigNumber(_eth).toFixed();
     }
-    return Web3Utils.fromWei(totalVal.toFixed(), 'ether');
+    return '0';
 }
 
 /**

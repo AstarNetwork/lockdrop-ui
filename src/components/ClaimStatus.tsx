@@ -303,7 +303,6 @@ const ClaimStatus: React.FC<Props> = ({
                                 rel="noopener noreferrer"
                                 target="_blank"
                                 slot="start"
-                                size="large"
                             >
                                 Create a new account
                             </IonButton>
@@ -311,9 +310,8 @@ const ClaimStatus: React.FC<Props> = ({
                                 onClick={handleEditAddress}
                                 disabled={isLoadingBal || isLoadingClaims || !customClaimAddr}
                                 slot="end"
-                                size="large"
                             >
-                                Set Address
+                                Set account
                             </IonButton>
                         </IonItem>
                     </IonList>

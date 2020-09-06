@@ -91,7 +91,7 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ lockData }) => {
                 <>
                     <div>
                         <h1>Global Locks</h1>
-                        <h3>{getTotalLockVal(lockData)} ETH locked</h3>
+                        <h3>{getTotalLockVal(lockData, 4)} ETH locked</h3>
                         <p>There are {lockData.length} locks</p>
                     </div>
 
