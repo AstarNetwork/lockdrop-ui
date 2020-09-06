@@ -26,18 +26,6 @@ import { secondLockContract } from '../data/lockInfo';
 import Dropdown from 'react-dropdown';
 import 'react-dropdown/style.css';
 
-const formInfo = `This is the lockdrop form for Ethereum.
-This uses Web3 injection so you must have Metamask (or other Web3-enabled wallet) installed in order for this to work properly.
-If you find any errors or find issues with this form, please contact the Plasm team.
-Regarding the audit by Quantstamp, click <a
-                            color="inherit"
-                            href="https://github.com/staketechnologies/lockdrop-ui/blob/16a2d495d85f2d311957b9cf366204fbfabadeaa/audit/quantstamp-audit.pdf"
-                            rel="noopener noreferrer"
-                            target="_blank"
-                        >
-                            here
-                        </a> for more details`;
-
 const useStyles = makeStyles(theme =>
     createStyles({
         addressDropdown: {
@@ -93,6 +81,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
     });
 
     const [currentNetwork, setCurrentNetwork] = useState('');
+    // get lock event list from the local storage if it exists
     const [allLockEvents, setLockEvents] = useState<LockEvent[]>([]);
 
     const [publicKey, setPublicKey] = useState<string>();
@@ -139,20 +128,23 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
 
     const handleFetchLockEvents = useCallback(
         async (web3Api: Web3, contractInst: Contract) => {
-            !isLoading.loading && setLoading({ loading: true, message: 'Fetching contract events...' });
-
-            const _allLocks = await ethLockdrop.getAllLockEvents(web3Api, contractInst);
-            setLockEvents(_allLocks);
-            !isLoading.loading && setLoading({ loading: false, message: '' });
+            // only fetch the events if the block number is high
+            if (
+                allLockEvents.length === 0 ||
+                (latestBlock !== 0 && ethLockdrop.getHighestBlockNo(allLockEvents) <= latestBlock)
+            ) {
+                const _allLocks = await ethLockdrop.getAllLockEvents(web3Api, contractInst, !isMainnetLock);
+                setLockEvents(_allLocks);
+            }
         },
-        [isLoading.loading],
+        [latestBlock, allLockEvents, isMainnetLock],
     );
 
     // initial API loading
     useEffect(() => {
         setLoading({
             loading: true,
-            message: 'Connecting to Web3 instance...',
+            message: 'Syncing with Ethereum...',
         });
         (async function() {
             try {
@@ -206,15 +198,11 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         // eslint-disable-next-line
     }, []);
 
-    // fetch lock data in the background
+    // fetch ethereum block header in the background
     useEffect(() => {
         const interval = setInterval(async () => {
             try {
                 if (web3 && contract) {
-                    // const _allLocks = await ethLockdrop.getAllLockEvents(web3, contract);
-                    // if (_allLocks.length > allLockEvents.length) {
-                    //     setLockEvents(_allLocks);
-                    // }
                     const _latest = await web3.eth.getBlockNumber();
                     if (_latest !== latestBlock) {
                         setLatestBlock(_latest);
@@ -240,8 +228,9 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                 message: 'Connecting to Web3 instance with new contract...',
             });
             (async function() {
+                // fetch a new contract
                 const _contract = await ethLockdrop.createContractInstance(web3, contractAddress);
-
+                // fetch new lock events
                 await handleFetchLockEvents(web3, _contract);
                 // check contract start and end dates
                 const _end = await ethLockdrop.getContractEndDate(_contract);
@@ -269,14 +258,13 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
     /**
      * called when the user changes MetaMask account
      */
-    const handleAccountChange = useCallback(
-        (accounts: string[]) => {
-            if (account !== accounts[0]) {
-                setAccount(accounts[0]);
-            }
-        },
-        [account],
-    );
+    const handleAccountChange = useCallback(() => {
+        const currentAccount = (window as any).ethereum.selectedAddress as string;
+        if (account !== currentAccount) {
+            console.log('user changed account to ' + currentAccount);
+            setAccount(currentAccount);
+        }
+    }, [account]);
 
     // handle metamask account change event handler
     useEffect(() => {
@@ -330,6 +318,11 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                     throw new Error('Could not find a contract instance');
                 }
 
+                if (formInputVal.amount.isZero() || formInputVal.duration <= 0) {
+                    console.log(formInputVal);
+                    throw new Error('You are missing an input!');
+                }
+
                 if (!publicKey) {
                     const _publicKey = await ethLockdrop.getPubKey(
                         web3,
@@ -367,81 +360,85 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         <IonPage>
             <Navbar />
             <IonContent>
-                <>
-                    <IonLoading isOpen={isLoading.loading} message={isLoading.message} />
-                    {isMainnet(currentNetwork) !== isMainnetLock ? (
+                <IonLoading isOpen={isLoading.loading} message={isLoading.message} />
+                {isMainnet(currentNetwork) !== isMainnetLock ? (
+                    <SectionCard maxWidth="lg">
+                        <Typography variant="h2" component="h4" align="center">
+                            Please access this page with a {plasmNetToEthNet} wallet
+                        </Typography>
+                    </SectionCard>
+                ) : (
+                    <>
                         <SectionCard maxWidth="lg">
-                            <Typography variant="h2" component="h4" align="center">
-                                Please access this page with a {plasmNetToEthNet} wallet
-                            </Typography>
-                        </SectionCard>
-                    ) : (
-                        <>
-                            <SectionCard maxWidth="lg">
-                                <LockdropCountdownPanel
-                                    startTime={moment.unix(parseInt(lockdropStart))}
-                                    endTime={moment.unix(parseInt(lockdropEnd))}
-                                    lockData={allLockEvents}
-                                />
-                                {!isMainnetLock && (
-                                    <>
-                                        <Divider />
-                                        <Typography variant="h4" component="h5" align="center">
-                                            Lockdrop Contract Address
-                                        </Typography>
-                                        <Dropdown
-                                            options={getAddressArray}
-                                            value={contractAddress}
-                                            onChange={e => setContractAddress(e.value)}
-                                            className={classes.addressDropdown}
-                                        />
-                                    </>
-                                )}
-                            </SectionCard>
-
-                            {isLockdropOpen && (
-                                <LockdropForm
-                                    token="ETH"
-                                    onSubmit={handleSubmit}
-                                    description={formInfo}
-                                    dusty={!isMainnetLock}
-                                />
-                            )}
-
-                            <SectionCard maxWidth="lg">
-                                <Typography variant="h4" component="h1" align="center">
-                                    Real-time Lockdrop Status
-                                </Typography>
-                                {publicKey && plasmApi ? (
-                                    <ClaimStatus
-                                        claimParams={lockParams}
-                                        plasmApi={plasmApi}
-                                        networkType="ETH"
-                                        plasmNetwork={isMainnetLock ? 'Plasm' : 'Dusty'}
-                                        publicKey={publicKey}
-                                        getLockerSig={(id, addr) => getClaimToSig(id, addr)}
+                            <LockdropCountdownPanel
+                                startTime={moment.unix(parseInt(lockdropStart))}
+                                endTime={moment.unix(parseInt(lockdropEnd))}
+                                lockData={allLockEvents}
+                            />
+                            {!isMainnetLock && (
+                                <>
+                                    <Divider />
+                                    <Typography variant="h4" component="h5" align="center">
+                                        Lockdrop Contract Address
+                                    </Typography>
+                                    <Dropdown
+                                        options={getAddressArray}
+                                        value={contractAddress}
+                                        onChange={e => setContractAddress(e.value)}
+                                        className={classes.addressDropdown}
                                     />
-                                ) : (
-                                    <>
-                                        <Container>
-                                            <IonButton expand="block" onClick={handleGetPublicKey}>
-                                                Click to view lock claims
-                                            </IonButton>
-                                        </Container>
-                                    </>
-                                )}
-                            </SectionCard>
-                            {web3 && (
-                                <LockedEthList
-                                    web3={web3}
-                                    account={account}
-                                    lockData={allLockEvents}
-                                    onClickRefresh={contract ? () => handleFetchLockEvents(web3, contract) : undefined}
-                                />
+                                </>
                             )}
-                        </>
-                    )}
-                </>
+                        </SectionCard>
+
+                        {isLockdropOpen && <LockdropForm onSubmit={handleSubmit} dusty={!isMainnetLock} />}
+
+                        <SectionCard maxWidth="lg">
+                            <Typography variant="h4" component="h1" align="center">
+                                Real-time Lockdrop Status
+                            </Typography>
+                            {publicKey && plasmApi ? (
+                                <ClaimStatus
+                                    claimParams={lockParams}
+                                    plasmApi={plasmApi}
+                                    networkType="ETH"
+                                    plasmNetwork={isMainnetLock ? 'Plasm' : 'Dusty'}
+                                    publicKey={publicKey}
+                                    getLockerSig={(id, addr) => getClaimToSig(id, addr)}
+                                />
+                            ) : (
+                                <Container>
+                                    <IonButton expand="block" onClick={handleGetPublicKey}>
+                                        Click to view lock claims
+                                    </IonButton>
+                                </Container>
+                            )}
+                        </SectionCard>
+                        {web3 && (
+                            <LockedEthList
+                                web3={web3}
+                                account={account}
+                                lockData={allLockEvents}
+                                onClickRefresh={
+                                    contract
+                                        ? () => {
+                                              setLoading({
+                                                  loading: true,
+                                                  message: 'Fetching contract events...',
+                                              });
+                                              return handleFetchLockEvents(web3, contract).finally(() => {
+                                                  setLoading({
+                                                      loading: false,
+                                                      message: '',
+                                                  });
+                                              });
+                                          }
+                                        : undefined
+                                }
+                            />
+                        )}
+                    </>
+                )}
                 <Footer />
             </IonContent>
         </IonPage>

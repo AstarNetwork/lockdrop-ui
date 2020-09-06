@@ -42,6 +42,19 @@ const FirstEthLockdropPage: React.FC = () => {
         return currentNetwork === 'main';
     };
 
+    const lockStoreKey = `id:${firstLockContract.find(i => i.type === 'main')?.address}`;
+
+    // store all lock events to local storage every time things changes
+    useEffect(() => {
+        if (allLockEvents.length > 0 && Array.isArray(allLockEvents)) {
+            const serializedEvents = ethLockdrop.serializeLockEvents(allLockEvents);
+            // ensure that the store value are not the same before storing
+            if (localStorage.getItem(lockStoreKey) !== serializedEvents) {
+                localStorage.setItem(lockStoreKey, serializedEvents);
+            }
+        }
+    }, [allLockEvents, lockStoreKey]);
+
     // load web3 instance
     useEffect(() => {
         setLoading({

@@ -4,21 +4,18 @@ import { LockInput, OptionItem } from '../../types/LockdropModels';
 import SectionCard from '../SectionCard';
 import { DropdownOption } from '../DropdownOption';
 import Container from '@material-ui/core/Container';
-import BN from 'bn.js';
 import { Typography, Link } from '@material-ui/core';
 import quantstampLogo from '../../resources/quantstamp-logo.png';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-import parse from 'html-react-parser';
 import { ethDurations, ethDustyDurations } from '../../data/lockInfo';
+import { BN } from 'ethereumjs-util';
 
 type InputProps = {
-    token: string;
     onSubmit: (inputs: LockInput) => void;
-    description?: string;
     dusty?: boolean;
 };
 // the main component function
-const LockdropForm = ({ token, onSubmit, description, dusty }: InputProps) => {
+const LockdropForm = ({ onSubmit, dusty }: InputProps) => {
     // states used in this component
     const [lockAmount, setAmount] = useState<BN>(new BN(0));
     const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
@@ -80,17 +77,31 @@ const LockdropForm = ({ token, onSubmit, description, dusty }: InputProps) => {
                         </Link>
                     </div>
 
-                    {description ? (
-                        <IonCard className={classes.textBox}>
-                            <IonCardContent>{parse(description)}</IonCardContent>
-                        </IonCard>
-                    ) : null}
+                    <IonCard className={classes.textBox}>
+                        <IonCardContent>
+                            This is the lockdrop form for Ethereum. This uses Web3 injection so you must access this
+                            page with a dApp browser or extension installed in order for this to work properly. If you
+                            find any errors or find issues with this form, please contact the Plasm team. Regarding the
+                            audit by Quantstamp, click{' '}
+                            <a
+                                color="inherit"
+                                href="https://github.com/staketechnologies/lockdrop-ui/blob/16a2d495d85f2d311957b9cf366204fbfabadeaa/audit/quantstamp-audit.pdf"
+                                rel="noopener noreferrer"
+                                target="_blank"
+                            >
+                                here
+                            </a>{' '}
+                            for more details
+                        </IonCardContent>
+                    </IonCard>
 
                     <IonItem>
-                        <IonLabel position="floating">Number of {token}</IonLabel>
+                        <IonLabel position="floating">Number of ETH</IonLabel>
                         <IonInput
-                            placeholder={'ex: 0.64646 ' + token}
-                            onIonInput={e => setAmount(((e.target as HTMLInputElement).value as unknown) as BN)}
+                            placeholder={'ex: 0.64646 ETH'}
+                            onIonInput={e =>
+                                setAmount(new BN(((e.target as HTMLInputElement).value as unknown) as string))
+                            }
                         ></IonInput>
                     </IonItem>
                     <IonLabel className={classes.formLabel}>Lock Duration</IonLabel>

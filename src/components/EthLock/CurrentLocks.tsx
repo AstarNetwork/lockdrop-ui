@@ -24,6 +24,8 @@ import LockOpenIcon from '@material-ui/icons/LockOpen';
 import { defaultAddress } from '../../data/affiliationProgram';
 import Web3Utils from 'web3-utils';
 import { toast } from 'react-toastify';
+import Skeleton from '@material-ui/lab/Skeleton';
+import BigNumber from 'bignumber.js';
 
 const useStyles = makeStyles(theme =>
     createStyles({
@@ -145,8 +147,10 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address, onClic
     const [tillUnlock, setUnlockDate] = useState<TimeFormat>(calculateTimeLeft());
     const [unlocked, setUnlockState] = useState(false);
     const [isLoading, setLoading] = useState(false);
+    const [balanceLoaded, setBalanceLoaded] = useState(false);
+    const [lockVal, setLockVal] = useState<BigNumber>();
 
-    const checkUnlock = useCallback(async () => {
+    const checkUnlock = useCallback(() => {
         // get today in UTC epoch seconds (js default is ms)
         const today = Date.now();
 
@@ -156,17 +160,17 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address, onClic
         const unlockDate = lockedDay + lockInfo.duration * epochDayMil;
 
         // check if the balance is 0 or not
-        const lockClaimState = lockInfo.currentBalance.toString() === '0';
+        const lockClaimState = typeof lockVal !== 'undefined' && lockVal.isLessThanOrEqualTo(new BigNumber(0));
         // console.log(lockBalance);
         setUnlockState(lockClaimState);
         return today > unlockDate;
-    }, [lockInfo]);
+    }, [lockInfo, lockVal]);
 
     // update time value every second
     useEffect(() => {
-        const interval = setInterval(async () => {
+        const interval = setInterval(() => {
             setUnlockDate(calculateTimeLeft());
-            setLockState(await checkUnlock());
+            setLockState(checkUnlock());
         }, 1000);
         // cleanup async hook
         return () => {
@@ -174,11 +178,28 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address, onClic
         };
     }, [calculateTimeLeft, checkUnlock]);
 
+    const fetchBalance = useCallback(async () => {
+        const bal = await web3.eth.getBalance(lockInfo.lock);
+        return new BigNumber(bal);
+    }, [lockInfo.lock, web3.eth]);
+
     // initial update
     useEffect(() => {
-        setUnlockDate(calculateTimeLeft());
-        checkUnlock().then(setLockState);
-    }, [calculateTimeLeft, checkUnlock]);
+        (async () => {
+            const bal = await fetchBalance();
+            setLockVal(bal);
+        })()
+            .catch(e => {
+                console.log(e);
+                toast.error(e.message);
+            })
+            .finally(() => {
+                setBalanceLoaded(true);
+                setUnlockDate(calculateTimeLeft());
+                checkUnlock();
+            });
+        // eslint-disable-next-line
+    }, []);
 
     // click unlock ETH
     const handleClick = useCallback(async () => {
@@ -190,9 +211,8 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address, onClic
                 value: '0',
             });
             onClickRefresh && (await onClickRefresh());
-            // check if the balance is 0 or not
-            const lockClaimState = lockInfo.currentBalance.toString() === '0';
-            setUnlockState(lockClaimState);
+            const bal = await fetchBalance();
+            setLockVal(bal);
         } catch (e) {
             console.log(e);
             toast.error(e.message);
@@ -206,73 +226,95 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address, onClic
     return (
         <>
             <ListItem>
-                <Grid container spacing={4} alignItems="center">
-                    <Grid item xs={9}>
-                        <ListItemText>
-                            <h5>Lock address: {lockInfo.lock}</h5>
-                            <p>
-                                Locked {Web3Utils.fromWei(lockInfo.eth, 'ether')} ETH for {lockInfo.duration} days
-                            </p>
-                            {lockInfo.introducer !== defaultAddress ? (
-                                <p>Introducer: {lockInfo.introducer}</p>
-                            ) : (
-                                <p>No introducer</p>
-                            )}
-                            {isLoading ? (
-                                <>
-                                    <LinearProgress />
-                                </>
-                            ) : (
-                                <>
-                                    {!canUnlock ? (
-                                        <Grid container spacing={1}>
-                                            <Grid item>
-                                                <p>{tillUnlock.days} Days </p>
-                                            </Grid>
-                                            <Grid item>
-                                                <p>{tillUnlock.hours} Hours </p>
-                                            </Grid>
-                                            <Grid item>
-                                                <p>{tillUnlock.minutes} Minutes </p>
-                                            </Grid>
-                                            <Grid item>
-                                                <p>{tillUnlock.seconds} Seconds </p>
-                                            </Grid>
-                                            <Grid item>
-                                                <p>Left</p>
-                                            </Grid>
-                                        </Grid>
-                                    ) : unlocked ? (
-                                        <p>Lock already unlocked!</p>
+                {balanceLoaded ? (
+                    <>
+                        <Grid container spacing={4} alignItems="center">
+                            <Grid item xs={9}>
+                                <ListItemText>
+                                    <h5>Lock address: {lockInfo.lock}</h5>
+                                    <p>
+                                        Locked {Web3Utils.fromWei(lockInfo.eth, 'ether')} ETH for {lockInfo.duration}{' '}
+                                        days
+                                    </p>
+                                    {lockInfo.introducer !== defaultAddress ? (
+                                        <p>Introducer: {lockInfo.introducer}</p>
                                     ) : (
-                                        <p>You can unlocked your lock!</p>
+                                        <p>No introducer</p>
                                     )}
-                                </>
-                            )}
-                        </ListItemText>
-                    </Grid>
-                    <Grid item>
-                        <ListItemSecondaryAction className={classes.itemButtons}>
-                            {unlocked ? (
-                                <LockOpenIcon color="disabled" />
-                            ) : canUnlock ? (
-                                <Tooltip title="Click to unlock" aria-label="unlock">
-                                    <IconButton
-                                        edge="end"
-                                        aria-label="unlock"
-                                        onClick={() => handleClick()}
-                                        color="primary"
-                                        disabled={isLoading}
-                                    >
-                                        <LockOpenIcon />
-                                    </IconButton>
-                                </Tooltip>
-                            ) : (
-                                <LockIcon color="inherit" />
-                            )}
-                        </ListItemSecondaryAction>
-                    </Grid>
-                </Grid>
+                                    {isLoading ? (
+                                        <>
+                                            <LinearProgress />
+                                        </>
+                                    ) : (
+                                        <>
+                                            {!canUnlock ? (
+                                                <Grid container spacing={1}>
+                                                    <Grid item>
+                                                        <p>{tillUnlock.days} Days </p>
+                                                    </Grid>
+                                                    <Grid item>
+                                                        <p>{tillUnlock.hours} Hours </p>
+                                                    </Grid>
+                                                    <Grid item>
+                                                        <p>{tillUnlock.minutes} Minutes </p>
+                                                    </Grid>
+                                                    <Grid item>
+                                                        <p>{tillUnlock.seconds} Seconds </p>
+                                                    </Grid>
+                                                    <Grid item>
+                                                        <p>Left</p>
+                                                    </Grid>
+                                                </Grid>
+                                            ) : unlocked ? (
+                                                <p>Lock already unlocked!</p>
+                                            ) : (
+                                                <p>You can unlocked your lock!</p>
+                                            )}
+                                        </>
+                                    )}
+                                </ListItemText>
+                            </Grid>
+                            <Grid item>
+                                <ListItemSecondaryAction className={classes.itemButtons}>
+                                    {unlocked ? (
+                                        <LockOpenIcon color="disabled" />
+                                    ) : canUnlock ? (
+                                        <Tooltip title="Click to unlock" aria-label="unlock">
+                                            <IconButton
+                                                edge="end"
+                                                aria-label="unlock"
+                                                onClick={() => handleClick()}
+                                                color="primary"
+                                                disabled={isLoading}
+                                            >
+                                                <LockOpenIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                    ) : (
+                                        <LockIcon color="inherit" />
+                                    )}
+                                </ListItemSecondaryAction>
+                            </Grid>
+                        </Grid>
+                    </>
+                ) : (
+                    <>
+                        <Grid container spacing={4} alignItems="center">
+                            <Grid item xs={9}>
+                                <ListItemText>
+                                    <Skeleton animation="wave" variant="text" />
+                                    <Skeleton animation="wave" variant="text" />
+                                    <Skeleton animation="wave" variant="text" />
+                                </ListItemText>
+                            </Grid>
+                            <Grid item>
+                                <ListItemSecondaryAction className={classes.itemButtons}>
+                                    <Skeleton animation="wave" variant="circle" width={40} height={40} />
+                                </ListItemSecondaryAction>
+                            </Grid>
+                        </Grid>
+                    </>
+                )}
             </ListItem>
         </>
     );
