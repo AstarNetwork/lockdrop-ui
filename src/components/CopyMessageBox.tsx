@@ -6,9 +6,9 @@ import FileCopyIcon from '@material-ui/icons/FileCopy';
 import { IonToast } from '@ionic/react';
 
 interface Props {
-    header: string;
     message: string;
     isCode?: boolean;
+    header?: string;
     componentType?:
         | 'inherit'
         | 'button'
@@ -65,9 +65,12 @@ const CopyMessageBox: React.FC<Props> = ({ header, message, componentType, isCod
     return (
         <>
             <Paper elevation={1} className={classes.messageBox}>
-                <Typography component="h4" variant="h3">
-                    {header}:
-                </Typography>
+                {header && (
+                    <Typography component="h4" variant="h3">
+                        {header}:
+                    </Typography>
+                )}
+
                 <div className={classes.signMessage}>
                     {isCode ? (
                         <code className={classes.message}>{message}</code>

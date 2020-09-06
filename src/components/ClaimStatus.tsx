@@ -20,7 +20,6 @@ import {
     ListItemSecondaryAction,
     IconButton,
     CircularProgress,
-    TextField,
 } from '@material-ui/core';
 import plasmIcon from '../resources/plasm-icon.svg';
 import dustyIcon from '../resources/dusty-icon.svg';
@@ -32,13 +31,27 @@ import BigNumber from 'bignumber.js';
 import Badge from '@material-ui/core/Badge';
 import ThumbUpIcon from '@material-ui/icons/ThumbUp';
 import ThumbDownIcon from '@material-ui/icons/ThumbDown';
-import { IonPopover, IonList, IonItem, IonListHeader, IonLabel, IonAlert } from '@ionic/react';
+import {
+    IonPopover,
+    IonList,
+    IonItem,
+    IonListHeader,
+    IonLabel,
+    IonAlert,
+    IonModal,
+    IonButton,
+    IonHeader,
+    IonToolbar,
+    IonContent,
+    IonTitle,
+    IonItemDivider,
+    IonInput,
+} from '@ionic/react';
 import { toast } from 'react-toastify';
 import HourglassEmptyIcon from '@material-ui/icons/HourglassEmpty';
 import ReplayIcon from '@material-ui/icons/Replay';
 import EditIcon from '@material-ui/icons/Edit';
-import DoneOutlineIcon from '@material-ui/icons/DoneOutline';
-import CancelIcon from '@material-ui/icons/Cancel';
+import CopyMessageBox from './CopyMessageBox';
 
 interface Props {
     claimParams: Lockdrop[];
@@ -70,10 +83,6 @@ const useStyles = makeStyles(theme =>
         },
         lockListPage: {
             textAlign: 'center',
-        },
-        tabMenu: {
-            backgroundColor: theme.palette.background.paper,
-            width: 'auto',
         },
         inline: {
             display: 'inline',
@@ -111,6 +120,19 @@ const epochToDays = (epoch: number) => {
     return epoch / epochDays;
 };
 
+const loadAddrCache = () => {
+    const _cache = localStorage.getItem('plasm-addr');
+    if (_cache === null) {
+        return undefined;
+    }
+    // check if the cached address is valid
+    const addrCheck = polkadotCrypto.checkAddress(_cache, 5);
+    if (!addrCheck[0]) {
+        return undefined;
+    }
+    return _cache;
+};
+
 const ClaimStatus: React.FC<Props> = ({
     claimParams,
     plasmApi,
@@ -131,9 +153,12 @@ const ClaimStatus: React.FC<Props> = ({
 
     const [isLoadingBal, setLoadingBal] = useState(true);
     const [isLoadingClaims, setLoadingClaims] = useState(true);
-    const [addrEditMode, setAddrEditMode] = useState(false);
+    // open edit mode if no valid address was saved
+    const [addrEditMode, setAddrEditMode] = useState(typeof loadAddrCache() === 'undefined');
 
-    const [plasmAddr, setPlasmAddr] = useState(defaultAddr);
+    // the address where PLMs will be sent
+    const [plasmAddr, setPlasmAddr] = useState(loadAddrCache() || defaultAddr);
+    // a temporary address the user will set
     const [customClaimAddr, setCustomClaimAddr] = useState<string>();
     const [balance, setBalance] = useState('');
 
@@ -172,6 +197,15 @@ const ClaimStatus: React.FC<Props> = ({
         })();
     }, [plasmApi, plasmAddr]);
 
+    // store plasm address to local storage every time things changes
+    useEffect(() => {
+        const addrCheck = polkadotCrypto.checkAddress(plasmAddr, 5);
+        // only save it locally if it is a valid address
+        if (addrCheck[0]) {
+            localStorage.setItem('plasm-addr', plasmAddr);
+        }
+    }, [plasmAddr]);
+
     // fetch address balance periodically
     useEffect(() => {
         const interval = setInterval(async () => {
@@ -199,7 +233,7 @@ const ClaimStatus: React.FC<Props> = ({
             if (addrEditMode) {
                 // if clicked finished edit
 
-                if (typeof customClaimAddr === 'undefined') {
+                if (!customClaimAddr) {
                     throw new Error('No Plasm Network address given');
                 }
 
@@ -224,39 +258,77 @@ const ClaimStatus: React.FC<Props> = ({
 
     return (
         <div>
+            <IonModal isOpen={addrEditMode} onDidDismiss={() => setAddrEditMode(false)}>
+                <IonHeader>
+                    <IonToolbar>
+                        <IonTitle>Token Claim Address</IonTitle>
+                    </IonToolbar>
+                </IonHeader>
+
+                <IonContent>
+                    <IonList>
+                        <IonItemDivider>Default Input with Placeholder</IonItemDivider>
+                        <IonItem>
+                            <IonLabel className="ion-text-wrap">
+                                This will set the Plasm Network address that will receive the lockdrop rewards when
+                                claimed. You can always change this later. For more information, please consider reading{' '}
+                                <a
+                                    href="https://medium.com/stake-technologies/lockdrop-the-hitchhikers-guide-to-plasm-network-token-distribution-38299e14d5d4"
+                                    rel="noopener noreferrer"
+                                    target="_blank"
+                                >
+                                    this
+                                </a>{' '}
+                                article
+                            </IonLabel>
+                        </IonItem>
+                        <IonItem>
+                            <IonLabel position="stacked">Enter Plasm Address</IonLabel>
+                            <IonInput
+                                value={customClaimAddr}
+                                placeholder={defaultAddr}
+                                onIonChange={e => setCustomClaimAddr(e.detail.value || undefined)}
+                                clearInput
+                            ></IonInput>
+                        </IonItem>
+                        <IonItem>
+                            <IonLabel className="ion-text-wrap">Your default Plasm Network address:</IonLabel>
+                        </IonItem>
+                        <IonItem>
+                            <CopyMessageBox message={defaultAddr} isCode />
+                        </IonItem>
+                        <IonItem>
+                            <IonButton
+                                href="https://apps.plasmnet.io/#/accounts"
+                                rel="noopener noreferrer"
+                                target="_blank"
+                                slot="start"
+                                size="large"
+                            >
+                                Create a new account
+                            </IonButton>
+                            <IonButton
+                                onClick={handleEditAddress}
+                                disabled={isLoadingBal || isLoadingClaims || !customClaimAddr}
+                                slot="end"
+                                size="large"
+                            >
+                                Set Address
+                            </IonButton>
+                        </IonItem>
+                    </IonList>
+                </IonContent>
+            </IonModal>
             <Typography variant="h5" component="h2" align="center">
-                {addrEditMode ? (
-                    <>
-                        <TextField
-                            id="address-input"
-                            label="Recipient Address"
-                            onChange={e => setCustomClaimAddr(e.target.value)}
-                        />
-                        <IconButton
-                            aria-label="edit"
-                            color="primary"
-                            onClick={handleEditAddress}
-                            disabled={isLoadingBal || isLoadingClaims || !customClaimAddr}
-                        >
-                            <DoneOutlineIcon fontSize="inherit" />
-                        </IconButton>
-                        <IconButton aria-label="cancel" color="secondary" onClick={() => setAddrEditMode(false)}>
-                            <CancelIcon fontSize="inherit" />
-                        </IconButton>
-                    </>
-                ) : (
-                    <>
-                        {'Sending to ' + plasmAddr}
-                        <IconButton
-                            aria-label="finish"
-                            color="primary"
-                            onClick={handleEditAddress}
-                            disabled={isLoadingBal || isLoadingClaims}
-                        >
-                            <EditIcon fontSize="inherit" />
-                        </IconButton>
-                    </>
-                )}
+                Sending to {plasmAddr}
+                <IconButton
+                    aria-label="finish"
+                    color="primary"
+                    onClick={handleEditAddress}
+                    disabled={isLoadingBal || isLoadingClaims}
+                >
+                    <EditIcon fontSize="inherit" />
+                </IconButton>
             </Typography>
 
             {balance && !addrEditMode && (

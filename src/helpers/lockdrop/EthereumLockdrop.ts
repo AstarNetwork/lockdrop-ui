@@ -97,13 +97,18 @@ export async function getPubKey(web3: Web3, message?: string) {
 export async function fetchAllAddresses(web3: Web3) {
     let ethAddr: string[];
     // get user account from injected web3
+    // we try every method here
     try {
         ethAddr = await web3.eth.getAccounts();
     } catch (e) {
         try {
             ethAddr = await web3.eth.requestAccounts();
         } catch (e) {
-            throw new Error(e);
+            try {
+                ethAddr = [(window as any).ethereum.selectedAddress as string];
+            } catch (e) {
+                throw new Error(e);
+            }
         }
     }
 
@@ -114,22 +119,58 @@ export async function fetchAllAddresses(web3: Web3) {
 }
 
 /**
+ * serializes ethereum lock event list and encodes them into base64 string
+ * @param lockEvents smart contract lock event
+ */
+export function serializeLockEvents(lockEvents: LockEvent[]) {
+    const _ev = JSON.stringify(lockEvents);
+    // encode utf-8 JSON to base 64 string
+    return Buffer.from(_ev).toString('base64');
+}
+
+/**
+ * deserialize the base64 string into a lock event list
+ * @param lockEvents lock event list in base64 string
+ */
+export function deserializeLockEvents(lockEvents: string) {
+    try {
+        const eventJson = Buffer.from(lockEvents, 'base64').toString('utf-8');
+
+        const locks: LockEvent[] = JSON.parse(eventJson);
+        return locks;
+    } catch (e) {
+        console.log(e);
+        return [];
+    }
+}
+
+/**
  * returns an array of locked events for the lock contract from the latest event block number.
- * This function will return the full list (i.e. previous events + new events)
+ * This function will return the full list (i.e. previous events + new events) and handle caching as well
  * @param web3 a web3.js instance to interact with the blockchain
  * @param instance a contract instance to parse the contract events
- * @param prevEvents previous lock events
  */
-export async function getAllLockEvents(web3: Web3, instance: Contract, prevEvents: LockEvent[]): Promise<LockEvent[]> {
+export async function getAllLockEvents(web3: Web3, instance: Contract): Promise<LockEvent[]> {
     const contractAddr = instance.options.address;
-    const allContractList = [...firstLockContract, ...secondLockContract];
+
+    const lockStoreKey = `id:${contractAddr}`;
+
+    const eventCache = localStorage.getItem(lockStoreKey);
+    // events from the cache
+    const prevEvents = eventCache ? deserializeLockEvents(eventCache) : [];
+
     // set the correct block number either based on the create block or the latest event block
     const mainnetStartBlock =
         prevEvents.length === 0 || !Array.isArray(prevEvents)
-            ? allContractList.find(i => i.address.toLowerCase() === contractAddr.toLowerCase())?.blockHeight
+            ? [...firstLockContract, ...secondLockContract].find(
+                  i => i.address.toLowerCase() === contractAddr.toLowerCase(),
+              )?.blockHeight
             : getHighestBlockNo(prevEvents);
 
     const ev = await instance.getPastEvents('Locked', { fromBlock: mainnetStartBlock });
+
+    // skip events on the same block
+    if (ev.length < 2) return prevEvents;
 
     const eventHashes = await Promise.all(
         ev.map(async e => {
@@ -143,9 +184,9 @@ export async function getAllLockEvents(web3: Web3, instance: Contract, prevEvent
             const blockHash = e[1];
             const lockEvent = e[0];
 
-            const transactionString = await Promise.resolve(web3.eth.getBlock(blockHash.blockNumber as number));
+            const transactionString = await web3.eth.getBlock(blockHash.blockNumber as number);
             const time = transactionString.timestamp.toString();
-            const _currentFund = await web3.eth.getBalance(lockEvent.lock);
+
             return {
                 eth: lockEvent.eth as BN,
                 duration: lockEvent.duration as number,
@@ -155,7 +196,6 @@ export async function getAllLockEvents(web3: Web3, instance: Contract, prevEvent
                 timestamp: time,
                 lockOwner: blockHash.from,
                 transactionHash: blockHash.hash,
-                currentBalance: new BN(_currentFund),
             } as LockEvent;
         }),
     );
@@ -164,16 +204,19 @@ export async function getAllLockEvents(web3: Web3, instance: Contract, prevEvent
 
     // filter objects so that the list only contains unique transaction hashes
     const uniqueEvents = _.uniqBy(allEvents, i => {
-        return i.transactionHash;
+        return i.lock;
     });
 
-    if (uniqueEvents.length === prevEvents.length) return prevEvents;
-
-    console.log('fetched all lock events');
-
-    return _.sortBy(uniqueEvents, e => {
+    const sortedList = _.sortBy(uniqueEvents, e => {
         return e.blockNo;
     });
+
+    const _serialized = serializeLockEvents(sortedList);
+    localStorage.setItem(lockStoreKey, _serialized);
+
+    console.log(`fetched ${newEvents.length} lock events`);
+
+    return sortedList;
 }
 
 /**
@@ -301,29 +344,6 @@ export function calculateTotalPlm(address: string, lockData: LockEvent[]): PlmDr
 }
 
 /**
- * serializes ethereum lock event list and encodes them into base64 string
- * @param lockEvents smart contract lock event
- */
-export function serializeLockEvents(lockEvents: LockEvent[]) {
-    const _ev = JSON.stringify(lockEvents);
-    console.log('Serializing lock events');
-    // encode utf-8 JSON to base 64 string
-    return Buffer.from(_ev).toString('base64');
-}
-
-/**
- * deserialize the base64 string into a lock event list
- * @param lockEvents lock event list in base64 string
- */
-export function deserializeLockEvents(lockEvents: string) {
-    const eventJson = Buffer.from(lockEvents, 'base64').toString('utf-8');
-
-    const locks: LockEvent[] = JSON.parse(eventJson);
-    console.log('Deserializing lock events');
-    return locks;
-}
-
-/**
  * parses through the given lock events to calculate the total amount of locked ETH
  * @param locks a list of lockdrop contract events
  */
@@ -412,14 +432,14 @@ export async function getContractStartDate(contract: Contract) {
 export async function submitLockTx(txInput: LockInput, address: string, contract: Contract) {
     // checks user input
     if (txInput.amount <= new BN(0) || txInput.duration <= 0) {
-        throw new Error('You are missing an input!');
+        throw new Error('Missing inputs');
     }
 
     // return a default address if user input is empty
     const introducer = defaultAffiliation(txInput.affiliation).toLowerCase();
     // check user input
     if (introducer === address) {
-        throw new Error('You cannot affiliate yourself');
+        throw new Error('Cannot self introduce');
     }
     if (introducer && !Web3.utils.isAddress(introducer)) {
         throw new Error('Please input a valid Ethereum address');

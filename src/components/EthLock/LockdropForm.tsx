@@ -4,11 +4,11 @@ import { LockInput, OptionItem } from '../../types/LockdropModels';
 import SectionCard from '../SectionCard';
 import { DropdownOption } from '../DropdownOption';
 import Container from '@material-ui/core/Container';
-import BN from 'bn.js';
 import { Typography, Link } from '@material-ui/core';
 import quantstampLogo from '../../resources/quantstamp-logo.png';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import { ethDurations, ethDustyDurations } from '../../data/lockInfo';
+import { BN } from 'ethereumjs-util';
 
 type InputProps = {
     onSubmit: (inputs: LockInput) => void;
@@ -79,10 +79,10 @@ const LockdropForm = ({ onSubmit, dusty }: InputProps) => {
 
                     <IonCard className={classes.textBox}>
                         <IonCardContent>
-                            This is the lockdrop form for Ethereum. This uses Web3 injection so you must have Metamask
-                            (or other Web3-enabled wallet) installed in order for this to work properly. If you find any
-                            errors or find issues with this form, please contact the Plasm team. Regarding the audit by
-                            Quantstamp, click{' '}
+                            This is the lockdrop form for Ethereum. This uses Web3 injection so you must access this
+                            page with a dApp browser or extension installed in order for this to work properly. If you
+                            find any errors or find issues with this form, please contact the Plasm team. Regarding the
+                            audit by Quantstamp, click{' '}
                             <a
                                 color="inherit"
                                 href="https://github.com/staketechnologies/lockdrop-ui/blob/16a2d495d85f2d311957b9cf366204fbfabadeaa/audit/quantstamp-audit.pdf"

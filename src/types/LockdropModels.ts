@@ -71,7 +71,6 @@ export interface LockEvent {
     timestamp: string; // in Unix epoch seconds
     lockOwner: string; // locker's address
     transactionHash: string;
-    currentBalance: BN; // how much funds the contract has now
 }
 
 // option data is the type that is going to be passed to the component

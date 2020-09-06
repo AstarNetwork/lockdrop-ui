@@ -80,10 +80,6 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         message: '',
     });
 
-    const lockStoreKey = useMemo(() => {
-        return `id:${contractAddress}`;
-    }, [contractAddress]);
-
     const [currentNetwork, setCurrentNetwork] = useState('');
     // get lock event list from the local storage if it exists
     const [allLockEvents, setLockEvents] = useState<LockEvent[]>([]);
@@ -137,23 +133,12 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                 allLockEvents.length === 0 ||
                 (latestBlock !== 0 && ethLockdrop.getHighestBlockNo(allLockEvents) <= latestBlock)
             ) {
-                const _allLocks = await ethLockdrop.getAllLockEvents(web3Api, contractInst, allLockEvents);
+                const _allLocks = await ethLockdrop.getAllLockEvents(web3Api, contractInst);
                 setLockEvents(_allLocks);
             }
         },
         [latestBlock, allLockEvents],
     );
-
-    // store all lock events to local storage
-    useEffect(() => {
-        if (allLockEvents.length > 0 && Array.isArray(allLockEvents)) {
-            const serializedEvents = ethLockdrop.serializeLockEvents(allLockEvents);
-            // ensure that the store value are not the same before storing
-            if (localStorage.getItem(lockStoreKey) !== serializedEvents) {
-                localStorage.setItem(lockStoreKey, serializedEvents);
-            }
-        }
-    }, [allLockEvents, contractAddress, lockStoreKey]);
 
     // initial API loading
     useEffect(() => {
@@ -331,6 +316,11 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                 }
                 if (typeof contract === 'undefined') {
                     throw new Error('Could not find a contract instance');
+                }
+
+                if (formInputVal.amount.isZero() || formInputVal.duration <= 0) {
+                    console.log(formInputVal);
+                    throw new Error('You are missing an input!');
                 }
 
                 if (!publicKey) {
