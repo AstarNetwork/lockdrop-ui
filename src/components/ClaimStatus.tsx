@@ -44,7 +44,6 @@ import {
     IonToolbar,
     IonContent,
     IonTitle,
-    IonItemDivider,
     IonInput,
 } from '@ionic/react';
 import { toast } from 'react-toastify';
@@ -267,7 +266,6 @@ const ClaimStatus: React.FC<Props> = ({
 
                 <IonContent>
                     <IonList>
-                        <IonItemDivider>Default Input with Placeholder</IonItemDivider>
                         <IonItem>
                             <IonLabel className="ion-text-wrap">
                                 This will set the Plasm Network address that will receive the lockdrop rewards when
