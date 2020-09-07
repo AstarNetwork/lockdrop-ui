@@ -183,14 +183,9 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                 toast.error(e.message);
                 console.log(e);
             }
-        })()
-            .catch(e => {
-                console.log(e);
-                toast.error(e.message);
-            })
-            .finally(() => {
-                setLoading({ loading: false, message: '' });
-            });
+        })().finally(() => {
+            setLoading({ loading: false, message: '' });
+        });
         return () => {
             plasmApi && plasmApi.disconnect();
         };
