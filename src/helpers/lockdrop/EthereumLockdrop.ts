@@ -519,13 +519,11 @@ export async function getContractStartDate(contract: Contract) {
  * @param contract smart contract instance used to invoke the contract method
  */
 export async function submitLockTx(txInput: LockInput, address: string, contract: Contract) {
-    // checks user input
-    if (txInput.amount <= new BN(0) || txInput.duration <= 0) {
-        throw new Error('Missing inputs');
-    }
-
     // return a default address if user input is empty
     const introducer = defaultAffiliation(txInput.affiliation).toLowerCase();
+    if (Number.parseFloat(txInput.amount) < 0) {
+        throw new Error('Number value must be greater than 0');
+    }
     // check user input
     if (introducer === address) {
         throw new Error('Cannot self introduce');

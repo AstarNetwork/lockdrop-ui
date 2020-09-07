@@ -317,10 +317,12 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                 if (typeof contract === 'undefined') {
                     throw new Error('Could not find a contract instance');
                 }
-
-                if (formInputVal.amount.isZero() || formInputVal.duration <= 0) {
-                    console.log(formInputVal);
-                    throw new Error('You are missing an input!');
+                const lockAmount = parseFloat(formInputVal.amount);
+                if (Number.isNaN(lockAmount)) {
+                    throw new Error('Invalid number given');
+                }
+                if (formInputVal.duration <= 0) {
+                    throw new Error('Please choose a lock duration');
                 }
 
                 if (!publicKey) {

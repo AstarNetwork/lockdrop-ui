@@ -8,7 +8,7 @@ import { H256, AuthorityId } from '@polkadot/types/interfaces';
  */
 export interface LockInput {
     duration: number; // in days
-    amount: BN; // in ETH
+    amount: string; // in ETH
     affiliation: string; // Ethereum address
     rate: number;
 }

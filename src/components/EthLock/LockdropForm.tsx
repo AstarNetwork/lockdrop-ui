@@ -8,7 +8,6 @@ import { Typography, Link } from '@material-ui/core';
 import quantstampLogo from '../../resources/quantstamp-logo.png';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import { ethDurations, ethDustyDurations } from '../../data/lockInfo';
-import { BN } from 'ethereumjs-util';
 
 type InputProps = {
     onSubmit: (inputs: LockInput) => void;
@@ -17,7 +16,7 @@ type InputProps = {
 // the main component function
 const LockdropForm = ({ onSubmit, dusty }: InputProps) => {
     // states used in this component
-    const [lockAmount, setAmount] = useState<BN>(new BN(0));
+    const [lockAmount, setAmount] = useState('');
     const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
     const [affAccount, setAff] = useState('');
 
@@ -99,9 +98,7 @@ const LockdropForm = ({ onSubmit, dusty }: InputProps) => {
                         <IonLabel position="floating">Number of ETH</IonLabel>
                         <IonInput
                             placeholder={'ex: 0.64646 ETH'}
-                            onIonInput={e =>
-                                setAmount(new BN(((e.target as HTMLInputElement).value as unknown) as string))
-                            }
+                            onIonChange={e => e.detail.value && setAmount(e.detail.value)}
                         ></IonInput>
                     </IonItem>
                     <IonLabel className={classes.formLabel}>Lock Duration</IonLabel>
