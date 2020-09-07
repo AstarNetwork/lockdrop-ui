@@ -44,7 +44,6 @@ import {
     IonToolbar,
     IonContent,
     IonTitle,
-    IonItemDivider,
     IonInput,
 } from '@ionic/react';
 import { toast } from 'react-toastify';
