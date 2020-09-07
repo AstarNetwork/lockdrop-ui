@@ -6,8 +6,8 @@ import * as polkadotCryptoUtil from '@polkadot/util-crypto';
 import * as polkadotUtil from '@polkadot/util';
 import * as plasmUtils from '../helpers/plasmUtils';
 import { ApiPromise, Keyring } from '@polkadot/api';
-import BN from 'bn.js';
 import { LockdropType } from 'src/types/LockdropModels';
+import { BN } from 'ethereumjs-util';
 
 const ethPubKey =
     'a27c1e09c563b1221636c7f69690a6e4d41e9c79d38518d00d5f6d3fb5d7a35407caff68e13fcd845646dc848e0649417b89acf1af435bd18f1ab2fcf20e2e61';
@@ -177,7 +177,7 @@ describe('Plasm lockdrop RPC tests', () => {
         const _voteThreshold = Number.parseInt((await api.query.plasmLockdrop.voteThreshold()).toString());
         const _positiveVotes = Number.parseInt((await api.query.plasmLockdrop.positiveVotes()).toString());
 
-        expect(_voteThreshold).toEqual(5);
+        expect(_voteThreshold).toEqual(4);
         expect(_positiveVotes).toEqual(4);
     });
 });
