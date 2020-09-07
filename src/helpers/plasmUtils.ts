@@ -397,12 +397,13 @@ export const getClaimParamsFromEth = (pubKey: string, locks: LockEvent[], latest
     });
 
     const claimIDs = claimableLocks.map(lock => {
+        const _wei = new BigNumber('0x' + lock.eth.toString());
         const _param = createLockParam(
             LockdropType.Ethereum,
             lock.transactionHash,
             pubKey,
             durationToEpoch(lock.duration).toString(),
-            lock.eth.toString(),
+            _wei.toFixed(),
         );
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return structToLockdrop(_param as any);
