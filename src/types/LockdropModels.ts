@@ -1,7 +1,7 @@
-import BN from 'bn.js';
 import { Moment } from 'moment';
 import { u64, u128, U8aFixed, BTreeSet } from '@polkadot/types';
 import { H256, AuthorityId } from '@polkadot/types/interfaces';
+import { BigNumber } from 'bignumber.js';
 
 /**
  * lock contract parameter
@@ -63,7 +63,7 @@ export enum LockdropType {
 }
 
 export interface LockEvent {
-    eth: BN; // this uses BN.js instead of BigNumber.js because that is what eth helper uses
+    eth: BigNumber; // locked value in wei
     duration: number; // in Unix epoch seconds
     lock: string; // lock address
     introducer: string;

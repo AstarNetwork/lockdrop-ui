@@ -204,7 +204,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
             try {
                 if (web3 && contract) {
                     const _latest = await web3.eth.getBlockNumber();
-                    if (_latest !== latestBlock) {
+                    if (_latest > latestBlock) {
                         setLatestBlock(_latest);
                     }
                 }

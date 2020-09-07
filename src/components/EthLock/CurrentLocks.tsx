@@ -194,9 +194,9 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address, onClic
                 toast.error(e.message);
             })
             .finally(() => {
-                setBalanceLoaded(true);
                 setUnlockDate(calculateTimeLeft());
                 checkUnlock();
+                setBalanceLoaded(true);
             });
         // eslint-disable-next-line
     }, []);
@@ -233,8 +233,8 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address, onClic
                                 <ListItemText>
                                     <h5>Lock address: {lockInfo.lock}</h5>
                                     <p>
-                                        Locked {Web3Utils.fromWei(lockInfo.eth, 'ether')} ETH for {lockInfo.duration}{' '}
-                                        days
+                                        Locked {Web3Utils.fromWei(lockInfo.eth.toFixed(), 'ether')} ETH for{' '}
+                                        {lockInfo.duration} days
                                     </p>
                                     {lockInfo.introducer !== defaultAddress ? (
                                         <p>Introducer: {lockInfo.introducer}</p>

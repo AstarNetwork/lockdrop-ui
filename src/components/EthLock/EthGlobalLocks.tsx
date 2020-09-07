@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { getTotalLockVal } from '../../helpers/lockdrop/EthereumLockdrop';
 import { LockEvent } from '../../types/LockdropModels';
 import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
@@ -58,8 +58,13 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ lockData }) => {
         keyMapper: () => 1,
     });
 
+    const totalVal = useMemo(() => {
+        return getTotalLockVal(lockData, 4);
+    }, [lockData]);
+
     const RowRenderer: React.FC<ListRowProps> = ({ index, key, style, parent }) => {
         const eventItem = lockData[index];
+
         return (
             <CellMeasurer cache={rowCache} columnIndex={0} key={key} parent={parent} rowIndex={index}>
                 {({ measure, registerChild }) => (
@@ -69,7 +74,8 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ lockData }) => {
                                 <h4>Lock address: {eventItem.lock}</h4>
                                 <h5>Locked in block no. {eventItem.blockNo}</h5>
                                 <p>
-                                    Locked {Web3Utils.fromWei(eventItem.eth, 'ether')} ETH for {eventItem.duration} days
+                                    Locked {Web3Utils.fromWei(eventItem.eth.toFixed(), 'ether')} ETH for{' '}
+                                    {eventItem.duration} days
                                 </p>
                                 {eventItem.introducer !== defaultAddress ? (
                                     <p>Introducer: {eventItem.introducer}</p>
@@ -91,7 +97,7 @@ const GlobalLocks: React.FC<LockHistoryProps> = ({ lockData }) => {
                 <>
                     <div>
                         <h1>Global Locks</h1>
-                        <h3>{getTotalLockVal(lockData, 4)} ETH locked</h3>
+                        <h3>{totalVal} ETH locked</h3>
                         <p>There are {lockData.length} locks</p>
                     </div>
 
