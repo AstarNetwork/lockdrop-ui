@@ -249,8 +249,15 @@ export async function getAllLockEvents(web3: Web3, instance: Contract, isDusty?:
 
     const eventCache = localStorage.getItem(lockStoreKey);
     // events from the cache
-    const prevEvents = eventCache ? deserializeLockEvents(eventCache) : [];
+    let prevEvents = eventCache ? deserializeLockEvents(eventCache) : [];
 
+    // todo: make a function that checks data integrity
+    // check if the recovered data is correct by looking at the head and the tail item
+    if (!(prevEvents[0].eth instanceof BigNumber) || !(prevEvents[prevEvents.length - 1].eth instanceof BigNumber)) {
+        console.log('invalid storage found, removing cache');
+        localStorage.removeItem(lockStoreKey);
+        prevEvents = [];
+    }
     // set the correct block number either based on the create block or the latest event block
     const mainnetStartBlock =
         prevEvents.length === 0 || !Array.isArray(prevEvents)
