@@ -5,7 +5,6 @@ import getWeb3 from '../getWeb3';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 import { LockEvent, LockInput } from '../../types/LockdropModels';
-import BN from 'bn.js';
 import BigNumber from 'bignumber.js';
 import { isValidIntroducerAddress, defaultAddress, affiliationRate } from '../../data/affiliationProgram';
 import { lockDurationToRate } from '../plasmUtils';
@@ -137,7 +136,21 @@ export function deserializeLockEvents(lockEvents: string) {
     try {
         const eventJson = Buffer.from(lockEvents, 'base64').toString('utf-8');
 
-        const locks: LockEvent[] = JSON.parse(eventJson);
+        const parsedData: any[] = JSON.parse(eventJson);
+        const locks = parsedData.map(e => {
+            const dat: LockEvent = {
+                blockNo: e.blockNo,
+                duration: e.duration,
+                eth: new BigNumber(e.eth),
+                introducer: e.introducer,
+                lock: e.lock,
+                lockOwner: e.lockOwner,
+                timestamp: e.timestamp,
+                transactionHash: e.transactionHash,
+            };
+            return dat;
+        });
+
         return locks;
     } catch (e) {
         console.log(e);
@@ -205,8 +218,10 @@ export async function fetchLockdropEvents(
         const decoded = web3.eth.abi.decodeLog(lockdropAbiInputs, event.data, event.topics);
         const senderTx = await web3.eth.getTransaction(event.transactionHash);
 
+        //console.log(new BigNumber(senderTx.value));
+
         const ev = {
-            eth: new BN(senderTx.value),
+            eth: new BigNumber(senderTx.value),
             duration: Web3Utils.hexToNumber(event.topics[2]),
             lock: decoded['lock'],
             introducer: decoded['introducer'],
@@ -433,8 +448,7 @@ export function getTotalLockVal(locks: LockEvent[], roundTo?: number): string {
     //let totalVal = new BigNumber(0);
     if (locks.length > 0 && Array.isArray(locks)) {
         const allVal = locks.map(e => {
-            // we have to manually prefix it with 0x for BigNumber to read
-            return new BigNumber('0x' + e.eth.toString('hex'));
+            return e.eth;
         });
 
         const totalVal = allVal.reduce((a, b) => a.plus(b), new BigNumber(0));

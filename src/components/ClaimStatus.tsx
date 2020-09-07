@@ -459,26 +459,28 @@ const ClaimItem: React.FC<ItemProps> = ({
      * @param param lockdrop parameter data
      */
     const submitClaimReq = (param: Lockdrop) => {
-        setSendingRequest(true);
-        claimData = undefined;
-        const _lock = plasmUtils.createLockParam(
-            param.type,
-            param.transactionHash.toHex(),
-            param.publicKey.toHex(),
-            param.duration.toString(),
-            param.value.toString(),
-        );
-        const _nonce = plasmUtils.claimPowNonce(_lock.hash);
-        // send lockdrop claim request
-        plasmUtils // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .sendLockClaimRequest(plasmApi, _lock as any, _nonce)
-            .then(res => {
-                console.log('Claim ID: ' + _lock.hash + '\nRequest transaction hash:\n' + res.toHex());
-            })
-            .catch(e => {
-                toast.error(e);
-                console.log(e);
-            });
+        if (claimData && !claimData.complete.valueOf()) {
+            setSendingRequest(true);
+            claimData = undefined;
+            const _lock = plasmUtils.createLockParam(
+                param.type,
+                param.transactionHash.toHex(),
+                param.publicKey.toHex(),
+                param.duration.toString(),
+                param.value.toString(),
+            );
+            const _nonce = plasmUtils.claimPowNonce(_lock.hash);
+            // send lockdrop claim request
+            plasmUtils // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .sendLockClaimRequest(plasmApi, _lock as any, _nonce)
+                .then(res => {
+                    console.log('Claim ID: ' + _lock.hash + '\nRequest transaction hash:\n' + res.toHex());
+                })
+                .catch(e => {
+                    toast.error(e);
+                    console.log(e);
+                });
+        }
     };
 
     /**
@@ -487,7 +489,7 @@ const ClaimItem: React.FC<ItemProps> = ({
      */
     const submitTokenClaim = async (id: Uint8Array) => {
         try {
-            if (hasAllVotes && reqAccepted) {
+            if (hasAllVotes && reqAccepted && claimData && !claimData.complete.valueOf()) {
                 // show loading circle
                 setClaimingLock(true);
                 let txHash: string;
