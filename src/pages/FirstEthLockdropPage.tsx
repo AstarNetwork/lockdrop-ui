@@ -85,7 +85,7 @@ const FirstEthLockdropPage: React.FC = () => {
                     setWeb3(web3State);
                     setAccount(ethAddr[0]);
 
-                    const _allLocks = await ethLockdrop.getAllLockEvents(web3State, _contract);
+                    const _allLocks = await ethLockdrop.getAllLockEvents(_contract);
                     setLockEvents(_allLocks);
                 }
             } catch (e) {

@@ -127,17 +127,17 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
     }, [allLockEvents, account, publicKey, latestBlock, web3]);
 
     const handleFetchLockEvents = useCallback(
-        async (web3Api: Web3, contractInst: Contract) => {
+        async (contractInst: Contract) => {
             // only fetch the events if the block number is high
             if (
                 allLockEvents.length === 0 ||
                 (latestBlock !== 0 && ethLockdrop.getHighestBlockNo(allLockEvents) <= latestBlock)
             ) {
-                const _allLocks = await ethLockdrop.getAllLockEvents(web3Api, contractInst, !isMainnetLock);
+                const _allLocks = await ethLockdrop.getAllLockEvents(contractInst);
                 setLockEvents(_allLocks);
             }
         },
-        [latestBlock, allLockEvents, isMainnetLock],
+        [latestBlock, allLockEvents],
     );
 
     // initial API loading
@@ -166,7 +166,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                     setLockdropEnd(_end);
                     setLockdropStart(_start);
 
-                    await handleFetchLockEvents(web3Inst, _contract);
+                    await handleFetchLockEvents(_contract);
 
                     setWeb3(web3Inst);
                     setContract(_contract);
@@ -201,6 +201,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                     const _latest = await web3.eth.getBlockNumber();
                     if (_latest > latestBlock) {
                         setLatestBlock(_latest);
+                        await handleFetchLockEvents(contract);
                     }
                 }
             } catch (error) {
@@ -222,11 +223,12 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                 loading: true,
                 message: 'Connecting to Web3 instance with new contract...',
             });
+
             (async function() {
                 // fetch a new contract
                 const _contract = await ethLockdrop.createContractInstance(web3, contractAddress);
                 // fetch new lock events
-                await handleFetchLockEvents(web3, _contract);
+                await handleFetchLockEvents(_contract);
                 // check contract start and end dates
                 const _end = await ethLockdrop.getContractEndDate(_contract);
                 const _start = await ethLockdrop.getContractStartDate(_contract);
@@ -332,7 +334,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
 
                 await ethLockdrop.submitLockTx(formInputVal, account, contract);
                 toast.success(`Successfully locked ${formInputVal.amount} ETH for ${formInputVal.duration} days!`);
-                await handleFetchLockEvents(web3, contract);
+                await handleFetchLockEvents(contract);
             } catch (e) {
                 toast.error(e.message.toString());
                 console.log(e);
@@ -423,7 +425,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                                                   loading: true,
                                                   message: 'Fetching contract events...',
                                               });
-                                              return handleFetchLockEvents(web3, contract).finally(() => {
+                                              return handleFetchLockEvents(contract).finally(() => {
                                                   setLoading({
                                                       loading: false,
                                                       message: '',
