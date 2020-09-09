@@ -12,8 +12,8 @@ import { PlmDrop } from '../../types/PlasmDrop';
 import Web3Utils from 'web3-utils';
 import * as ethereumUtils from 'ethereumjs-util';
 import EthCrypto from 'eth-crypto';
-import { firstLockContract, secondLockContract } from 'src/data/lockInfo';
-import _ from 'lodash';
+//import { firstLockContract, secondLockContract } from 'src/data/lockInfo';
+//import _ from 'lodash';
 import { EtherScanApi } from 'src/types/EtherScanTypes';
 
 /**
@@ -56,6 +56,34 @@ export async function getMessageSignature(web3: Web3, message: string, asSigPara
         return sig;
     }
 }
+
+/**
+ * Fetches ethereum lock event from the cache server.
+ * This is a temporary cache server with not query
+ * @param contractAddr contract address that emits the event
+ */
+export const fetchEventsFromCache = async (contractAddr: string) => {
+    const api = `https://cache.plasmnet.io/locks/cache-${contractAddr.slice(0, 6)}.json`;
+
+    const res = await fetch(api);
+
+    const jsonData: any[] = await res.json();
+
+    const evs = jsonData.map(i => {
+        return {
+            eth: new BigNumber(i.eth),
+            duration: i.duration,
+            lock: i.lock,
+            introducer: i.introducer,
+            blockNo: i.blockNo,
+            timestamp: i.timestamp,
+            lockOwner: i.lockOwner,
+            transactionHash: i.transactionHash,
+        } as LockEvent;
+    });
+
+    return evs;
+};
 
 /**
  * finds the highest block number from the given lock event
@@ -226,7 +254,7 @@ export async function fetchLockdropEvents(
             lock: decoded['lock'],
             introducer: decoded['introducer'],
             blockNo: Web3Utils.hexToNumber(event.blockNumber),
-            timestamp: Web3Utils.hexToNumber(event.timeStamp).toFixed(),
+            timestamp: Web3Utils.hexToNumber(event.timeStamp),
             lockOwner: senderTx.from,
             transactionHash: event.transactionHash,
         } as LockEvent;
@@ -239,93 +267,22 @@ export async function fetchLockdropEvents(
 /**
  * returns an array of locked events for the lock contract from the latest event block number.
  * This function will return the full list (i.e. previous events + new events) and handle caching as well
- * @param web3 a web3.js instance to interact with the blockchain
  * @param instance a contract instance to parse the contract events
  */
-export async function getAllLockEvents(web3: Web3, instance: Contract, isDusty?: boolean): Promise<LockEvent[]> {
+export async function getAllLockEvents(instance: Contract) {
     const contractAddr = instance.options.address;
 
     const lockStoreKey = `id:${contractAddr}`;
 
     const eventCache = localStorage.getItem(lockStoreKey);
-    // events from the cache
-    let prevEvents = eventCache ? deserializeLockEvents(eventCache) : [];
 
-    // todo: make a function that checks data integrity
-    // check if the recovered data is correct by looking at the head and the tail item
-    if (prevEvents.length > 0) {
-        if (
-            !(prevEvents[0].eth instanceof BigNumber) ||
-            !(prevEvents[prevEvents.length - 1].eth instanceof BigNumber)
-        ) {
-            console.log('invalid storage found, removing cache');
-            localStorage.removeItem(lockStoreKey);
-            prevEvents = [];
-        }
+    // remove the local cache if it exists
+    if (eventCache) {
+        localStorage.removeItem(lockStoreKey);
     }
+    const cacheEvents = await fetchEventsFromCache(contractAddr);
 
-    // set the correct block number either based on the create block or the latest event block
-    const mainnetStartBlock =
-        prevEvents.length === 0 || !Array.isArray(prevEvents)
-            ? [...firstLockContract, ...secondLockContract].find(
-                  i => i.address.toLowerCase() === contractAddr.toLowerCase(),
-              )?.blockHeight
-            : getHighestBlockNo(prevEvents);
-
-    const newEvents = await fetchLockdropEvents(web3, contractAddr, mainnetStartBlock, 'latest', isDusty);
-    // const ev = await instance.getPastEvents('Locked', {
-    //     fromBlock: mainnetStartBlock,
-    //     toBlock: 'latest',
-    // });
-
-    // skip events on the same block
-    if (newEvents.length < 2) return prevEvents;
-
-    // const eventHashes = await Promise.all(
-    //     ev.map(async e => {
-    //         return Promise.all([Promise.resolve(e.returnValues), web3.eth.getTransaction(e.transactionHash)]);
-    //     }),
-    // );
-
-    // const newEvents = await Promise.all(
-    //     eventHashes.map(async e => {
-    //         // e[0] is lock event and e[1] is block hash
-    //         const blockHash = e[1];
-    //         const lockEvent = e[0];
-
-    //         const transactionString = await web3.eth.getBlock(blockHash.blockNumber as number);
-    //         const time = transactionString.timestamp.toString();
-
-    //         return {
-    //             eth: lockEvent.eth as BN,
-    //             duration: lockEvent.duration as number,
-    //             lock: lockEvent.lock as string,
-    //             introducer: lockEvent.introducer as string,
-    //             blockNo: blockHash.blockNumber,
-    //             timestamp: time,
-    //             lockOwner: blockHash.from,
-    //             transactionHash: blockHash.hash,
-    //         } as LockEvent;
-    //     }),
-    // );
-
-    const allEvents = [...prevEvents, ...newEvents];
-
-    // filter objects so that the list only contains unique transaction hashes
-    const uniqueEvents = _.uniqBy(allEvents, i => {
-        return i.lock;
-    });
-
-    const sortedList = _.sortBy(uniqueEvents, e => {
-        return e.blockNo;
-    });
-
-    const _serialized = serializeLockEvents(sortedList);
-    localStorage.setItem(lockStoreKey, _serialized);
-
-    console.log(`fetched ${newEvents.length} lock events`);
-
-    return sortedList;
+    return cacheEvents;
 }
 
 /**
@@ -349,9 +306,7 @@ function plmBaseIssueRatio(lockData: LockEvent, ethExchangeRate: BigNumber): Big
     const bonusRate = new BigNumber(lockDurationToRate(lockData.duration)).times(ethExchangeRate);
 
     // calculate issuingPLMRate = lockedEth([ETH]) * lockBonusRate * ethExRate
-    const issuingRatio: BigNumber = new BigNumber(Web3Utils.fromWei(lockData.eth.toString(), 'ether')).times(
-        new BigNumber(bonusRate),
-    );
+    const issuingRatio = new BigNumber(Web3Utils.fromWei(lockData.eth.toFixed(), 'ether')).times(bonusRate);
     return issuingRatio;
 }
 
@@ -495,8 +450,7 @@ export const getUnlockDate = (lockInfo: LockEvent) => {
     // 24 hours in epoch
     const epochDay = 60 * 60 * 24;
 
-    // Ethereum lock timestamp is in integers
-    const lockedDay = parseInt(lockInfo.timestamp);
+    const lockedDay = lockInfo.timestamp;
 
     // locked date + lock duration in days to epoch
     const unlockDate = lockedDay + lockInfo.duration * epochDay;
