@@ -119,8 +119,8 @@ const epochToDays = (epoch: number) => {
     return epoch / epochDays;
 };
 
-const loadAddrCache = () => {
-    const _cache = localStorage.getItem('plasm-addr');
+const loadAddrCache = (publicKey: string) => {
+    const _cache = localStorage.getItem(`claim-addr:${publicKey}`);
     if (_cache === null) {
         return undefined;
     }
@@ -152,11 +152,12 @@ const ClaimStatus: React.FC<Props> = ({
 
     const [isLoadingBal, setLoadingBal] = useState(true);
     const [isLoadingClaims, setLoadingClaims] = useState(true);
+
     // open edit mode if no valid address was saved
-    const [addrEditMode, setAddrEditMode] = useState(typeof loadAddrCache() === 'undefined');
+    const [addrEditMode, setAddrEditMode] = useState(typeof loadAddrCache(publicKey) === 'undefined');
 
     // the address where PLMs will be sent
-    const [plasmAddr, setPlasmAddr] = useState(loadAddrCache() || defaultAddr);
+    const [plasmAddr, setPlasmAddr] = useState(loadAddrCache(publicKey) || defaultAddr);
     // a temporary address the user will set
     const [customClaimAddr, setCustomClaimAddr] = useState<string>();
     const [balance, setBalance] = useState('');
@@ -196,14 +197,14 @@ const ClaimStatus: React.FC<Props> = ({
         })();
     }, [plasmApi, plasmAddr]);
 
-    // store plasm address to local storage every time things changes
+    //store plasm address to local storage every time things changes
     useEffect(() => {
         const addrCheck = polkadotCrypto.checkAddress(plasmAddr, 5);
         // only save it locally if it is a valid address
         if (addrCheck[0]) {
-            localStorage.setItem('plasm-addr', plasmAddr);
+            localStorage.setItem(`claim-addr:${publicKey}`, plasmAddr);
         }
-    }, [plasmAddr]);
+    }, [plasmAddr, publicKey]);
 
     // fetch address balance periodically
     useEffect(() => {
