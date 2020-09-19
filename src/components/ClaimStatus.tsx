@@ -298,7 +298,9 @@ const ClaimStatus: React.FC<Props> = ({
                         </IonItem>
                         <IonItem>
                             <IonButton
-                                href="https://apps.plasmnet.io/#/accounts"
+                                href={`https://polkadot.js.org/apps/?rpc=wss://rpc.${
+                                    plasmNetwork === 'Dusty' ? 'dusty.' : ''
+                                }plasmnet.io/#/accounts`}
                                 rel="noopener noreferrer"
                                 target="_blank"
                                 slot="start"
