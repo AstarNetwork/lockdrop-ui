@@ -19,7 +19,6 @@ import SectionCard from '../components/SectionCard';
 import lockdropLogoA from '../resources/ld_logo_a.png';
 import lockdropLogoB from '../resources/ld_logo_b.png';
 import ethLogo from '../resources/ethereum_logo.svg';
-import btcLogo from '../resources/bitcoin_logo.svg';
 import { makeStyles } from '@material-ui/core';
 import { firstLockdropStart, firstLockdropEnd, secondLockdropStart, secondLockdropEnd } from '../data/lockInfo';
 import TosAgreementModal from 'src/components/TosAgreementModal';
@@ -146,14 +145,6 @@ export const LandingPage: React.FC = () => {
 
                         <IonButton fill="outline" slot="end">
                             <IonRouterLink routerLink="/lock-form/dusty-eth">View</IonRouterLink>
-                        </IonButton>
-                    </IonItem>
-                    <IonItem>
-                        <IonIcon src={btcLogo} slot="start" />
-                        <IonLabel>Dusty BTC Lock</IonLabel>
-
-                        <IonButton fill="outline" slot="end">
-                            <IonRouterLink routerLink="/lock-form/dusty-btc">View</IonRouterLink>
                         </IonButton>
                     </IonItem>
                 </SectionCard>

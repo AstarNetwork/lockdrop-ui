@@ -1,5 +1,4 @@
 import ethLogo from '../resources/ethereum_logo.svg';
-import btcLogo from '../resources/bitcoin_logo.svg';
 import { LockMenu } from '../types/LockdropModels';
 import { firstLockdropStart, firstLockdropEnd, secondLockdropStart, secondLockdropEnd } from './lockInfo';
 
@@ -21,14 +20,6 @@ export const secondLock: LockMenu[] = [
         startDate: secondLockdropStart,
         endDate: secondLockdropEnd,
     },
-    // {
-    //     title: 'BTC Lock',
-    //     uri: '/lock-form/first',
-    //     icon: btcLogo,
-    //     startDate: secondLockdropStart,
-    //     endDate: secondLockdropEnd,
-    //     disabled: true,
-    // },
 ];
 
 export const dustyLock: LockMenu[] = [
@@ -36,13 +27,6 @@ export const dustyLock: LockMenu[] = [
         title: 'ETH Lock',
         uri: '/lock-form/dusty-eth',
         icon: ethLogo,
-        startDate: firstLockdropStart,
-        endDate: firstLockdropEnd,
-    },
-    {
-        title: 'BTC Lock',
-        uri: '/lock-form/dusty-btc',
-        icon: btcLogo,
         startDate: firstLockdropStart,
         endDate: firstLockdropEnd,
     },

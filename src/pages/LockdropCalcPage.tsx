@@ -23,7 +23,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Container, Typography } from '@material-ui/core';
 import BigNumber from 'bignumber.js';
-import { ethDurations, btcDurations } from 'src/data/lockInfo';
+import { ethDurations } from 'src/data/lockInfo';
 import { ApiPromise } from '@polkadot/api';
 import * as plasmUtils from '../helpers/plasmUtils';
 
@@ -42,8 +42,6 @@ const LockdropCalcPage = () => {
 
     const tokenLockDurs = useMemo(() => {
         switch (tokenType) {
-            case 'BTC':
-                return btcDurations;
             case 'ETH':
             default:
                 return ethDurations;
@@ -142,7 +140,6 @@ const LockdropCalcPage = () => {
                                     <IonLabel>Plasm Network alpha value: {returnAlpha.toString()}</IonLabel>
                                     <IonItem>
                                         <IonLabel>
-                                            <p>{tokenExRate[0].toString()} USD per 1 BTC</p>
                                             <p>{tokenExRate[1].toString()} USD per 1 ETH</p>
                                         </IonLabel>
                                     </IonItem>
@@ -178,7 +175,6 @@ const LockdropCalcPage = () => {
                                                         e.detail.value && setTokenType(e.detail.value);
                                                     }}
                                                 >
-                                                    <IonSelectOption value="BTC">BTC</IonSelectOption>
                                                     <IonSelectOption value="ETH">ETH</IonSelectOption>
                                                 </IonSelect>
                                             </>

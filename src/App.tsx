@@ -5,7 +5,6 @@ import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/react';
 import { IonReactHashRouter } from '@ionic/react-router';
 import LandingPage from './pages/LandingPage';
 import FirstEthLockdropPage from './pages/FirstEthLockdropPage';
-import DustyBtcLockPage from './pages/DustyBtcLockPage';
 import SideMenu from './components/SideMenu';
 import LockdropCalcPage from './pages/LockdropCalcPage';
 import EthRealTimeLockPage from './pages/EthRealTimeLockPage';
@@ -52,7 +51,6 @@ const App: React.FC = () => {
                                 <EthRealTimeLockPage {...props} lockdropNetwork={plasmUtils.PlasmNetwork.Dusty} />
                             )}
                         />
-                        <Route path="/lock-form/dusty-btc" component={DustyBtcLockPage} />
                         <Route path="/utils-calculator" component={LockdropCalcPage} />
                         <Route exact path="/" render={() => <Redirect to="/lock-form" />} />
                     </IonRouterOutlet>
