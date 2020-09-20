@@ -73,21 +73,3 @@ export const ethDustyDurations: OptionItem[] = [
     { label: '30 Days', value: 30, rate: 360 },
     { label: '100 Days', value: 100, rate: 1600 },
 ];
-
-/**
- * BTC lockdrop does not support 1000 days lock due to CSV lock scheme
- */
-export const btcDurations: OptionItem[] = [
-    { label: '30 Days', value: 30, rate: 24 },
-    { label: '100 Days', value: 100, rate: 100 },
-    { label: '300 Days', value: 300, rate: 360 },
-];
-
-/**
- * BTC lockdrop for Dusty network. The lock days are much shorter
- */
-export const btcDustyDurations: OptionItem[] = [
-    { label: '3 Days', value: 3, rate: 24 },
-    { label: '10 Days', value: 10, rate: 100 },
-    { label: '30 Days', value: 30, rate: 360 },
-];

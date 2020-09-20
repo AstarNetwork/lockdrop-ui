@@ -2,7 +2,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { ApiPromise } from '@polkadot/api';
 import * as plasmUtils from '../helpers/plasmUtils';
-import * as btcLockdrop from '../helpers/lockdrop/BitcoinLockdrop';
 import * as polkadotUtils from '@polkadot/util';
 import * as polkadotCrypto from '@polkadot/util-crypto';
 import { Claim, Lockdrop } from 'src/types/LockdropModels';
@@ -616,7 +615,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                         Locked{' '}
                         {networkType === 'ETH'
                             ? `${Web3Utils.fromWei(lockParam.value.toString(), 'ether')} ETH `
-                            : `${btcLockdrop.satoshiToBitcoin(lockParam.value.toString())} BTC `}
+                            : `0 BTC `}
                         for {epochToDays(lockParam.duration.toNumber()).toString()} days
                     </Typography>
 
