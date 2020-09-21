@@ -1,15 +1,13 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { ApiPromise } from '@polkadot/api';
-import * as plasmUtils from '../helpers/plasmUtils';
+import * as plasmUtils from '../../helpers/plasmUtils';
 import * as polkadotUtils from '@polkadot/util';
 import * as polkadotCrypto from '@polkadot/util-crypto';
 import { Claim, Lockdrop } from 'src/types/LockdropModels';
 import {
-    List,
     makeStyles,
     createStyles,
-    ListSubheader,
     Divider,
     ListItem,
     Typography,
@@ -20,8 +18,8 @@ import {
     IconButton,
     CircularProgress,
 } from '@material-ui/core';
-import plasmIcon from '../resources/plasm-icon.svg';
-import dustyIcon from '../resources/dusty-icon.svg';
+import plasmIcon from '../../resources/plasm-icon.svg';
+import dustyIcon from '../../resources/dusty-icon.svg';
 import Web3Utils from 'web3-utils';
 import SendIcon from '@material-ui/icons/Send';
 import CheckIcon from '@material-ui/icons/Check';
@@ -30,80 +28,33 @@ import BigNumber from 'bignumber.js';
 import Badge from '@material-ui/core/Badge';
 import ThumbUpIcon from '@material-ui/icons/ThumbUp';
 import ThumbDownIcon from '@material-ui/icons/ThumbDown';
-import {
-    IonPopover,
-    IonList,
-    IonItem,
-    IonListHeader,
-    IonLabel,
-    IonAlert,
-    IonModal,
-    IonButton,
-    IonHeader,
-    IonToolbar,
-    IonContent,
-    IonTitle,
-    IonInput,
-} from '@ionic/react';
+import { IonPopover, IonList, IonItem, IonListHeader, IonLabel, IonAlert } from '@ionic/react';
 import { toast } from 'react-toastify';
 import HourglassEmptyIcon from '@material-ui/icons/HourglassEmpty';
 import ReplayIcon from '@material-ui/icons/Replay';
-import EditIcon from '@material-ui/icons/Edit';
-import CopyMessageBox from './CopyMessageBox';
 
-interface Props {
-    claimParams: Lockdrop[];
-    plasmApi: ApiPromise;
-    networkType: 'ETH' | 'BTC';
-    plasmNetwork: 'Plasm' | 'Dusty';
-    publicKey: string;
-    // getLockerSig must return a hex string of the signature
-    getLockerSig: (id: Uint8Array, sendToAddr: string) => Promise<string> | string;
+enum ClaimState {
+    NotReq, // tokens are locked, but no requests are sent
+    Waiting, // waiting for the validator votes for the request
+    Claimable, // votes are positive and rewards can be claimed
+    Failed, // votes are negative, need to request it again
+    Claimed, // lockdrop reward has been sent to the address
 }
 
-const useStyles = makeStyles(theme =>
-    createStyles({
-        listRoot: {
-            width: '100%',
-            maxWidth: 'auto',
-            backgroundColor: theme.palette.background.paper,
-            position: 'relative',
-            overflow: 'auto',
-            height: 360,
-            //minHeight: 360,
-        },
-        listSection: {
-            backgroundColor: 'inherit',
-        },
-        ul: {
-            backgroundColor: 'inherit',
-            padding: 0,
-        },
-        lockListPage: {
-            textAlign: 'center',
-        },
-        inline: {
-            display: 'inline',
-        },
-        iconProgress: {
-            color: green[500],
-            position: 'absolute',
-            top: 10,
-            left: 10,
-            zIndex: 1,
-        },
-        emptyPanel: {
-            textAlign: 'center',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: 'auto',
-            padding: theme.spacing(3, 0),
-        },
-        claimVoteIcon: {
-            margin: theme.spacing(1),
-        },
-    }),
-);
+interface ItemProps {
+    lockParam: Lockdrop;
+    plasmApi: ApiPromise;
+    plasmNetwork: 'Plasm' | 'Dusty';
+    networkType: 'BTC' | 'ETH';
+    positiveVotes: number;
+    voteThreshold: number;
+    getLockerSig: (id: Uint8Array, sendToAddr: string) => Promise<string> | string;
+    claimRecipientAddress: string;
+    isDefaultAddress: boolean;
+    claimData?: Claim;
+}
+
+// --- helper functions
 
 const truncateString = (str: string, num: number) => {
     if (str.length <= num) {
@@ -118,282 +69,23 @@ const epochToDays = (epoch: number) => {
     return epoch / epochDays;
 };
 
-const loadAddrCache = (publicKey: string) => {
-    const _cache = localStorage.getItem(`claim-addr:${publicKey}`);
-    if (_cache === null) {
-        return undefined;
-    }
-    // check if the cached address is valid
-    const addrCheck = polkadotCrypto.checkAddress(_cache, 5);
-    if (!addrCheck[0]) {
-        return undefined;
-    }
-    return _cache;
-};
-
-const ClaimStatus: React.FC<Props> = ({
-    claimParams,
-    plasmApi,
-    plasmNetwork = 'Plasm',
-    networkType,
-    publicKey,
-    getLockerSig,
-}) => {
-    const classes = useStyles();
-
-    const defaultAddr = useMemo(() => {
-        return plasmUtils.generatePlmAddress(publicKey);
-    }, [publicKey]);
-
-    // global lockdrop claim requirements
-    const [positiveVotes, setPositiveVotes] = useState(0);
-    const [voteThreshold, setVoteThreshold] = useState(0);
-
-    const [isLoadingBal, setLoadingBal] = useState(true);
-    const [isLoadingClaims, setLoadingClaims] = useState(true);
-
-    // open edit mode if no valid address was saved
-    const [addrEditMode, setAddrEditMode] = useState(typeof loadAddrCache(publicKey) === 'undefined');
-
-    // the address where PLMs will be sent
-    const [plasmAddr, setPlasmAddr] = useState(loadAddrCache(publicKey) || defaultAddr);
-    // a temporary address the user will set
-    const [customClaimAddr, setCustomClaimAddr] = useState<string>();
-    const [balance, setBalance] = useState('');
-
-    const [claims, setClaims] = useState<(Claim | undefined)[]>([]);
-
-    const fetchLockData = useCallback(async () => {
-        // create claims IDs from all the lock parameters
-        const claimIds = claimParams.map(c => {
-            // get claim ID of current parameter
-            return plasmUtils.createLockParam(
-                c.type,
-                c.transactionHash.toHex(),
-                c.publicKey.toHex(),
-                c.duration.toString(),
-                c.value.toString(),
-            ).hash;
-        });
-
-        const lockdropStates = claimIds.map(async id => {
-            // parse plasm node to check claim status
-            const claimRes = await plasmUtils.getClaimStatus(plasmApi, id);
-            return claimRes;
-        });
-
-        const _claims = await Promise.all(lockdropStates);
-
-        setClaims(_claims);
-    }, [claimParams, plasmApi]);
-
-    // initial plasm address balance fetch
-    useEffect(() => {
-        (async () => {
-            const _bal = (await plasmUtils.getAddressBalance(plasmApi, plasmAddr, true)).toFixed(3);
-            const formatBal = parseFloat(_bal).toLocaleString('en');
-            setBalance(formatBal);
-        })();
-    }, [plasmApi, plasmAddr]);
-
-    //store plasm address to local storage every time things changes
-    useEffect(() => {
-        const addrCheck = polkadotCrypto.checkAddress(plasmAddr, 5);
-        // only save it locally if it is a valid address
-        if (addrCheck[0]) {
-            localStorage.setItem(`claim-addr:${publicKey}`, plasmAddr);
-        }
-    }, [plasmAddr, publicKey]);
-
-    // fetch address balance periodically
-    useEffect(() => {
-        const interval = setInterval(async () => {
-            const _bal = (await plasmUtils.getAddressBalance(plasmApi, plasmAddr, true)).toFixed(3);
-            const formatBal = parseFloat(_bal).toLocaleString('en');
-            const _voteReq = await plasmUtils.getLockdropVoteRequirements(plasmApi);
-            setBalance(formatBal);
-            setPositiveVotes(_voteReq.positiveVotes);
-            setVoteThreshold(_voteReq.voteThreshold);
-
-            await fetchLockData();
-            setLoadingClaims(false);
-
-            isLoadingBal && setLoadingBal(false);
-        }, 15 * 1000);
-
-        // cleanup hook
-        return () => {
-            clearInterval(interval);
-        };
-    });
-
-    const handleEditAddress = () => {
-        try {
-            if (addrEditMode) {
-                // if clicked finished edit
-
-                if (!customClaimAddr) {
-                    throw new Error('No Plasm Network address given');
-                }
-
-                const addrCheck = polkadotCrypto.checkAddress(customClaimAddr, 5);
-                if (!addrCheck[0]) {
-                    //setAddrEditMode(false);
-                    throw new Error('Plasm address check error: ' + addrCheck[1]);
-                }
-
-                setPlasmAddr(customClaimAddr);
-                setAddrEditMode(false);
-            } else {
-                // if clicked edit
-                setAddrEditMode(true);
-                // allow user to edit the address field and hide the claim list to prevent them from claiming
-            }
-        } catch (e) {
-            console.log(e);
-            toast.error(e.message);
-        }
-    };
-
-    return (
-        <div>
-            <IonModal isOpen={addrEditMode} onDidDismiss={() => setAddrEditMode(false)}>
-                <IonHeader>
-                    <IonToolbar>
-                        <IonTitle>Token Claim Address</IonTitle>
-                    </IonToolbar>
-                </IonHeader>
-
-                <IonContent>
-                    <IonList>
-                        <IonItem>
-                            <IonLabel className="ion-text-wrap">
-                                This will set the Plasm Network address that will receive the lockdrop rewards when
-                                claimed. You can always change this later. For more information, please consider reading{' '}
-                                <a
-                                    href="https://medium.com/stake-technologies/lockdrop-the-hitchhikers-guide-to-plasm-network-token-distribution-38299e14d5d4"
-                                    rel="noopener noreferrer"
-                                    target="_blank"
-                                >
-                                    this
-                                </a>{' '}
-                                article
-                            </IonLabel>
-                        </IonItem>
-                        <IonItem>
-                            <IonLabel position="stacked">Enter Plasm Address</IonLabel>
-                            <IonInput
-                                value={customClaimAddr}
-                                placeholder={defaultAddr}
-                                onIonChange={e => setCustomClaimAddr(e.detail.value || undefined)}
-                                clearInput
-                            ></IonInput>
-                        </IonItem>
-                        <IonItem>
-                            <IonLabel className="ion-text-wrap">Your default Plasm Network address:</IonLabel>
-                        </IonItem>
-                        <IonItem>
-                            <CopyMessageBox message={defaultAddr} isCode />
-                        </IonItem>
-                        <IonItem>
-                            <IonButton
-                                href={`https://polkadot.js.org/apps/?rpc=wss://rpc.${
-                                    plasmNetwork === 'Dusty' ? 'dusty.' : ''
-                                }plasmnet.io/#/accounts`}
-                                rel="noopener noreferrer"
-                                target="_blank"
-                                slot="start"
-                            >
-                                Create a new account
-                            </IonButton>
-                            <IonButton
-                                onClick={handleEditAddress}
-                                disabled={isLoadingBal || isLoadingClaims || !customClaimAddr}
-                                slot="end"
-                            >
-                                Set account
-                            </IonButton>
-                        </IonItem>
-                    </IonList>
-                </IonContent>
-            </IonModal>
-            <Typography variant="h5" component="h2" align="center">
-                Sending to {plasmAddr}
-                <IconButton
-                    aria-label="finish"
-                    color="primary"
-                    onClick={handleEditAddress}
-                    disabled={isLoadingBal || isLoadingClaims}
-                >
-                    <EditIcon fontSize="inherit" />
-                </IconButton>
-            </Typography>
-
-            {balance && !addrEditMode && (
-                <Typography variant="body1" component="p" align="center">
-                    Has balance of {balance + ' '}
-                    {plasmNetwork === 'Plasm' ? 'PLM' : 'PLD'}
-                </Typography>
-            )}
-
-            <List className={classes.listRoot} subheader={<li />}>
-                <li className={classes.listSection}>
-                    <ul className={classes.ul}>
-                        {isLoadingBal || isLoadingClaims || addrEditMode ? (
-                            <div className={classes.emptyPanel}>
-                                <CircularProgress />
-                            </div>
-                        ) : claimParams.length > 0 ? (
-                            <>
-                                <ListSubheader>You can claim {claimParams.length} locks</ListSubheader>
-                                <Divider />
-
-                                {claimParams.map((e, i) => (
-                                    <div key={e.transactionHash.toHex()}>
-                                        <ClaimItem
-                                            lockParam={e}
-                                            plasmApi={plasmApi}
-                                            plasmNetwork={plasmNetwork}
-                                            networkType={networkType}
-                                            positiveVotes={positiveVotes}
-                                            voteThreshold={voteThreshold}
-                                            claimData={claims[i]}
-                                            getLockerSig={getLockerSig}
-                                            claimRecipientAddress={plasmAddr}
-                                        />
-                                    </div>
-                                ))}
-                            </>
-                        ) : (
-                            <>
-                                <ListSubheader>You don&apos;t have any locks!</ListSubheader>
-                                <Divider />
-                                <div className={classes.emptyPanel}>
-                                    <Typography>Why does the feeling of emptiness occupy so much space?</Typography>
-                                    <Typography>-James de la Vega-</Typography>
-                                </div>
-                            </>
-                        )}
-                    </ul>
-                </li>
-            </List>
-        </div>
-    );
-};
-
-export default ClaimStatus;
-
-interface ItemProps {
-    lockParam: Lockdrop;
-    plasmApi: ApiPromise;
-    plasmNetwork: 'Plasm' | 'Dusty';
-    networkType: 'BTC' | 'ETH';
-    positiveVotes: number;
-    voteThreshold: number;
-    getLockerSig: (id: Uint8Array, sendToAddr: string) => Promise<string> | string;
-    claimRecipientAddress: string;
-    claimData?: Claim;
-}
+const useStyles = makeStyles(theme =>
+    createStyles({
+        inline: {
+            display: 'inline',
+        },
+        iconProgress: {
+            color: green[500],
+            position: 'absolute',
+            top: 10,
+            left: 10,
+            zIndex: 1,
+        },
+        claimVoteIcon: {
+            margin: theme.spacing(1),
+        },
+    }),
+);
 
 const ClaimItem: React.FC<ItemProps> = ({
     lockParam,
@@ -404,6 +96,7 @@ const ClaimItem: React.FC<ItemProps> = ({
     voteThreshold,
     getLockerSig,
     claimRecipientAddress,
+    isDefaultAddress,
     claimData,
 }) => {
     const classes = useStyles();
@@ -452,9 +145,16 @@ const ClaimItem: React.FC<ItemProps> = ({
         return plasmUtils.femtoToPlm(new BigNumber(claimData.amount.toString())).toFixed();
     }, [claimData]);
 
-    const plasmDefaultAddress = useMemo(() => {
-        return plasmUtils.generatePlmAddress(lockParam.publicKey.toHex());
-    }, [lockParam]);
+    const claimStatus = useMemo(() => {
+        if (claimData && !hasAllVotes) {
+            return ClaimState.Waiting;
+        } else if (claimData === undefined) {
+            return ClaimState.NotReq;
+        } else if (claimData && !reqAccepted) {
+            return ClaimState.Failed;
+        }
+        return ClaimState.Claimable;
+    }, [claimData, hasAllVotes, reqAccepted]);
 
     /**
      * sends a lockdrop claim request to the plasm node by the given lockdrop parameter
@@ -494,7 +194,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                 setClaimingLock(true);
                 let txHash: string;
 
-                if (!!claimRecipientAddress && claimRecipientAddress !== plasmDefaultAddress) {
+                if (claimRecipientAddress && !isDefaultAddress) {
                     console.log('using claim_to function');
                     // hex string signature
                     const _sig = await getLockerSig(id, claimRecipientAddress);
@@ -530,11 +230,11 @@ const ClaimItem: React.FC<ItemProps> = ({
     }, [claimData, claimingLock, sendingRequest]);
 
     const ActionIcon = () => {
-        if (claimData && !hasAllVotes) {
+        if (claimStatus === ClaimState.Waiting) {
             return <HourglassEmptyIcon />;
-        } else if (claimData === undefined) {
+        } else if (claimStatus === ClaimState.NotReq) {
             return <SendIcon />;
-        } else if (claimData && !reqAccepted) {
+        } else if (claimStatus === ClaimState.Failed) {
             return <ReplayIcon />;
         }
         return <CheckIcon />;
@@ -712,3 +412,5 @@ const ClaimItem: React.FC<ItemProps> = ({
         </>
     );
 };
+
+export default ClaimItem;

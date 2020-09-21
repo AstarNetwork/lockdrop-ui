@@ -53,7 +53,7 @@ export function claimPowNonce(claimId: Uint8Array | H256): Uint8Array {
 /**
  * used for adding new polkadot-js api types for communicating with plasm node
  */
-export const plasmTypeReg = new TypeRegistry();
+const plasmTypeReg = new TypeRegistry();
 
 /**
  * establishes a connection between the client and the plasm node with the given endpoint.
@@ -373,6 +373,17 @@ export function structToLockdrop(lockdropParam: Struct) {
 const durationToEpoch = (duration: number) => {
     const epochDays = 60 * 60 * 24;
     return duration * epochDays;
+};
+
+/**
+ * a utility function that obtains the claim PoW nonce in hex string from the given claim ID.
+ * This is used to manually send claim requests from polkadot-js app portal
+ * @param claimId claim ID in hex string
+ */
+export const claimIdToNonceString = (claimId: string) => {
+    const nonce2 = claimPowNonce(polkadotUtils.hexToU8a(claimId));
+
+    return polkadotUtils.u8aToHex(nonce2);
 };
 
 /**

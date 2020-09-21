@@ -19,7 +19,7 @@ import * as plasmUtils from '../helpers/plasmUtils';
 import { ApiPromise } from '@polkadot/api';
 import * as polkadotCrypto from '@polkadot/util-crypto';
 import * as polkadotUtil from '@polkadot/util';
-import ClaimStatus from 'src/components/ClaimStatus';
+import ClaimStatus from 'src/components/RealtimeLockdrop/ClaimStatus';
 import moment from 'moment';
 import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
 import { secondLockContract } from '../data/lockInfo';
