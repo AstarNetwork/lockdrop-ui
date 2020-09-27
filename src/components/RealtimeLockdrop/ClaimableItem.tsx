@@ -51,7 +51,7 @@ interface ItemProps {
     getLockerSig: (id: Uint8Array, sendToAddr: string) => Promise<string> | string;
     claimRecipientAddress: string;
     isDefaultAddress: boolean;
-    claimData?: Claim;
+    initClaimData?: Claim;
 }
 
 // --- helper functions
@@ -97,7 +97,7 @@ const ClaimItem: React.FC<ItemProps> = ({
     getLockerSig,
     claimRecipientAddress,
     isDefaultAddress,
-    claimData,
+    initClaimData,
 }) => {
     const classes = useStyles();
 
@@ -124,6 +124,8 @@ const ClaimItem: React.FC<ItemProps> = ({
 
     const [claimConfirm, setClaimConfirm] = useState(false);
 
+    const [claimData, setClaimData] = useState(initClaimData);
+
     const setVoteList = (_claim: Claim) => {
         const approves = _claim.approve.toJSON() as string[];
         setApproveList(approves);
@@ -139,6 +141,15 @@ const ClaimItem: React.FC<ItemProps> = ({
         return approveList.length - declineList.length >= positiveVotes;
     }, [approveList, declineList, positiveVotes]);
 
+    const isReqHanging = useMemo(() => {
+        if (claimData) {
+            const isClaimHanging = !hasAllVotes || !reqAccepted;
+            const isValidClaim = approveList.length > 0;
+            // todo: add timestamp check
+            return isClaimHanging && isValidClaim;
+        } else return false;
+    }, [approveList, hasAllVotes, reqAccepted, claimData]);
+
     const receivingPlm = useMemo(() => {
         if (typeof claimData === 'undefined') return '0';
 
@@ -146,23 +157,39 @@ const ClaimItem: React.FC<ItemProps> = ({
     }, [claimData]);
 
     const claimStatus = useMemo(() => {
-        if (claimData && !hasAllVotes) {
-            return ClaimState.Waiting;
-        } else if (claimData === undefined) {
+        if (typeof claimData === 'undefined') {
             return ClaimState.NotReq;
-        } else if (claimData && !reqAccepted) {
+        } else if (!hasAllVotes && !isReqHanging) {
+            return ClaimState.Waiting;
+        } else if (claimData.complete) {
+            return ClaimState.Claimed;
+        } else if (!reqAccepted || isReqHanging) {
             return ClaimState.Failed;
         }
         return ClaimState.Claimable;
-    }, [claimData, hasAllVotes, reqAccepted]);
+    }, [claimData, hasAllVotes, reqAccepted, isReqHanging]);
+
+    // initial set claim status
+    useEffect(() => {
+        if (claimData) {
+            setVoteList(claimData);
+        }
+    }, [claimData]);
+
+    // handle loading
+    useEffect(() => {
+        if (typeof claimData !== 'undefined') {
+            // turn off loading if it's on
+            if (claimData.complete.valueOf() && claimingLock) setClaimingLock(false);
+        }
+    }, [claimData, claimingLock]);
 
     /**
      * sends a lockdrop claim request to the plasm node by the given lockdrop parameter
      * @param param lockdrop parameter data
      */
-    const submitClaimReq = (param: Lockdrop) => {
+    const submitClaimReq = async (param: Lockdrop) => {
         setSendingRequest(true);
-        claimData = undefined;
         const _lock = plasmUtils.createLockParam(
             param.type,
             param.transactionHash.toHex(),
@@ -171,16 +198,21 @@ const ClaimItem: React.FC<ItemProps> = ({
             param.value.toString(),
         );
         const _nonce = plasmUtils.claimPowNonce(_lock.hash);
-        // send lockdrop claim request
-        plasmUtils // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .sendLockClaimRequest(plasmApi, _lock as any, _nonce)
-            .then(res => {
-                console.log('Claim ID: ' + _lock.hash + '\nRequest transaction hash:\n' + res.toHex());
-            })
-            .catch(e => {
-                toast.error(e);
-                console.log(e);
-            });
+
+        const unsubscribe = await plasmApi.tx.plasmLockdrop.request(_lock.toU8a(), _nonce).send(({ status }) => {
+            console.log('Claim request status:', status.type);
+
+            if (status.isFinalized) {
+                console.log('Finalized block hash', status.asFinalized.toHex());
+
+                plasmUtils.getClaimStatus(plasmApi, claimId).then(claim => {
+                    setClaimData(claim);
+                    setSendingRequest(false);
+                });
+
+                unsubscribe();
+            }
+        });
     };
 
     /**
@@ -192,22 +224,45 @@ const ClaimItem: React.FC<ItemProps> = ({
             if (hasAllVotes && reqAccepted && claimData && !claimData.complete.valueOf()) {
                 // show loading circle
                 setClaimingLock(true);
-                let txHash: string;
 
                 if (claimRecipientAddress && !isDefaultAddress) {
                     console.log('using claim_to function');
                     // hex string signature
                     const _sig = await getLockerSig(id, claimRecipientAddress);
 
-                    // send claim_to() transaction
-                    txHash = (
-                        await plasmUtils.claimTo(plasmApi, id, claimRecipientAddress, polkadotUtils.hexToU8a(_sig))
-                    ).toHex();
+                    const unsubscribe = await plasmApi.tx.plasmLockdrop
+                        .claimTo(claimId, claimRecipientAddress, polkadotUtils.hexToU8a(_sig))
+                        .send(({ status }) => {
+                            console.log('Token claim status:', status.type);
+
+                            if (status.isFinalized) {
+                                console.log('Finalized block hash', status.asFinalized.toHex());
+
+                                plasmUtils.getClaimStatus(plasmApi, claimId).then(claim => {
+                                    setClaimData(claim);
+                                    setClaimingLock(false);
+                                });
+
+                                unsubscribe();
+                            }
+                        });
                 } else {
-                    console.log('using claim function');
-                    txHash = (await plasmUtils.sendLockdropClaim(plasmApi, id)).toHex();
+                    console.log('Sending tokens to the default address');
+                    const unsubscribe = await plasmApi.tx.plasmLockdrop.claim(claimId).send(({ status }) => {
+                        console.log('Token claim status:', status.type);
+
+                        if (status.isFinalized) {
+                            console.log('Finalized block hash', status.asFinalized.toHex());
+
+                            plasmUtils.getClaimStatus(plasmApi, claimId).then(claim => {
+                                setClaimData(claim);
+                                setClaimingLock(false);
+                            });
+
+                            unsubscribe();
+                        }
+                    });
                 }
-                console.log('Token claim transaction hash:\n' + txHash);
             } else {
                 throw new Error('Claim requirement was not met');
             }
@@ -216,18 +271,6 @@ const ClaimItem: React.FC<ItemProps> = ({
             toast.error(e.message);
         }
     };
-
-    // initial set claim status
-    useEffect(() => {
-        // turn off loading if it's on
-        if (claimData) {
-            setVoteList(claimData);
-
-            // turn off loading if it's on
-            if (sendingRequest) setSendingRequest(false);
-            if (claimData.complete.valueOf() && claimingLock) setClaimingLock(false);
-        }
-    }, [claimData, claimingLock, sendingRequest]);
 
     const ActionIcon = () => {
         if (claimStatus === ClaimState.Waiting) {

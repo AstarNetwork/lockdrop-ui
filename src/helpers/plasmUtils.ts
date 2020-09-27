@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import BigNumber from 'bignumber.js';
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Hash, H256 } from '@polkadot/types/interfaces';
+import { H256 } from '@polkadot/types/interfaces';
 import * as polkadotUtilCrypto from '@polkadot/util-crypto';
 import * as polkadotUtils from '@polkadot/util';
 import { u8aConcat } from '@polkadot/util';
@@ -202,16 +202,17 @@ export async function claimTo(
  * @param lockParam lockdrop parameter that contains the lock data
  * @param nonce nonce for PoW authentication with the node
  */
-export async function sendLockClaimRequest(api: ApiPromise, lockParam: Struct, nonce: Uint8Array): Promise<Hash> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function sendLockClaimRequest(api: ApiPromise, lockParam: Struct<any>, nonce: Uint8Array) {
     if (typeof api.tx.plasmLockdrop === 'undefined') {
         throw new Error('Plasm node cannot find lockdrop module');
     }
 
     const claimRequestTx = api.tx.plasmLockdrop.request(lockParam.toU8a(), nonce);
 
-    const txHash = await claimRequestTx.send();
+    const hash = await claimRequestTx.send();
 
-    return txHash;
+    return hash;
 }
 
 /**
@@ -368,6 +369,40 @@ export function structToLockdrop(lockdropParam: Struct) {
     };
 
     return param;
+}
+
+/**
+ * Sends another claim request from the given claim ID. The request must have been submitted once for this to work.
+ * @param api polkadot-js api
+ * @param claimId claim ID
+ */
+export async function requestClaimBump(api: ApiPromise, claimId: Uint8Array | H256) {
+    const claimData = await getClaimStatus(api, claimId);
+    if (typeof claimData === 'undefined') {
+        throw new Error('No claim request was found for ' + polkadotUtils.u8aToHex(claimId));
+    }
+    const { transactionHash, type, publicKey, value, duration } = claimData.params;
+    const lockParam = createLockParam(
+        type,
+        transactionHash.toHex(),
+        publicKey.toHex(),
+        duration.toString(),
+        value.toString(),
+    );
+    const nonce = claimPowNonce(claimId);
+    const hash = await sendLockClaimRequest(api, lockParam, nonce);
+    return hash;
+}
+
+export async function isClaimHanging(plasmApi: ApiPromise, claimData: Claim) {
+    const { voteThreshold, positiveVotes } = await getLockdropVoteRequirements(plasmApi);
+
+    const isClaimHanging =
+        claimData.approve.size - claimData.decline.size < voteThreshold || claimData.approve.size < positiveVotes;
+    const isValidClaim = claimData.approve.size > 0;
+    //console.log(`Claim ${i.claimId} has ${i.approve.size} approvals and ${i.decline.size} disapprovals`);
+
+    return (isClaimHanging && isValidClaim) || (claimData.approve.size === 0 && claimData.decline.size === 0);
 }
 
 const durationToEpoch = (duration: number) => {

@@ -121,29 +121,32 @@ const ClaimStatus: React.FC<Props> = ({
         return plasmAddr === defaultAddr;
     }, [plasmAddr, defaultAddr]);
 
-    const fetchLockData = useCallback(async () => {
-        // create claims IDs from all the lock parameters
-        const claimIds = claimParams.map(c => {
-            // get claim ID of current parameter
-            return plasmUtils.createLockParam(
-                c.type,
-                c.transactionHash.toHex(),
-                c.publicKey.toHex(),
-                c.duration.toString(),
-                c.value.toString(),
-            ).hash;
-        });
+    const fetchLockData = useCallback(
+        async (api: ApiPromise) => {
+            // create claims IDs from all the lock parameters
+            const claimIds = claimParams.map(c => {
+                // get claim ID of current parameter
+                return plasmUtils.createLockParam(
+                    c.type,
+                    c.transactionHash.toHex(),
+                    c.publicKey.toHex(),
+                    c.duration.toString(),
+                    c.value.toString(),
+                ).hash;
+            });
 
-        const lockdropStates = claimIds.map(async id => {
-            // parse plasm node to check claim status
-            const claimRes = await plasmUtils.getClaimStatus(plasmApi, id);
-            return claimRes;
-        });
+            const lockdropStates = claimIds.map(async id => {
+                // parse plasm node to check claim status
+                const claimRes = await plasmUtils.getClaimStatus(api, id);
+                return claimRes;
+            });
 
-        const _claims = await Promise.all(lockdropStates);
+            const _claims = await Promise.all(lockdropStates);
 
-        return _claims;
-    }, [claimParams, plasmApi]);
+            return _claims;
+        },
+        [claimParams],
+    );
 
     // initial plasm address balance fetch
     useEffect(() => {
@@ -156,6 +159,19 @@ const ClaimStatus: React.FC<Props> = ({
         });
     }, [plasmApi, plasmAddr]);
 
+    // initial claim data fetch
+    useEffect(() => {
+        (async () => {
+            const claimData = await fetchLockData(plasmApi);
+            const _voteReq = await plasmUtils.getLockdropVoteRequirements(plasmApi);
+            setPositiveVotes(_voteReq.positiveVotes);
+            setVoteThreshold(_voteReq.voteThreshold);
+            setClaims(claimData);
+        })().finally(() => {
+            setLoadingClaims(false);
+        });
+    }, [fetchLockData, plasmApi]);
+
     //store plasm address to local storage every time things changes
     useEffect(() => {
         const addrCheck = polkadotCrypto.checkAddress(plasmAddr, 5);
@@ -165,21 +181,13 @@ const ClaimStatus: React.FC<Props> = ({
         }
     }, [plasmAddr, publicKey]);
 
-    // fetch address balance periodically
+    // fetch address balance and lockdrop claim data periodically
     useEffect(() => {
         const interval = setInterval(async () => {
             const _bal = (await plasmUtils.getAddressBalance(plasmApi, plasmAddr, true)).toFixed(3);
             const formatBal = parseFloat(_bal).toLocaleString('en');
-            const _voteReq = await plasmUtils.getLockdropVoteRequirements(plasmApi);
+
             setBalance(formatBal);
-            setPositiveVotes(_voteReq.positiveVotes);
-            setVoteThreshold(_voteReq.voteThreshold);
-
-            const claimData = await fetchLockData();
-            setClaims(claimData);
-            setLoadingClaims(false);
-
-            //isLoadingBal && setLoadingBal(false);
         }, 15 * 1000);
 
         // cleanup hook
@@ -318,7 +326,7 @@ const ClaimStatus: React.FC<Props> = ({
                                             networkType={networkType}
                                             positiveVotes={positiveVotes}
                                             voteThreshold={voteThreshold}
-                                            claimData={claims[i]}
+                                            initClaimData={claims[i]}
                                             getLockerSig={getLockerSig}
                                             claimRecipientAddress={plasmAddr}
                                             isDefaultAddress={sendToDefault}
