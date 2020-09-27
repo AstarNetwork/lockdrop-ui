@@ -154,25 +154,6 @@ describe('Plasm lockdrop RPC tests', () => {
         200 * 1000,
     );
 
-    // it(
-    //     'lock/claim BTC testnet3 transactions',
-    //     async () => {
-    //         // const nonce = plasmUtils.claimPowNonce(btcTestnet3Lock.hash);
-    //         // console.log('claim nonce: ' + polkadotUtil.u8aToHex(nonce));
-    //         // console.log('claim ID: ' + ropstenLock.hash.toString());
-
-    //         // const claimRequestTx = api.tx.plasmLockdrop.request(btcTestnet3Lock.toU8a(), nonce);
-    //         // await claimRequestTx.send();
-
-    //         //const claimData = await api.query.plasmLockdrop.claims(btcTestnet3Lock.hash);
-    //         const claimData = await plasmUtils.getClaimStatus(api, btcTestnet3Lock.hash);
-    //         const claimAmount = new BN(claimData!.amount.toString());
-    //         console.log('Receiving amount: ' + claimAmount.toString());
-    //         expect(claimData!.params.value.toString()).toEqual(btcTestnet3Lock.get('value')?.toString());
-    //     },
-    //     200 * 1000,
-    // );
-
     it('checks lockdrop voting requirements', async () => {
         const _voteThreshold = Number.parseInt((await api.query.plasmLockdrop.voteThreshold()).toString());
         const _positiveVotes = Number.parseInt((await api.query.plasmLockdrop.positiveVotes()).toString());
@@ -189,6 +170,7 @@ describe('real-time lockdrop claim hash tests', () => {
 
     it('performs a simple PoW security check', () => {
         const nonce = plasmUtils.claimPowNonce(sampleLock.hash);
+
         const powData = polkadotUtil.u8aConcat(sampleClaimId, nonce);
         const powHash = polkadotCryptoUtil.blake2AsU8a(powData);
         expect(powHash[0]).toEqual(0);
