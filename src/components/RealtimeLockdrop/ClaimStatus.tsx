@@ -31,6 +31,7 @@ import EditIcon from '@material-ui/icons/Edit';
 import CopyMessageBox from '../CopyMessageBox';
 import ClaimItem from './ClaimableItem';
 import BigNumber from 'bignumber.js';
+import moment from 'moment';
 
 interface Props {
     claimParams: Lockdrop[];
@@ -124,6 +125,17 @@ const ClaimStatus: React.FC<Props> = ({
     const sendToDefault = useMemo(() => {
         return plasmAddr === defaultAddr;
     }, [plasmAddr, defaultAddr]);
+
+    const lockdropBoundLeft = useMemo(() => {
+        return claimSeasonEnd - currentBlockNo;
+    }, [claimSeasonEnd, currentBlockNo]);
+
+    const lockdropEndEst = useMemo(() => {
+        const expectedBTime = 10;
+        const secondsLeft = lockdropBoundLeft > 0 ? lockdropBoundLeft * expectedBTime : 0;
+        const tillEnd = moment.duration(secondsLeft, 'seconds');
+        return `${tillEnd.hours()}h:${tillEnd.minutes()}m`;
+    }, [lockdropBoundLeft]);
 
     const fetchLockData = useCallback(
         async (api: ApiPromise) => {
@@ -322,8 +334,10 @@ const ClaimStatus: React.FC<Props> = ({
             </IonModal>
             {claimSeasonEnd > 0 && currentBlockNo > 0 && (
                 <Typography variant="h5" component="h4" align="center">
-                    {claimSeasonEnd - currentBlockNo > 0
-                        ? `${claimSeasonEnd - currentBlockNo} blocks until the lockdrop claim ends`
+                    {lockdropBoundLeft > 0
+                        ? `${lockdropBoundLeft.toLocaleString(
+                              'en',
+                          )} blocks (${lockdropEndEst} or more) until the lockdrop claim ends`
                         : 'Lockdrop claim season has ended'}
                 </Typography>
             )}
@@ -371,7 +385,7 @@ const ClaimStatus: React.FC<Props> = ({
                                             getLockerSig={getLockerSig}
                                             claimRecipientAddress={plasmAddr}
                                             isDefaultAddress={sendToDefault}
-                                            isOver={claimSeasonEnd - currentBlockNo < 0}
+                                            isOver={lockdropBoundLeft < 1}
                                         />
                                     </div>
                                 ))}

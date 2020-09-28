@@ -402,12 +402,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                                 </Badge>
                             </IconButton>
 
-                            <IconButton
-                                color="primary"
-                                component="span"
-                                onClick={() => setShowDeclines(true)}
-                                disabled={isOver}
-                            >
+                            <IconButton color="primary" component="span" onClick={() => setShowDeclines(true)}>
                                 <Badge
                                     color="secondary"
                                     badgeContent={declineList.length}
@@ -437,13 +432,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                                     : setClaimConfirm(true);
                             }}
                             color="primary"
-                            disabled={
-                                isOver ||
-                                sendingRequest ||
-                                claimData?.complete.valueOf() ||
-                                claimingLock ||
-                                (claimData && !hasAllVotes)
-                            }
+                            disabled={isOver || sendingRequest || claimData?.complete.valueOf() || claimingLock}
                         >
                             <ActionIcon />
                         </IconButton>
