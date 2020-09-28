@@ -51,6 +51,7 @@ interface ItemProps {
     getLockerSig: (id: Uint8Array, sendToAddr: string) => Promise<string> | string;
     claimRecipientAddress: string;
     isDefaultAddress: boolean;
+    isOver: boolean;
     initClaimData?: Claim;
 }
 
@@ -97,6 +98,7 @@ const ClaimItem: React.FC<ItemProps> = ({
     getLockerSig,
     claimRecipientAddress,
     isDefaultAddress,
+    isOver,
     initClaimData,
 }) => {
     const classes = useStyles();
@@ -169,16 +171,10 @@ const ClaimItem: React.FC<ItemProps> = ({
         return ClaimState.Claimable;
     }, [claimData, hasAllVotes, reqAccepted, isReqHanging]);
 
-    // initial set claim status
-    useEffect(() => {
-        if (claimData) {
-            setVoteList(claimData);
-        }
-    }, [claimData]);
-
-    // handle loading
+    // handle loading and initial set claim status
     useEffect(() => {
         if (typeof claimData !== 'undefined') {
+            setVoteList(claimData);
             // turn off loading if it's on
             if (claimData.complete.valueOf() && claimingLock) setClaimingLock(false);
         }
@@ -406,7 +402,12 @@ const ClaimItem: React.FC<ItemProps> = ({
                                 </Badge>
                             </IconButton>
 
-                            <IconButton color="primary" component="span" onClick={() => setShowDeclines(true)}>
+                            <IconButton
+                                color="primary"
+                                component="span"
+                                onClick={() => setShowDeclines(true)}
+                                disabled={isOver}
+                            >
                                 <Badge
                                     color="secondary"
                                     badgeContent={declineList.length}
@@ -437,6 +438,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                             }}
                             color="primary"
                             disabled={
+                                isOver ||
                                 sendingRequest ||
                                 claimData?.complete.valueOf() ||
                                 claimingLock ||

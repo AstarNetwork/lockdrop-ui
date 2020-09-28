@@ -6,6 +6,7 @@ import * as polkadotUtilCrypto from '@polkadot/util-crypto';
 import * as polkadotUtils from '@polkadot/util';
 import { u8aConcat } from '@polkadot/util';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
+import { BlockNumber } from '@polkadot/types/interfaces';
 import * as plasmDefinitions from '@plasm/types/interfaces/definitions';
 import { LockdropType, Claim, Lockdrop, LockEvent } from 'src/types/LockdropModels';
 
@@ -351,6 +352,17 @@ export function subscribeCoinRate(api: ApiPromise, subscribeCallback: (rate: [nu
 export async function getCoinRate(api: ApiPromise) {
     const rate = ((await api.query.plasmLockdrop.dollarRate()) as unknown) as [number, number];
     return rate;
+}
+
+/**
+ * Obtains the current lockdrop duration in block numbers. First entry in the tuple is the start
+ * and the second entry is the end block number
+ * @param api plasm network api inst
+ */
+export async function getLockdropDuration(api: ApiPromise) {
+    const lockdropBounds = await api.query.plasmLockdrop.lockdropBounds();
+
+    return (lockdropBounds as unknown) as [BlockNumber, BlockNumber];
 }
 
 /**
