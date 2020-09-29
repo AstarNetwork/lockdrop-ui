@@ -30,6 +30,8 @@ import { toast } from 'react-toastify';
 import EditIcon from '@material-ui/icons/Edit';
 import CopyMessageBox from '../CopyMessageBox';
 import ClaimItem from './ClaimableItem';
+import BigNumber from 'bignumber.js';
+import moment from 'moment';
 
 interface Props {
     claimParams: Lockdrop[];
@@ -117,9 +119,23 @@ const ClaimStatus: React.FC<Props> = ({
 
     const [claims, setClaims] = useState<(Claim | undefined)[]>([]);
 
+    const [claimSeasonEnd, setClaimSeasonEnd] = useState(0);
+    const [currentBlockNo, setCurrentBlockNo] = useState(0);
+
     const sendToDefault = useMemo(() => {
         return plasmAddr === defaultAddr;
     }, [plasmAddr, defaultAddr]);
+
+    const lockdropBoundLeft = useMemo(() => {
+        return claimSeasonEnd - currentBlockNo;
+    }, [claimSeasonEnd, currentBlockNo]);
+
+    const lockdropEndEst = useMemo(() => {
+        const expectedBTime = 10;
+        const secondsLeft = lockdropBoundLeft > 0 ? lockdropBoundLeft * expectedBTime : 0;
+        const tillEnd = moment.duration(secondsLeft, 'seconds');
+        return `${tillEnd.hours()}h:${tillEnd.minutes()}m`;
+    }, [lockdropBoundLeft]);
 
     const fetchLockData = useCallback(
         async (api: ApiPromise) => {
@@ -148,29 +164,74 @@ const ClaimStatus: React.FC<Props> = ({
         [claimParams],
     );
 
-    // initial plasm address balance fetch
+    // plasm address balance subscribe
     useEffect(() => {
-        (async () => {
-            const _bal = (await plasmUtils.getAddressBalance(plasmApi, plasmAddr, true)).toFixed(3);
-            const formatBal = parseFloat(_bal).toLocaleString('en');
-            setBalance(formatBal);
-        })().finally(() => {
-            setLoadingBal(false);
-        });
-    }, [plasmApi, plasmAddr]);
+        // unsubscribe flag
+        let isUnmounting = false;
+        const balanceSub = async () => {
+            const unsub = await plasmApi.query.system.account(plasmAddr, ({ data: balance }) => {
+                if (isUnmounting) unsub();
+                const freeBal = balance.free;
+                const plmTokens = plasmUtils.femtoToPlm(new BigNumber(freeBal.toString(10))).toFixed(3);
+                const formatBal = parseFloat(plmTokens).toLocaleString('en');
+                setBalance(formatBal);
+                // turn off the loading circle for initial fetches
+                if (isLoadingBal && balance) setLoadingBal(false);
+                console.log(`free balance for ${plasmAddr} is ${freeBal} with ${balance.reserved} reserved`);
+            });
+        };
+        balanceSub();
+
+        return () => {
+            isUnmounting = true;
+        };
+    }, [plasmAddr, plasmApi, isLoadingBal]);
+
+    // block subscribe
+    useEffect(() => {
+        // unsubscribe flag
+        let isUnmounting = false;
+        const blockSub = async () => {
+            const unsub = await plasmApi.rpc.chain.subscribeNewHeads(header => {
+                if (isUnmounting) unsub();
+                const _currentBlock = header.number.toNumber();
+                setCurrentBlockNo(_currentBlock);
+            });
+        };
+        blockSub();
+
+        return () => {
+            isUnmounting = true;
+        };
+    }, [plasmAddr, plasmApi, isLoadingBal]);
 
     // initial claim data fetch
     useEffect(() => {
         (async () => {
             const claimData = await fetchLockData(plasmApi);
             const _voteReq = await plasmUtils.getLockdropVoteRequirements(plasmApi);
+            const lockdropDeadline = await plasmUtils.getLockdropDuration(plasmApi);
+
+            setClaims(claimData);
             setPositiveVotes(_voteReq.positiveVotes);
             setVoteThreshold(_voteReq.voteThreshold);
-            setClaims(claimData);
+            setClaimSeasonEnd(lockdropDeadline[1].toNumber());
         })().finally(() => {
             setLoadingClaims(false);
         });
     }, [fetchLockData, plasmApi]);
+
+    // background claim data fetch
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            const claimData = await fetchLockData(plasmApi);
+            setClaims(claimData);
+        }, 10 * 1000);
+        // cleanup hook
+        return () => {
+            clearInterval(interval);
+        };
+    });
 
     //store plasm address to local storage every time things changes
     useEffect(() => {
@@ -180,21 +241,6 @@ const ClaimStatus: React.FC<Props> = ({
             localStorage.setItem(`claim-addr:${publicKey}`, plasmAddr);
         }
     }, [plasmAddr, publicKey]);
-
-    // fetch address balance and lockdrop claim data periodically
-    useEffect(() => {
-        const interval = setInterval(async () => {
-            const _bal = (await plasmUtils.getAddressBalance(plasmApi, plasmAddr, true)).toFixed(3);
-            const formatBal = parseFloat(_bal).toLocaleString('en');
-
-            setBalance(formatBal);
-        }, 15 * 1000);
-
-        // cleanup hook
-        return () => {
-            clearInterval(interval);
-        };
-    });
 
     const handleEditAddress = () => {
         try {
@@ -286,6 +332,15 @@ const ClaimStatus: React.FC<Props> = ({
                     </IonList>
                 </IonContent>
             </IonModal>
+            {claimSeasonEnd > 0 && currentBlockNo > 0 && (
+                <Typography variant="h5" component="h4" align="center">
+                    {lockdropBoundLeft > 0
+                        ? `${lockdropBoundLeft.toLocaleString(
+                              'en',
+                          )} blocks (${lockdropEndEst} or more) until the lockdrop claim ends`
+                        : 'Lockdrop claim season has ended'}
+                </Typography>
+            )}
             <Typography variant="h5" component="h2" align="center">
                 Sending to {plasmAddr}
                 <IconButton
@@ -330,6 +385,7 @@ const ClaimStatus: React.FC<Props> = ({
                                             getLockerSig={getLockerSig}
                                             claimRecipientAddress={plasmAddr}
                                             isDefaultAddress={sendToDefault}
+                                            isOver={lockdropBoundLeft < 1}
                                         />
                                     </div>
                                 ))}
