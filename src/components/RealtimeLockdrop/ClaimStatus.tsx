@@ -132,9 +132,9 @@ const ClaimStatus: React.FC<Props> = ({
 
     const lockdropEndEst = useMemo(() => {
         const expectedBTime = 10;
-        const secondsLeft = lockdropBoundLeft > 0 ? lockdropBoundLeft * expectedBTime : 0;
+        const secondsLeft = Math.max(lockdropBoundLeft * expectedBTime, 0);
         const tillEnd = moment.duration(secondsLeft, 'seconds');
-        return `${tillEnd.hours()}h:${tillEnd.minutes()}m`;
+        return `${tillEnd.days()}d:${tillEnd.hours()}h:${tillEnd.minutes()}m`;
     }, [lockdropBoundLeft]);
 
     const fetchLockData = useCallback(
@@ -337,7 +337,7 @@ const ClaimStatus: React.FC<Props> = ({
                     {lockdropBoundLeft > 0
                         ? `${lockdropBoundLeft.toLocaleString(
                               'en',
-                          )} blocks (${lockdropEndEst} or more) until the lockdrop claim ends`
+                          )} blocks (${lockdropEndEst}) until the lockdrop claim ends`
                         : 'Lockdrop claim season has ended'}
                 </Typography>
             )}
