@@ -28,6 +28,7 @@ import '@ionic/react/css/display.css';
 
 /* Theme variables */
 import './theme/variables.css';
+import LockdropStatPage from './pages/LockdropStatPage';
 
 const App: React.FC = () => {
     return (
@@ -38,6 +39,7 @@ const App: React.FC = () => {
 
                     <IonRouterOutlet id="main" animated>
                         <Route exact path="/lock-form" component={LandingPage} />
+                        <Route exact path="/" render={() => <Redirect to="/lock-form" />} />
                         <Route path="/lock-form/first" component={FirstEthLockdropPage} />
                         <Route
                             path="/lock-form/second-eth"
@@ -52,7 +54,8 @@ const App: React.FC = () => {
                             )}
                         />
                         <Route path="/utils-calculator" component={LockdropCalcPage} />
-                        <Route exact path="/" render={() => <Redirect to="/lock-form" />} />
+
+                        <Route path="/lockdrop-stat" component={LockdropStatPage} />
                     </IonRouterOutlet>
                 </IonSplitPane>
             </IonReactHashRouter>

@@ -9,7 +9,7 @@ import telegram from '../resources/logo-telegram.svg';
 import github from '../resources/logo-github.svg';
 import { firstLock, secondLock, dustyLock } from '../data/pages';
 import { LockMenu } from '../types/LockdropModels';
-import { calculator } from 'ionicons/icons';
+import { calculator, stats } from 'ionicons/icons';
 
 interface Props {
     headerText: string;
@@ -55,7 +55,13 @@ const SideMenu: React.FC = () => {
                         <IonRouterLink routerLink="/utils-calculator">
                             <IonItem button detail>
                                 <IonIcon icon={calculator} slot="start" />
-                                <IonLabel>Lockdrop Calculator</IonLabel>
+                                <IonLabel>Reward Calculator</IonLabel>
+                            </IonItem>
+                        </IonRouterLink>
+                        <IonRouterLink routerLink="/lockdrop-stat">
+                            <IonItem button detail>
+                                <IonIcon icon={stats} slot="start" />
+                                <IonLabel>Lockdrop Statistics</IonLabel>
                             </IonItem>
                         </IonRouterLink>
                     </IonList>
