@@ -104,6 +104,8 @@ const ClaimItem: React.FC<ItemProps> = ({
 }) => {
     const classes = useStyles();
 
+    const now = moment.utc().valueOf();
+
     const claimId = useMemo(() => {
         return plasmUtils.createLockParam(
             lockParam.type,
@@ -149,15 +151,15 @@ const ClaimItem: React.FC<ItemProps> = ({
     // this will check if the request is incomplete and has been more than 10 minutes since the first submission
     // because the timestamp has a default value of 0, this will reset upon browser refresh
     const isReqHanging = useMemo(() => {
-        if (claimData) {
+        if (claimData && !isOver) {
             const isIncomplete = !hasAllVotes || !reqAccepted;
-            const timePast = moment.utc().valueOf() - lastClaimTime;
+            const timePast = now - lastClaimTime;
             // check if the request has been going for more than 10 minutes in seconds
             const isLate = timePast - 60 * 60 * 10 > 0;
 
             return isIncomplete && isLate;
         } else return false;
-    }, [hasAllVotes, reqAccepted, claimData, lastClaimTime]);
+    }, [hasAllVotes, reqAccepted, claimData, lastClaimTime, now, isOver]);
 
     const receivingPlm = useMemo(() => {
         if (typeof claimData === 'undefined') return '0';
@@ -203,9 +205,8 @@ const ClaimItem: React.FC<ItemProps> = ({
         const _nonce = plasmUtils.claimPowNonce(_lock.hash);
 
         const unsubscribe = await plasmApi.tx.plasmLockdrop.request(_lock.toU8a(), _nonce).send(({ status }) => {
-            const sentTime = moment.utc().valueOf();
             // set the timestamp of the request
-            setLastClaimTime(sentTime);
+            setLastClaimTime(now);
             console.log('Claim request status:', status.type);
 
             if (status.isFinalized) {
