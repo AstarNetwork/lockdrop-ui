@@ -32,6 +32,7 @@ import { IonPopover, IonList, IonItem, IonListHeader, IonLabel, IonAlert } from 
 import { toast } from 'react-toastify';
 import HourglassEmptyIcon from '@material-ui/icons/HourglassEmpty';
 import ReplayIcon from '@material-ui/icons/Replay';
+import moment from 'moment';
 
 enum ClaimState {
     NotReq, // tokens are locked, but no requests are sent
@@ -103,6 +104,8 @@ const ClaimItem: React.FC<ItemProps> = ({
 }) => {
     const classes = useStyles();
 
+    const now = moment.utc().valueOf();
+
     const claimId = useMemo(() => {
         return plasmUtils.createLockParam(
             lockParam.type,
@@ -128,6 +131,8 @@ const ClaimItem: React.FC<ItemProps> = ({
 
     const [claimData, setClaimData] = useState(initClaimData);
 
+    const [lastClaimTime, setLastClaimTime] = useState(0);
+
     const setVoteList = (_claim: Claim) => {
         const approves = _claim.approve.toJSON() as string[];
         setApproveList(approves);
@@ -143,14 +148,18 @@ const ClaimItem: React.FC<ItemProps> = ({
         return approveList.length - declineList.length >= positiveVotes;
     }, [approveList, declineList, positiveVotes]);
 
+    // this will check if the request is incomplete and has been more than 10 minutes since the first submission
+    // because the timestamp has a default value of 0, this will reset upon browser refresh
     const isReqHanging = useMemo(() => {
-        if (claimData) {
-            const isClaimHanging = !hasAllVotes || !reqAccepted;
-            const isValidClaim = approveList.length > 0;
-            // todo: add timestamp check
-            return isClaimHanging && isValidClaim;
+        if (claimData && !isOver) {
+            const isIncomplete = !hasAllVotes || !reqAccepted;
+            const timePast = now - lastClaimTime;
+            // check if the request has been going for more than 10 minutes in seconds
+            const isLate = timePast - 60 * 60 * 10 > 0;
+
+            return isIncomplete && isLate;
         } else return false;
-    }, [approveList, hasAllVotes, reqAccepted, claimData]);
+    }, [hasAllVotes, reqAccepted, claimData, lastClaimTime, now, isOver]);
 
     const receivingPlm = useMemo(() => {
         if (typeof claimData === 'undefined') return '0';
@@ -161,12 +170,12 @@ const ClaimItem: React.FC<ItemProps> = ({
     const claimStatus = useMemo(() => {
         if (typeof claimData === 'undefined') {
             return ClaimState.NotReq;
+        } else if (!reqAccepted || isReqHanging) {
+            return ClaimState.Failed;
         } else if (!hasAllVotes && !isReqHanging) {
             return ClaimState.Waiting;
         } else if (claimData.complete) {
             return ClaimState.Claimed;
-        } else if (!reqAccepted || isReqHanging) {
-            return ClaimState.Failed;
         }
         return ClaimState.Claimable;
     }, [claimData, hasAllVotes, reqAccepted, isReqHanging]);
@@ -196,6 +205,8 @@ const ClaimItem: React.FC<ItemProps> = ({
         const _nonce = plasmUtils.claimPowNonce(_lock.hash);
 
         const unsubscribe = await plasmApi.tx.plasmLockdrop.request(_lock.toU8a(), _nonce).send(({ status }) => {
+            // set the timestamp of the request
+            setLastClaimTime(now);
             console.log('Claim request status:', status.type);
 
             if (status.isFinalized) {
