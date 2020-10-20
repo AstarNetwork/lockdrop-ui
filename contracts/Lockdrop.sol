@@ -4,7 +4,7 @@ import "./Lock.sol";
 
 contract Lockdrop {
     // Time constants
-    uint256 public constant LOCK_DROP_PERIOD = 30 days;
+    uint256 public constant LOCK_DROP_PERIOD = 15 days;
     uint256 public LOCK_START_TIME;
     uint256 public LOCK_END_TIME;
 
@@ -36,7 +36,7 @@ contract Lockdrop {
         require(msg.sender == tx.origin);
 
         // Accept only fixed set of durations
-        require(_days == 30 || _days == 100 || _days == 300 || _days == 1000);
+        require(_days == 90 || _days == 180 || _days == 360);
         uint256 unlockTime = now + _days * 1 days;
 
         // Accept non-zero payments only

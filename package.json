@@ -1,107 +1,42 @@
 {
-    "name": "lockdrop-ui",
-    "homepage": "https://lockdrop.plasmnet.io",
-    "version": "0.0.1",
-    "private": true,
-    "dependencies": {
-        "@ionic/core": "^4.11.0",
-        "@ionic/react": "^4.11.0",
-        "@ionic/react-router": "^4.11.0",
-        "@material-ui/core": "^4.9.4",
-        "@material-ui/icons": "^4.9.1",
-        "@material-ui/lab": "^4.0.0-alpha.56",
-        "@plasm/types": "^1.3.0",
-        "@polkadot/api": "^1.30.1",
-        "@polkadot/types": "^1.30.1",
-        "@polkadot/util-crypto": "^3.3.1",
-        "bignumber.js": "^9.0.0",
-        "eth-crypto": "^1.6.0",
-        "ethereumjs-util": "^6.2.0",
-        "fast-sha256": "^1.3.0",
-        "ionicons": "^4.6.3",
-        "lodash": "^4.17.20",
-        "moment": "^2.24.0",
-        "moment-timezone": "^0.5.31",
-        "react": "^16.12.0",
-        "react-countup": "^4.3.3",
-        "react-dom": "^16.12.0",
-        "react-dropdown": "^1.7.0",
-        "react-markdown": "^4.3.1",
-        "react-router": "^5.1.2",
-        "react-router-dom": "^5.1.2",
-        "react-scripts": "3.4.0",
-        "react-scroll": "^1.7.16",
-        "react-swipeable-views": "^0.13.9",
-        "react-toastify": "^5.5.0",
-        "react-virtualized": "^9.22.2",
-        "regtest-client": "^0.2.0",
-        "rxjs-hooks": "^0.5.2",
-        "secp256k1": "^4.0.2",
-        "semantic-ui-react": "^0.88.2",
-        "styled-components": "^5.0.1",
-        "styled-media-query": "^2.1.2",
-        "truffle-contract": "^3.0.1",
-        "typescript": "^3.8",
-        "varuint-bitcoin": "^1.1.2",
-        "web3": "^1.2.5",
-        "web3-utils": "^1.2.6"
-    },
-    "devDependencies": {
-        "@babel/helper-call-delegate": "^7.10.1",
-        "@testing-library/dom": "^7.2.2",
-        "@testing-library/jest-dom": "^4.2.4",
-        "@testing-library/react": "^9.4.0",
-        "@testing-library/user-event": "^8.0.3",
-        "@types/bigi": "^1.4.2",
-        "@types/bs58": "^4.0.1",
-        "@types/ecurve": "^1.0.0",
-        "@types/elliptic": "^6.4.12",
-        "@types/jest": "^24.0.25",
-        "@types/lodash": "^4.14.161",
-        "@types/node": "^12.12.26",
-        "@types/react": "^16.9.17",
-        "@types/react-dom": "^16.9.4",
-        "@types/react-router": "^5.1.4",
-        "@types/react-router-dom": "^5.1.3",
-        "@types/react-scroll": "^1.5.4",
-        "@types/react-swipeable-views": "^0.13.0",
-        "@types/react-virtualized": "^9.21.10",
-        "@types/secp256k1": "^4.0.1",
-        "@types/styled-components": "^5.0.1",
-        "@typescript-eslint/parser": "^2.28.0",
-        "eslint": "^6.8.0",
-        "eslint-config-prettier": "^6.10.0",
-        "eslint-plugin-prettier": "^3.1.2",
-        "eslint-plugin-react": "^7.19.0",
-        "eslint-plugin-react-hooks": "^0.0.0-d7382b6c4",
-        "gh-pages": "^2.2.0",
-        "prettier": "^1.19.1"
-    },
-    "scripts": {
-        "start": "react-scripts start",
-        "build": "react-scripts build",
-        "build:ci": "CI=true react-scripts build",
-        "test": "react-scripts test",
-        "eject": "react-scripts eject",
-        "lint": "eslint src/**/*.{ts,tsx}",
-        "fix": "eslint --fix src/**/*.{ts,tsx}",
-        "predeploy": "npm run build",
-        "deploy": "gh-pages -d build"
-    },
-    "eslintConfig": {
-        "extends": "react-app"
-    },
-    "browserslist": {
-        "production": [
-            ">0.2%",
-            "not dead",
-            "not op_mini all"
-        ],
-        "development": [
-            "last 1 chrome version",
-            "last 1 firefox version",
-            "last 1 safari version"
-        ]
-    },
-    "description": "Lockdrop Application for Plasm Network"
+  "name": "lockdrop-contracts",
+  "version": "1.0.0",
+  "homepage": "https://github.com/Taraxa-project/lockdrop-contracts#readme",
+  "description": "Taraxa lockdrop contracts",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test",
+    "compile": "truffle compile",
+    "migrate": "truffle migrate",
+    "console": "truffle console",
+    "testrpc": "ganache-cli",
+    "release": "truffle migrate --network mainnet"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Taraxa-project/lockdrop-contracts.git"
+  },
+  "keywords": [
+    "ethereum",
+    "solidity",
+    "lockdrop"
+  ],
+  "dependencies": {
+    "bn-chai": "^1.0.1",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "eth-gas-reporter": "^0.2.18",
+    "ganache-cli": "^6.12.0",
+    "truffle": "^5.1.49",
+    "truffle-flattener": "1.3.0",
+    "truffle-hdwallet-provider": "^1.0.6",
+    "web3": "^1.2",
+    "yargs": "^13.0"
+  },
+  "author": "Aleksandr Krupenkin <mail@akru.me>",
+  "license": "BSD-3-Clause"
 }
