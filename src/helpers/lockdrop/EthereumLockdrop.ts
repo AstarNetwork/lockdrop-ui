@@ -63,7 +63,7 @@ export async function getMessageSignature(web3: Web3, message: string, asSigPara
  * @param contractAddr contract address that emits the event
  */
 export const fetchEventsFromCache = async (contractAddr: string) => {
-    const api = `https://raw.githubusercontent.com/hoonsubin/plasm-scripts/master/src/data/cache/cache-${contractAddr.slice(
+    const api = `https://raw.githubusercontent.com/hoonsubin/plasm-scripts/a4ea5d1f1e35ba7d370c46738bc485fc5164b376/src/data/cache/cache-${contractAddr.slice(
         0,
         6,
     )}.json`;
