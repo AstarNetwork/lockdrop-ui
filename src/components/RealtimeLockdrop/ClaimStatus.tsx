@@ -32,10 +32,10 @@ import CopyMessageBox from '../CopyMessageBox';
 import ClaimItem from './ClaimableItem';
 import BigNumber from 'bignumber.js';
 import moment from 'moment';
+import { useApi } from '../../helpers/Api';
 
 interface Props {
     claimParams: Lockdrop[];
-    plasmApi: ApiPromise;
     networkType: 'ETH' | 'BTC';
     plasmNetwork: 'Plasm' | 'Dusty';
     publicKey: string;
@@ -89,13 +89,13 @@ const loadAddrCache = (publicKey: string) => {
 
 const ClaimStatus: React.FC<Props> = ({
     claimParams,
-    plasmApi,
     plasmNetwork = 'Plasm',
     networkType,
     publicKey,
     getLockerSig,
 }) => {
     const classes = useStyles();
+    const { api } = useApi();
 
     const defaultAddr = useMemo(() => {
         return plasmUtils.generatePlmAddress(publicKey);
@@ -169,7 +169,7 @@ const ClaimStatus: React.FC<Props> = ({
         // unsubscribe flag
         let isUnmounting = false;
         const balanceSub = async () => {
-            const unsub = await plasmApi.query.system.account(plasmAddr, ({ data: balance }) => {
+            const unsub = await api.query.system.account(plasmAddr, ({ data: balance }) => {
                 if (isUnmounting) unsub();
                 const freeBal = balance.free;
                 const plmTokens = plasmUtils.femtoToPlm(new BigNumber(freeBal.toString(10))).toFixed(3);
@@ -185,14 +185,14 @@ const ClaimStatus: React.FC<Props> = ({
         return () => {
             isUnmounting = true;
         };
-    }, [plasmAddr, plasmApi, isLoadingBal]);
+    }, [plasmAddr, api, isLoadingBal]);
 
     // block subscribe
     useEffect(() => {
         // unsubscribe flag
         let isUnmounting = false;
         const blockSub = async () => {
-            const unsub = await plasmApi.rpc.chain.subscribeNewHeads(header => {
+            const unsub = await api.rpc.chain.subscribeNewHeads(header => {
                 if (isUnmounting) unsub();
                 const _currentBlock = header.number.toNumber();
                 setCurrentBlockNo(_currentBlock);
@@ -203,14 +203,14 @@ const ClaimStatus: React.FC<Props> = ({
         return () => {
             isUnmounting = true;
         };
-    }, [plasmAddr, plasmApi, isLoadingBal]);
+    }, [plasmAddr, api, isLoadingBal]);
 
     // initial claim data fetch
     useEffect(() => {
         (async () => {
-            const claimData = await fetchLockData(plasmApi);
-            const _voteReq = await plasmUtils.getLockdropVoteRequirements(plasmApi);
-            const lockdropDeadline = await plasmUtils.getLockdropDuration(plasmApi);
+            const claimData = await fetchLockData(api);
+            const _voteReq = await plasmUtils.getLockdropVoteRequirements(api);
+            const lockdropDeadline = await plasmUtils.getLockdropDuration(api);
 
             setClaims(claimData);
             setPositiveVotes(_voteReq.positiveVotes);
@@ -219,12 +219,12 @@ const ClaimStatus: React.FC<Props> = ({
         })().finally(() => {
             setLoadingClaims(false);
         });
-    }, [fetchLockData, plasmApi]);
+    }, [fetchLockData, api]);
 
     // background claim data fetch
     useEffect(() => {
         const interval = setInterval(async () => {
-            const claimData = await fetchLockData(plasmApi);
+            const claimData = await fetchLockData(api);
             setClaims(claimData);
         }, 10 * 1000);
         // cleanup hook
@@ -376,7 +376,6 @@ const ClaimStatus: React.FC<Props> = ({
                                     <div key={e.transactionHash.toHex()}>
                                         <ClaimItem
                                             lockParam={e}
-                                            plasmApi={plasmApi}
                                             plasmNetwork={plasmNetwork}
                                             networkType={networkType}
                                             positiveVotes={positiveVotes}

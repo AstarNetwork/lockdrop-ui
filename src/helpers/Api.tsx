@@ -17,7 +17,18 @@ function Api({ network = DEFAULT_NETWORK, children }: Props): React.ReactElement
         const provider = new WsProvider(url);
         api = new ApiPromise({
             provider,
-            types,
+            types: {
+                ...types,
+                // aliases that don't do well as part of interfaces
+                'voting::VoteType': 'VoteType',
+                'voting::TallyType': 'TallyType',
+                // chain-specific overrides
+                Address: 'GenericAddress',
+                Keys: 'SessionKeys4',
+                StakingLedger: 'StakingLedgerTo223',
+                Votes: 'VotesTo230',
+                ReferendumInfo: 'ReferendumInfoTo239',
+            },
         });
         api.on('connected', (): void => {
             api.isReady.then((): void => {

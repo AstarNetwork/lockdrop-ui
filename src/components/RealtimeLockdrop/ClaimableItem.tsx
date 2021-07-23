@@ -1,6 +1,5 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState, useMemo } from 'react';
-import { ApiPromise } from '@polkadot/api';
 import * as plasmUtils from '../../helpers/plasmUtils';
 import * as polkadotUtils from '@polkadot/util';
 import * as polkadotCrypto from '@polkadot/util-crypto';
@@ -33,6 +32,7 @@ import { toast } from 'react-toastify';
 import HourglassEmptyIcon from '@material-ui/icons/HourglassEmpty';
 import ReplayIcon from '@material-ui/icons/Replay';
 import moment from 'moment';
+import { useApi } from 'src/helpers/Api';
 
 enum ClaimState {
     NotReq, // tokens are locked, but no requests are sent
@@ -44,7 +44,6 @@ enum ClaimState {
 
 interface ItemProps {
     lockParam: Lockdrop;
-    plasmApi: ApiPromise;
     plasmNetwork: 'Plasm' | 'Dusty';
     networkType: 'BTC' | 'ETH';
     positiveVotes: number;
@@ -91,7 +90,6 @@ const useStyles = makeStyles(theme =>
 
 const ClaimItem: React.FC<ItemProps> = ({
     lockParam,
-    plasmApi,
     plasmNetwork,
     networkType,
     positiveVotes,
@@ -103,7 +101,7 @@ const ClaimItem: React.FC<ItemProps> = ({
     initClaimData,
 }) => {
     const classes = useStyles();
-
+    const { api } = useApi();
     const now = moment.utc().valueOf();
 
     const claimId = useMemo(() => {
@@ -204,7 +202,7 @@ const ClaimItem: React.FC<ItemProps> = ({
         );
         const _nonce = plasmUtils.claimPowNonce(_lock.hash);
 
-        const unsubscribe = await plasmApi.tx.plasmLockdrop.request(_lock.toU8a(), _nonce).send(({ status }) => {
+        const unsubscribe = await api.tx.plasmLockdrop.request(_lock.toU8a(), _nonce).send(({ status }) => {
             // set the timestamp of the request
             setLastClaimTime(now);
             console.log('Claim request status:', status.type);
@@ -212,7 +210,7 @@ const ClaimItem: React.FC<ItemProps> = ({
             if (status.isFinalized) {
                 console.log('Finalized block hash', status.asFinalized.toHex());
 
-                plasmUtils.getClaimStatus(plasmApi, claimId).then(claim => {
+                plasmUtils.getClaimStatus(api, claimId).then(claim => {
                     setClaimData(claim);
                     setSendingRequest(false);
                 });
@@ -237,7 +235,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                     // hex string signature
                     const _sig = await getLockerSig(id, claimRecipientAddress);
 
-                    const unsubscribe = await plasmApi.tx.plasmLockdrop
+                    const unsubscribe = await api.tx.plasmLockdrop
                         .claimTo(claimId, claimRecipientAddress, polkadotUtils.hexToU8a(_sig))
                         .send(({ status }) => {
                             console.log('Token claim status:', status.type);
@@ -245,7 +243,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                             if (status.isFinalized) {
                                 console.log('Finalized block hash', status.asFinalized.toHex());
 
-                                plasmUtils.getClaimStatus(plasmApi, claimId).then(claim => {
+                                plasmUtils.getClaimStatus(api, claimId).then(claim => {
                                     setClaimData(claim);
                                     setClaimingLock(false);
                                 });
@@ -255,13 +253,13 @@ const ClaimItem: React.FC<ItemProps> = ({
                         });
                 } else {
                     console.log('Sending tokens to the default address');
-                    const unsubscribe = await plasmApi.tx.plasmLockdrop.claim(claimId).send(({ status }) => {
+                    const unsubscribe = await api.tx.plasmLockdrop.claim(claimId).send(({ status }) => {
                         console.log('Token claim status:', status.type);
 
                         if (status.isFinalized) {
                             console.log('Finalized block hash', status.asFinalized.toHex());
 
-                            plasmUtils.getClaimStatus(plasmApi, claimId).then(claim => {
+                            plasmUtils.getClaimStatus(api, claimId).then(claim => {
                                 setClaimData(claim);
                                 setClaimingLock(false);
                             });

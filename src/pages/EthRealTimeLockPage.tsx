@@ -386,7 +386,6 @@ const EthRealTimeLockPage: React.FC = () => {
                             {publicKey && api ? (
                                 <ClaimStatus
                                     claimParams={lockParams}
-                                    plasmApi={api}
                                     networkType="ETH"
                                     plasmNetwork={isMainnetLock ? 'Plasm' : 'Dusty'}
                                     publicKey={publicKey}

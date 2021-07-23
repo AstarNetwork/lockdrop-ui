@@ -48,7 +48,6 @@ const LockdropCalcPage = () => {
 
     // initial API setup
     useEffect(() => {
-        console.log('IsReady: ', isReady);
         if (!isReady) {
             setIsLoading({ loading: true, message: 'Connecting to Plasm Network' });
         } else {
