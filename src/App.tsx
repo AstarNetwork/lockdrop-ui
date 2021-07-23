@@ -29,6 +29,7 @@ import '@ionic/react/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 import LockdropStatPage from './pages/LockdropStatPage';
+import Api from './helpers/Api';
 
 const App: React.FC = () => {
     return (
@@ -44,17 +45,27 @@ const App: React.FC = () => {
                         <Route
                             path="/lock-form/second-eth"
                             component={(props: any) => (
-                                <EthRealTimeLockPage {...props} lockdropNetwork={plasmUtils.PlasmNetwork.Main} />
+                                <Api network={plasmUtils.PlasmNetwork.Main}>
+                                    <EthRealTimeLockPage {...props} />
+                                </Api>
                             )}
                         />
                         <Route
                             path="/lock-form/dusty-eth"
                             component={(props: any) => (
-                                <EthRealTimeLockPage {...props} lockdropNetwork={plasmUtils.PlasmNetwork.Dusty} />
+                                <Api network={plasmUtils.PlasmNetwork.Local}>
+                                    <EthRealTimeLockPage {...props} />
+                                </Api>
                             )}
                         />
-                        <Route path="/utils-calculator" component={LockdropCalcPage} />
-
+                        <Route
+                            path="/utils-calculator"
+                            component={() => (
+                                <Api network={plasmUtils.PlasmNetwork.Local}>
+                                    <LockdropCalcPage />
+                                </Api>
+                            )}
+                        />
                         <Route path="/lockdrop-stat" component={LockdropStatPage} />
                     </IonRouterOutlet>
                 </IonSplitPane>

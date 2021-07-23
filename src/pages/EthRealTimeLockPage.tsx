@@ -16,7 +16,6 @@ import { removeWeb3Event } from '../helpers/getWeb3';
 import SectionCard from '../components/SectionCard';
 import { Typography, Container, Divider, makeStyles, createStyles } from '@material-ui/core';
 import * as plasmUtils from '../helpers/plasmUtils';
-import { ApiPromise } from '@polkadot/api';
 import * as polkadotCrypto from '@polkadot/util-crypto';
 import * as polkadotUtil from '@polkadot/util';
 import ClaimStatus from 'src/components/RealtimeLockdrop/ClaimStatus';
@@ -25,6 +24,7 @@ import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel
 import { secondLockContract } from '../data/lockInfo';
 import Dropdown from 'react-dropdown';
 import 'react-dropdown/style.css';
+import { useApi } from 'src/helpers/Api';
 
 const useStyles = makeStyles(theme =>
     createStyles({
@@ -39,24 +39,20 @@ const useStyles = makeStyles(theme =>
     }),
 );
 
-interface Props {
-    lockdropNetwork: plasmUtils.PlasmNetwork;
-}
-
-const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
+const EthRealTimeLockPage: React.FC = () => {
     const classes = useStyles();
     const now = moment.utc().valueOf();
+    const { api, network } = useApi();
 
     /**
      * returns true if this is lockdrop is for the plasm main net.
      */
-    const isMainnetLock = lockdropNetwork === plasmUtils.PlasmNetwork.Main;
+    const isMainnetLock = network === plasmUtils.PlasmNetwork.Main;
 
     // this is used for rendering network names
     const plasmNetToEthNet = isMainnetLock ? 'Main Network' : 'Ropsten';
 
     const [web3, setWeb3] = useState<Web3>();
-    const [plasmApi, setPlasmApi] = useState<ApiPromise>();
     const [account, setAccount] = useState<string>('');
     const [contract, setContract] = useState<Contract>();
     const [latestBlock, setLatestBlock] = useState(0);
@@ -171,11 +167,6 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                     setWeb3(web3Inst);
                     setContract(_contract);
                     setAccount(ethAddr[0]);
-                    // connect to plasm node
-                    const plasmNode = await plasmUtils.createPlasmInstance(
-                        isMainnetLock ? plasmUtils.PlasmNetwork.Main : plasmUtils.PlasmNetwork.Dusty,
-                    );
-                    setPlasmApi(plasmNode);
                 } else {
                     throw new Error('User is not connected to ' + plasmNetToEthNet);
                 }
@@ -186,9 +177,6 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         })().finally(() => {
             setLoading({ loading: false, message: '' });
         });
-        return () => {
-            plasmApi && plasmApi.disconnect();
-        };
         // we disable this because we want this to only call once (on component mount)
         // eslint-disable-next-line
     }, []);
@@ -246,7 +234,6 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         }
         return () => {
             removeWeb3Event();
-            if (plasmApi && plasmApi.hasSubscriptions) plasmApi.disconnect();
         };
         // we disable next line to prevent change on getClaimParams
         // eslint-disable-next-line
@@ -396,10 +383,10 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                             <Typography variant="h4" component="h1" align="center">
                                 Real-time Lockdrop Status
                             </Typography>
-                            {publicKey && plasmApi ? (
+                            {publicKey && api ? (
                                 <ClaimStatus
                                     claimParams={lockParams}
-                                    plasmApi={plasmApi}
+                                    plasmApi={api}
                                     networkType="ETH"
                                     plasmNetwork={isMainnetLock ? 'Plasm' : 'Dusty'}
                                     publicKey={publicKey}

@@ -9,7 +9,7 @@ let api: ApiPromise;
 
 function Api({ network = DEFAULT_NETWORK, children }: Props): React.ReactElement<Props> {
     const [isReady, setIsReady] = useState<boolean>(false);
-    const value = useMemo<ApiProps>(() => ({ api, isReady }), [isReady]);
+    const value = useMemo<ApiProps>(() => ({ api, isReady, network }), [isReady]);
 
     useEffect(() => {
         const types = Object.values(plasmDefinitions).reduce((res, { types }): object => ({ ...res, ...types }), {});
