@@ -8,6 +8,7 @@ import { MuiThemeProvider, createMuiTheme, responsiveFontSizes } from '@material
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 import { toast } from 'react-toastify';
+import Api from './helpers/Api';
 
 // define web3 instance as a global variable
 declare global {
@@ -57,7 +58,9 @@ theme = responsiveFontSizes(theme);
 
 ReactDOM.render(
     <MuiThemeProvider theme={theme}>
-        <App />
+        <Api>
+            <App />
+        </Api>
     </MuiThemeProvider>,
     document.getElementById('root'),
 );

@@ -57,13 +57,11 @@ export function claimPowNonce(claimId: Uint8Array | H256): Uint8Array {
 const plasmTypeReg = new TypeRegistry();
 
 /**
- * establishes a connection between the client and the plasm node with the given endpoint.
- * this will default to the main net node
- * @param network end point for the client to connect to
+ * gets endpoint url for a given network
+ * @param network the network
  */
-export async function createPlasmInstance(network?: PlasmNetwork) {
-    let endpoint = '';
-    const types = Object.values(plasmDefinitions).reduce((res, { types }): object => ({ ...res, ...types }), {});
+export function getNetworkEndpoint(network?: PlasmNetwork) {
+    let endpoint: string;
 
     switch (network) {
         case PlasmNetwork.Local:
@@ -78,6 +76,17 @@ export async function createPlasmInstance(network?: PlasmNetwork) {
             break;
     }
 
+    return endpoint;
+}
+
+/**
+ * establishes a connection between the client and the plasm node with the given endpoint.
+ * this will default to the main net node
+ * @param network end point for the client to connect to
+ */
+export async function createPlasmInstance(network?: PlasmNetwork) {
+    const endpoint = getNetworkEndpoint(network);
+    const types = Object.values(plasmDefinitions).reduce((res, { types }): object => ({ ...res, ...types }), {});
     const wsProvider = new WsProvider(endpoint);
 
     const api = await ApiPromise.create({
