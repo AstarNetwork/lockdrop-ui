@@ -33,6 +33,7 @@ import HourglassEmptyIcon from '@material-ui/icons/HourglassEmpty';
 import ReplayIcon from '@material-ui/icons/Replay';
 import moment from 'moment';
 import { useApi } from 'src/helpers/Api';
+import useChainInfo from '../../helpers/chainInfo';
 
 enum ClaimState {
     NotReq, // tokens are locked, but no requests are sent
@@ -103,6 +104,7 @@ const ClaimItem: React.FC<ItemProps> = ({
     const classes = useStyles();
     const { api } = useApi();
     const now = moment.utc().valueOf();
+    const { tokenDecimals } = useChainInfo();
 
     const claimId = useMemo(() => {
         return plasmUtils.createLockParam(
@@ -162,7 +164,7 @@ const ClaimItem: React.FC<ItemProps> = ({
     const receivingPlm = useMemo(() => {
         if (typeof claimData === 'undefined') return '0';
 
-        return plasmUtils.femtoToPlm(new BigNumber(claimData.amount.toString())).toFixed();
+        return plasmUtils.femtoToPlm(new BigNumber(claimData.amount.toString()), tokenDecimals).toFixed();
     }, [claimData]);
 
     const claimStatus = useMemo(() => {

@@ -23,11 +23,12 @@ export enum PlasmNetwork {
  * converts the plasm network minimum denominator to PLM
  * @param femto minimum token value
  */
-export function femtoToPlm(femto: BigNumber) {
+export function femtoToPlm(femto: BigNumber, tokenDecimals: number) {
     if (femto.isLessThanOrEqualTo(new BigNumber(0))) {
         return new BigNumber(0);
     }
-    const plmDenominator = new BigNumber(10).pow(new BigNumber(15));
+
+    const plmDenominator = new BigNumber(10).pow(new BigNumber(tokenDecimals));
     return femto.dividedBy(plmDenominator);
 }
 
@@ -252,21 +253,21 @@ export function generatePlmAddress(publicKey: string) {
  * @param plasmAddress Plasm network address
  * @param asPlm if the output value should be in PLM. Default denominator is in femto
  */
-export async function getAddressBalance(api: ApiPromise, plasmAddress: string | Uint8Array, asPlm?: boolean) {
-    const encodedAddr =
-        plasmAddress instanceof Uint8Array ? polkadotUtilCrypto.encodeAddress(plasmAddress) : plasmAddress;
-    const addrCheck = polkadotUtilCrypto.checkAddress(encodedAddr, 5);
-    if (!addrCheck[0]) {
-        throw new Error('Plasm address check error: ' + addrCheck[1]);
-    }
+// export async function getAddressBalance(api: ApiPromise, plasmAddress: string | Uint8Array, asPlm?: boolean) {
+//     const encodedAddr =
+//         plasmAddress instanceof Uint8Array ? polkadotUtilCrypto.encodeAddress(plasmAddress) : plasmAddress;
+//     const addrCheck = polkadotUtilCrypto.checkAddress(encodedAddr, 5);
+//     if (!addrCheck[0]) {
+//         throw new Error('Plasm address check error: ' + addrCheck[1]);
+//     }
 
-    const { data: balance } = await api.query.system.account(plasmAddress);
-    let _bal = new BigNumber(balance.free.toString());
-    if (asPlm) {
-        _bal = femtoToPlm(new BigNumber(balance.free.toString()));
-    }
-    return _bal;
-}
+//     const { data: balance } = await api.query.system.account(plasmAddress);
+//     let _bal = new BigNumber(balance.free.toString());
+//     if (asPlm) {
+//         _bal = femtoToPlm(new BigNumber(balance.free.toString()));
+//     }
+//     return _bal;
+// }
 
 /**
  * Fetches Plasm real-time lockdrop vote threshold and positive vote values.

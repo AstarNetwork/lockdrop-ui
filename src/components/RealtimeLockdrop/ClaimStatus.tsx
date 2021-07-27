@@ -33,6 +33,7 @@ import ClaimItem from './ClaimableItem';
 import BigNumber from 'bignumber.js';
 import moment from 'moment';
 import { useApi } from '../../helpers/Api';
+import useChainInfo from '../../helpers/chainInfo';
 
 interface Props {
     claimParams: Lockdrop[];
@@ -96,6 +97,7 @@ const ClaimStatus: React.FC<Props> = ({
 }) => {
     const classes = useStyles();
     const { api } = useApi();
+    const { tokenDecimals } = useChainInfo();
 
     const defaultAddr = useMemo(() => {
         return plasmUtils.generatePlmAddress(publicKey);
@@ -172,7 +174,7 @@ const ClaimStatus: React.FC<Props> = ({
             const unsub = await api.query.system.account(plasmAddr, ({ data: balance }) => {
                 if (isUnmounting) unsub();
                 const freeBal = balance.free;
-                const plmTokens = plasmUtils.femtoToPlm(new BigNumber(freeBal.toString(10))).toFixed(3);
+                const plmTokens = plasmUtils.femtoToPlm(new BigNumber(freeBal.toString(10)), tokenDecimals).toFixed(3);
                 const formatBal = parseFloat(plmTokens).toLocaleString('en');
                 setBalance(formatBal);
                 // turn off the loading circle for initial fetches
