@@ -25,7 +25,7 @@ import { defaultAddress } from '../../data/affiliationProgram';
 import Web3Utils from 'web3-utils';
 import { toast } from 'react-toastify';
 import Skeleton from '@material-ui/lab/Skeleton';
-import BigNumber from 'bignumber.js';
+import BN from 'bn.js';
 
 const useStyles = makeStyles(theme =>
     createStyles({
@@ -148,7 +148,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address, onClic
     const [unlocked, setUnlockState] = useState(false);
     const [isLoading, setLoading] = useState(false);
     const [balanceLoaded, setBalanceLoaded] = useState(false);
-    const [lockVal, setLockVal] = useState<BigNumber>();
+    const [lockVal, setLockVal] = useState<BN>();
 
     const checkUnlock = useCallback(() => {
         // get today in UTC epoch seconds (js default is ms)
@@ -160,7 +160,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address, onClic
         const unlockDate = lockedDay + lockInfo.duration * epochDayMil;
 
         // check if the balance is 0 or not
-        const lockClaimState = typeof lockVal !== 'undefined' && lockVal.isLessThanOrEqualTo(new BigNumber(0));
+        const lockClaimState = typeof lockVal !== 'undefined' && lockVal.lte(new BN(0));
         // console.log(lockBalance);
         setUnlockState(lockClaimState);
         return today > unlockDate;
@@ -180,7 +180,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address, onClic
 
     const fetchBalance = useCallback(async () => {
         const bal = await web3.eth.getBalance(lockInfo.lock);
-        return new BigNumber(bal);
+        return new BN(bal);
     }, [lockInfo.lock, web3.eth]);
 
     // initial update

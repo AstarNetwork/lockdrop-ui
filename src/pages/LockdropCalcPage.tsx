@@ -22,7 +22,7 @@ import {
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Container, Typography } from '@material-ui/core';
-import BigNumber from 'bignumber.js';
+import BN from 'bn.js';
 import { ethDurations } from 'src/data/lockInfo';
 import { ApiPromise } from '@polkadot/api';
 import * as plasmUtils from '../helpers/plasmUtils';
@@ -52,7 +52,7 @@ const LockdropCalcPage = () => {
     useEffect(() => {
         setIsLoading({ loading: true, message: 'Connecting to Plasm Network' });
         (async () => {
-            const api = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Main);
+            const api = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Local);
             setPlasmApi(api);
 
             const networkAlpha = await plasmUtils.getLockdropAlpha(api);
@@ -97,10 +97,14 @@ const LockdropCalcPage = () => {
                 : tokenType === 'BTC' // or use exchange rate for each token
                 ? tokenExRate[0]
                 : tokenExRate[1];
-            const _lockVal = new BigNumber(tokenAmount).times(new BigNumber(_exRate));
-            const total = _lockVal.times(new BigNumber(returnAlpha)).times(new BigNumber(lockDuration));
-            if (total.isNaN()) throw new Error('Invalid value in the calculation');
-            return parseFloat(total.toFixed()).toLocaleString('en');
+
+            // Since BN doesn't support decimals be careful about returnAlpha which is decimal number.
+            const multiplier = 1000000000000000; // todo use number of decimals here from other branch
+            const newAlpha = returnAlpha * multiplier;
+            const _lockVal = new BN(tokenAmount).mul(new BN(_exRate));
+            const total = _lockVal.mul(new BN(newAlpha)).mul(new BN(lockDuration));
+            const totalDiv = parseFloat(total.toString()) / multiplier;
+            return totalDiv.toLocaleString('en');
         } catch (e) {
             return '0';
         }

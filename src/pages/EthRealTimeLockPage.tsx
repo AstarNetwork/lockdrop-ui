@@ -171,9 +171,10 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                     setWeb3(web3Inst);
                     setContract(_contract);
                     setAccount(ethAddr[0]);
+
                     // connect to plasm node
                     const plasmNode = await plasmUtils.createPlasmInstance(
-                        isMainnetLock ? plasmUtils.PlasmNetwork.Main : plasmUtils.PlasmNetwork.Dusty,
+                        isMainnetLock ? plasmUtils.PlasmNetwork.Main : plasmUtils.PlasmNetwork.Local,
                     );
                     setPlasmApi(plasmNode);
                 } else {
