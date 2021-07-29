@@ -1,16 +1,14 @@
 import React, { useMemo, useState, useEffect, useContext } from 'react';
 import { ApiPromise } from '@polkadot/api';
-import Web3 from 'web3';
 import { ApiContext, ApiProps } from './ApiContext';
 import { getApi, PlasmNetwork } from './plasmUtils';
 
 const DEFAULT_NETWORK = PlasmNetwork.Local;
 let api: ApiPromise;
-let web3: Web3;
 
 function Api({ network = DEFAULT_NETWORK, children }: Props): React.ReactElement<Props> {
     const [isReady, setIsReady] = useState<boolean>(false);
-    const value = useMemo<ApiProps>(() => ({ api, web3, isReady, network }), [isReady, network]);
+    const value = useMemo<ApiProps>(() => ({ api, isReady, network }), [isReady, network]);
 
     useEffect(() => {
         api = getApi(network);

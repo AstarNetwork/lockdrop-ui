@@ -4,7 +4,6 @@ import { IonContent, IonPage, IonLoading, IonButton } from '@ionic/react';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import LockdropForm from '../components/EthLock/LockdropForm';
 import * as ethLockdrop from '../helpers/lockdrop/EthereumLockdrop';
-import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
@@ -12,7 +11,6 @@ import { LockInput, LockEvent } from '../types/LockdropModels';
 import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { removeWeb3Event } from '../helpers/getWeb3';
 import SectionCard from '../components/SectionCard';
 import { Typography, Container, Divider, makeStyles, createStyles } from '@material-ui/core';
 import * as plasmUtils from '../helpers/plasmUtils';
@@ -25,6 +23,7 @@ import { secondLockContract } from '../data/lockInfo';
 import Dropdown from 'react-dropdown';
 import 'react-dropdown/style.css';
 import { useApi } from 'src/helpers/Api';
+import { useEth } from 'src/helpers/Web3Api';
 
 const useStyles = makeStyles(theme =>
     createStyles({
@@ -51,11 +50,20 @@ const EthRealTimeLockPage: React.FC = () => {
 
     // this is used for rendering network names
     const plasmNetToEthNet = isMainnetLock ? 'Main Network' : 'Ropsten';
+    const {
+        web3,
+        account,
+        contract,
+        latestBlock,
+        error,
+        lockdropStart,
+        lockdropEnd,
+        isChangingContract,
+        setLatestBlock,
+        setAccount,
+        changeContractAddress,
+    } = useEth();
 
-    const [web3, setWeb3] = useState<Web3>();
-    const [account, setAccount] = useState<string>('');
-    const [contract, setContract] = useState<Contract>();
-    const [latestBlock, setLatestBlock] = useState(0);
     // set default testnet contract address
     const [contractAddress, setContractAddress] = useState(() => {
         const _mainContract = secondLockContract.find(i => i.type === 'main')?.address;
@@ -76,14 +84,11 @@ const EthRealTimeLockPage: React.FC = () => {
         message: '',
     });
 
-    const [currentNetwork, setCurrentNetwork] = useState('');
+    const [currentNetwork] = useState('');
     // get lock event list from the local storage if it exists
     const [allLockEvents, setLockEvents] = useState<LockEvent[]>([]);
 
     const [publicKey, setPublicKey] = useState<string>();
-
-    const [lockdropStart, setLockdropStart] = useState('0');
-    const [lockdropEnd, setLockdropEnd] = useState('0');
 
     const isMainnet = (currentNetwork: string) => {
         return currentNetwork === 'main';
@@ -136,50 +141,33 @@ const EthRealTimeLockPage: React.FC = () => {
         [latestBlock, allLockEvents],
     );
 
-    // initial API loading
+    // wait for initial API loading or errors
     useEffect(() => {
-        setLoading({
-            loading: true,
-            message: 'Syncing with Ethereum...',
-        });
-        (async function() {
-            try {
-                const web3Inst = await ethLockdrop.connectWeb3();
-                const _netType = await web3Inst.eth.net.getNetworkType();
-
-                if (isMainnet(_netType) === isMainnetLock) {
-                    // get user account from injected web3
-                    const ethAddr = await ethLockdrop.fetchAllAddresses(web3Inst);
-                    setCurrentNetwork(_netType);
-                    const _latest = await web3Inst.eth.getBlockNumber();
-                    setLatestBlock(_latest);
-
-                    const _contract = await ethLockdrop.createContractInstance(web3Inst, contractAddress);
-
-                    // check contract start and end dates
-                    const _end = await ethLockdrop.getContractEndDate(_contract);
-                    const _start = await ethLockdrop.getContractStartDate(_contract);
-                    setLockdropEnd(_end);
-                    setLockdropStart(_start);
-
-                    await handleFetchLockEvents(_contract);
-
-                    setWeb3(web3Inst);
-                    setContract(_contract);
-                    setAccount(ethAddr[0]);
-                } else {
-                    throw new Error('User is not connected to ' + plasmNetToEthNet);
-                }
-            } catch (e) {
-                toast.error(e.message);
-                console.log(e);
-            }
-        })().finally(() => {
+        if (typeof web3 === 'undefined') {
+            setLoading({
+                loading: true,
+                message: 'Syncing with Ethereum...',
+            });
+        } else {
             setLoading({ loading: false, message: '' });
-        });
-        // we disable this because we want this to only call once (on component mount)
-        // eslint-disable-next-line
-    }, []);
+        }
+
+        if (typeof error !== 'undefined') {
+            toast.error(error.message);
+            console.log(error);
+        }
+    }, [web3, error]);
+
+    // load lock events
+    useEffect(() => {
+        const fetchLockEvents = async () => {
+            if (typeof contract !== 'undefined') {
+                await handleFetchLockEvents(contract);
+            }
+        };
+
+        fetchLockEvents();
+    }, [contract]);
 
     // fetch ethereum block header in the background
     useEffect(() => {
@@ -206,38 +194,21 @@ const EthRealTimeLockPage: React.FC = () => {
 
     // refresh if contract reloads
     useEffect(() => {
-        if (web3) {
+        if (isChangingContract) {
             setLoading({
                 loading: true,
                 message: 'Connecting to Web3 instance with new contract...',
             });
-
-            (async function() {
-                // fetch a new contract
-                const _contract = await ethLockdrop.createContractInstance(web3, contractAddress);
-                // fetch new lock events
-                await handleFetchLockEvents(_contract);
-                // check contract start and end dates
-                const _end = await ethLockdrop.getContractEndDate(_contract);
-                const _start = await ethLockdrop.getContractStartDate(_contract);
-                setLockdropEnd(_end);
-                setLockdropStart(_start);
-                setContract(_contract);
-            })()
-                .catch(e => {
-                    console.log(e);
-                    toast.error(e.message);
-                })
-                .finally(() => {
-                    setLoading({ loading: false, message: '' });
-                });
+        } else {
+            setLoading({ loading: false, message: '' });
         }
-        return () => {
-            removeWeb3Event();
-        };
+
+        if (web3) {
+            changeContractAddress(contractAddress);
+        }
         // we disable next line to prevent change on getClaimParams
         // eslint-disable-next-line
-    }, [contractAddress]);
+    }, [contractAddress, isChangingContract]);
 
     /**
      * called when the user changes MetaMask account
