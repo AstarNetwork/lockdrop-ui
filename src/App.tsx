@@ -50,7 +50,7 @@ const App: React.FC = () => {
                         <Route
                             path="/lock-form/dusty-eth"
                             component={(props: any) => (
-                                <EthRealTimeLockPage {...props} lockdropNetwork={plasmUtils.PlasmNetwork.Dusty} />
+                                <EthRealTimeLockPage {...props} lockdropNetwork={plasmUtils.PlasmNetwork.Local} />
                             )}
                         />
                         <Route path="/utils-calculator" component={LockdropCalcPage} />
