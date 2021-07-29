@@ -24,7 +24,7 @@ import Web3Utils from 'web3-utils';
 import SendIcon from '@material-ui/icons/Send';
 import CheckIcon from '@material-ui/icons/Check';
 import { green } from '@material-ui/core/colors';
-import BigNumber from 'bignumber.js';
+import BN from 'bn.js';
 import Badge from '@material-ui/core/Badge';
 import ThumbUpIcon from '@material-ui/icons/ThumbUp';
 import ThumbDownIcon from '@material-ui/icons/ThumbDown';
@@ -164,7 +164,7 @@ const ClaimItem: React.FC<ItemProps> = ({
     const receivingPlm = useMemo(() => {
         if (typeof claimData === 'undefined') return '0';
 
-        return plasmUtils.femtoToPlm(new BigNumber(claimData.amount.toString())).toFixed();
+        return plasmUtils.femtoToPlmBN(new BN(claimData.amount.toString())).toString();
     }, [claimData]);
 
     const claimStatus = useMemo(() => {

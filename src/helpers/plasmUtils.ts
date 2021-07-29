@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import BigNumber from 'bignumber.js';
+import BN from 'bn.js';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { H256 } from '@polkadot/types/interfaces';
 import * as polkadotUtilCrypto from '@polkadot/util-crypto';
@@ -7,7 +8,7 @@ import * as polkadotUtils from '@polkadot/util';
 import { u8aConcat } from '@polkadot/util';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
 import { BlockNumber } from '@polkadot/types/interfaces';
-import * as plasmDefinitions from '@plasm/types/interfaces/definitions';
+import * as plasmDefinitions from '@plasm/types/dist/interfaces/definitions';
 import { LockdropType, Claim, Lockdrop, LockEvent } from 'src/types/LockdropModels';
 
 /**
@@ -29,6 +30,18 @@ export function femtoToPlm(femto: BigNumber) {
     }
     const plmDenominator = new BigNumber(10).pow(new BigNumber(15));
     return femto.dividedBy(plmDenominator);
+}
+
+/**
+ * converts the plasm network minimum denominator to PLM
+ * @param femto minimum token value
+ */
+export function femtoToPlmBN(femto: BN): BN {
+    if (femto.lte(new BN(0))) {
+        return new BN(0);
+    }
+    const plmDenominator = new BN(10).pow(new BN(15));
+    return femto.div(plmDenominator);
 }
 
 /**
