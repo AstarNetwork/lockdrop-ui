@@ -7,7 +7,7 @@ import * as polkadotUtils from '@polkadot/util';
 import { u8aConcat } from '@polkadot/util';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
 import { BlockNumber } from '@polkadot/types/interfaces';
-import * as plasmDefinitions from '@plasm/types/interfaces/definitions';
+import { plasmDefinitions, dustyDefinitions } from '@plasm/types';
 import { LockdropType, Claim, Lockdrop, LockEvent } from 'src/types/LockdropModels';
 
 /**
@@ -81,17 +81,15 @@ export function getNetworkEndpoint(network?: PlasmNetwork) {
 }
 
 /**
- * establishes a connection between the client and the plasm node with the given endpoint.
- * this will default to the main net node
+ * creates ApiPromise for a given network
  * @param network end point for the client to connect to
  */
-export async function createPlasmInstance(network?: PlasmNetwork) {
-    const endpoint = getNetworkEndpoint(network);
-    const types = Object.values(plasmDefinitions).reduce((res, { types }): object => ({ ...res, ...types }), {});
-    const wsProvider = new WsProvider(endpoint);
-
-    const api = await ApiPromise.create({
-        provider: wsProvider,
+export function getApi(network: PlasmNetwork): ApiPromise {
+    const types = network === PlasmNetwork.Main ? plasmDefinitions : dustyDefinitions;
+    const url = getNetworkEndpoint(network);
+    const provider = new WsProvider(url);
+    return new ApiPromise({
+        provider,
         types: {
             ...types,
             // aliases that don't do well as part of interfaces
@@ -104,10 +102,16 @@ export async function createPlasmInstance(network?: PlasmNetwork) {
             Votes: 'VotesTo230',
             ReferendumInfo: 'ReferendumInfoTo239',
         },
-        // override duplicate type name
-        typesAlias: { voting: { Tally: 'VotingTally' } },
     });
+}
 
+/**
+ * establishes a connection between the client and the plasm node with the given endpoint.
+ * this will default to the main net node
+ * @param network end point for the client to connect to
+ */
+export async function createPlasmInstance(network?: PlasmNetwork) {
+    const api = getApi(network || PlasmNetwork.Main);
     return await api.isReady;
 }
 
