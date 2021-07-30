@@ -3,14 +3,12 @@
 import { IonContent, IonPage, IonLoading } from '@ionic/react';
 import React, { useState, useEffect } from 'react';
 import * as ethLockdrop from '../helpers/lockdrop/EthereumLockdrop';
-import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { LockEvent } from '../types/LockdropModels';
 import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { removeWeb3Event } from '../helpers/getWeb3';
 import SectionCard from '../components/SectionCard';
 import { Typography, Divider } from '@material-ui/core';
 import moment from 'moment';
@@ -19,10 +17,20 @@ import { firstLockContract } from '../data/lockInfo';
 import 'react-dropdown/style.css';
 import LockdropResult from 'src/components/EthLock/LockdropResult';
 import AffiliationList from 'src/components/EthLock/AffiliationList';
+import { useEth, isMainnet } from 'src/helpers/Web3Api';
 
 const FirstEthLockdropPage: React.FC = () => {
-    const [web3, setWeb3] = useState<Web3>();
-    const [, setAccount] = useState<string>('');
+    const {
+        web3,
+        contract,
+        isWeb3Loading,
+        error,
+        lockdropStart,
+        lockdropEnd,
+        currentNetwork,
+        setIsMainnetLock,
+        changeContractAddress,
+    } = useEth();
 
     const [isLoading, setLoading] = useState<{
         loading: boolean;
@@ -32,17 +40,20 @@ const FirstEthLockdropPage: React.FC = () => {
         message: '',
     });
 
-    const [networkType, setNetworkType] = useState('');
     const [allLockEvents, setLockEvents] = useState<LockEvent[]>([]);
-
-    const [lockdropStart, setLockdropStart] = useState('0');
-    const [lockdropEnd, setLockdropEnd] = useState('0');
-
-    const isMainnet = (currentNetwork: string) => {
-        return currentNetwork === 'main';
-    };
-
     const lockStoreKey = `id:${firstLockContract.find(i => i.type === 'main')?.address}`;
+
+    // Set network and contract address
+    useEffect(() => {
+        setIsMainnetLock(true);
+
+        const contAddr = firstLockContract.find(i => i.type === 'main')?.address;
+        if (typeof contAddr !== 'undefined') {
+            changeContractAddress(contAddr);
+        } else {
+            toast.error('Could not find lockdrop contract');
+        }
+    }, []);
 
     // store all lock events to local storage every time things changes
     useEffect(() => {
@@ -55,52 +66,37 @@ const FirstEthLockdropPage: React.FC = () => {
         }
     }, [allLockEvents, lockStoreKey]);
 
-    // load web3 instance
+    // Wait for initial API loading
     useEffect(() => {
-        setLoading({
-            loading: true,
-            message: 'Connecting to Web3 instance...',
-        });
-        (async function() {
-            try {
-                const web3State = await ethLockdrop.connectWeb3();
-                const _netType = await web3State.eth.net.getNetworkType();
-                setNetworkType(_netType);
-                if (isMainnet(_netType)) {
-                    const contAddr = firstLockContract.find(i => i.type === 'main')?.address;
-                    if (typeof contAddr === 'undefined') {
-                        throw new Error('Could not find lockdrop contract');
-                    }
-
-                    const _contract = await ethLockdrop.createContractInstance(web3State, contAddr);
-
-                    const ethAddr = await ethLockdrop.fetchAllAddresses(web3State);
-
-                    // check contract start and end dates
-                    const _end = await ethLockdrop.getContractEndDate(_contract);
-                    const _start = await ethLockdrop.getContractStartDate(_contract);
-                    setLockdropEnd(_end);
-                    setLockdropStart(_start);
-
-                    setWeb3(web3State);
-                    setAccount(ethAddr[0]);
-
-                    const _allLocks = await ethLockdrop.getAllLockEvents(_contract);
-                    setLockEvents(_allLocks);
-                }
-            } catch (e) {
-                toast.error(e.message);
-                console.log(e);
-            }
-        })().finally(() => {
+        if (isWeb3Loading) {
+            setLoading({
+                loading: true,
+                message: 'Syncing with Ethereum...',
+            });
+        } else {
             setLoading({ loading: false, message: '' });
-        });
-        return () => {
-            removeWeb3Event();
+        }
+    }, [isWeb3Loading]);
+
+    // Display error messages
+    useEffect(() => {
+        if (typeof error !== 'undefined') {
+            setLoading({ loading: false, message: '' });
+            toast.error(error);
+        }
+    }, [error]);
+
+    // Load lock events
+    useEffect(() => {
+        const fetchLockEvents = async () => {
+            if (typeof contract !== 'undefined') {
+                const _allLocks = await ethLockdrop.getAllLockEvents(contract);
+                setLockEvents(_allLocks);
+            }
         };
-        // we disable this because we want this to only call once (on component mount)
-        // eslint-disable-next-line
-    }, []);
+
+        fetchLockEvents();
+    }, [contract]);
 
     return (
         <IonPage>
@@ -108,7 +104,7 @@ const FirstEthLockdropPage: React.FC = () => {
             <IonContent>
                 <>
                     <IonLoading isOpen={isLoading.loading} message={isLoading.message} />
-                    {!isMainnet(networkType) ? (
+                    {!isMainnet(currentNetwork) ? (
                         <SectionCard maxWidth="lg">
                             <Typography variant="h2" component="h4" align="center">
                                 Please access this page with a Mainnet wallet

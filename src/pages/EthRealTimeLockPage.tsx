@@ -145,7 +145,6 @@ const EthRealTimeLockPage: React.FC = () => {
 
     // Set contract address
     useEffect(() => {
-        console.log('changing contract address ', contractAddress);
         changeContractAddress(contractAddress);
     }, [contractAddress]);
 
@@ -163,7 +162,6 @@ const EthRealTimeLockPage: React.FC = () => {
 
     // Display error messages
     useEffect(() => {
-        console.log('Error is ', error);
         if (typeof error !== 'undefined') {
             setLoading({ loading: false, message: '' });
             toast.error(error);
@@ -224,9 +222,6 @@ const EthRealTimeLockPage: React.FC = () => {
             }
         }
 
-        if (web3) {
-            //changeContractAddress(contractAddress);
-        }
         // we disable next line to prevent change on getClaimParams
         // eslint-disable-next-line
     }, [contractAddress, isChangingContract]);
