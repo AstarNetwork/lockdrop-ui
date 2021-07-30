@@ -18,12 +18,16 @@ function Web3Api({ contractAddress = defaultContract, children }: Props): React.
     const [lockdropEnd, setLockdropEnd] = useState<string>('0');
     const [error, setError] = useState<Error>();
     const [isChangingContract, setIsChangingContract] = useState<boolean>(false);
+    const [isWeb3Ready, setIsWeb3Ready] = useState<boolean>(false);
 
-    const createContract = async (address: string) => {
+    const createContract = async (address: string, isInitial: boolean) => {
         console.log('Creating contract with address ', address);
 
         try {
-            setIsChangingContract(true);
+            if (!isInitial) {
+                setIsChangingContract(true);
+            }
+
             setError(undefined);
             const contract = await ethLockdrop.createContractInstance(web3, address);
 
@@ -32,7 +36,10 @@ function Web3Api({ contractAddress = defaultContract, children }: Props): React.
             setLockdropStart(start);
             setLockdropEnd(end);
             setContract(contract);
-            setIsChangingContract(false);
+
+            if (!isInitial) {
+                setIsChangingContract(false);
+            }
         } catch (err) {
             setError(err);
         }
@@ -41,6 +48,7 @@ function Web3Api({ contractAddress = defaultContract, children }: Props): React.
     const value = useMemo<Web3ApiProps>(
         () => ({
             web3,
+            isWeb3Ready,
             currentNetwork,
             latestBlock,
             account,
@@ -49,7 +57,7 @@ function Web3Api({ contractAddress = defaultContract, children }: Props): React.
             lockdropEnd,
             error,
             isChangingContract,
-            changeContractAddress: address => createContract(address),
+            changeContractAddress: address => createContract(address, false),
             setLatestBlock: block => setLatestBlock(block),
             setAccount: account => setAccount(account),
         }),
@@ -60,6 +68,7 @@ function Web3Api({ contractAddress = defaultContract, children }: Props): React.
         const initialize = async () => {
             try {
                 setError(undefined);
+                setIsWeb3Ready(false);
                 web3 = await ethLockdrop.connectWeb3();
 
                 const network = await web3.eth.net.getNetworkType();
@@ -71,7 +80,9 @@ function Web3Api({ contractAddress = defaultContract, children }: Props): React.
                 const latest = await web3.eth.getBlockNumber();
                 setLatestBlock(latest);
 
-                createContract(contractAddress);
+                createContract(contractAddress, true);
+
+                setIsWeb3Ready(true);
             } catch (err) {
                 setError(err);
             }

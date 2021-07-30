@@ -52,6 +52,7 @@ const EthRealTimeLockPage: React.FC = () => {
     const plasmNetToEthNet = isMainnetLock ? 'Main Network' : 'Ropsten';
     const {
         web3,
+        isWeb3Ready,
         account,
         contract,
         latestBlock,
@@ -143,7 +144,7 @@ const EthRealTimeLockPage: React.FC = () => {
 
     // wait for initial API loading or errors
     useEffect(() => {
-        if (typeof web3 === 'undefined') {
+        if (!isWeb3Ready) {
             setLoading({
                 loading: true,
                 message: 'Syncing with Ethereum...',
@@ -156,7 +157,7 @@ const EthRealTimeLockPage: React.FC = () => {
             toast.error(error.message);
             console.log(error);
         }
-    }, [web3, error]);
+    }, [isWeb3Ready, error]);
 
     // load lock events
     useEffect(() => {
@@ -195,12 +196,16 @@ const EthRealTimeLockPage: React.FC = () => {
     // refresh if contract reloads
     useEffect(() => {
         if (isChangingContract) {
-            setLoading({
-                loading: true,
-                message: 'Connecting to Web3 instance with new contract...',
-            });
+            if (isWeb3Ready) {
+                setLoading({
+                    loading: true,
+                    message: 'Connecting to Web3 instance with new contract...',
+                });
+            }
         } else {
-            setLoading({ loading: false, message: '' });
+            if (isWeb3Ready) {
+                setLoading({ loading: false, message: '' });
+            }
         }
 
         if (web3) {

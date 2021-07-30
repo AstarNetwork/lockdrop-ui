@@ -4,6 +4,7 @@ import { Contract } from 'web3-eth-contract';
 
 export interface Web3ApiProps {
     web3: Web3;
+    isWeb3Ready: boolean;
     currentNetwork: string;
     latestBlock: number;
     account: string;
