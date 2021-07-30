@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import BigNumber from 'bignumber.js';
-import { ApiPromise, WsProvider } from '@polkadot/api';
+import { ApiPromise } from '@polkadot/api';
 import { H256 } from '@polkadot/types/interfaces';
 import * as polkadotUtilCrypto from '@polkadot/util-crypto';
 import * as polkadotUtils from '@polkadot/util';
 import { u8aConcat } from '@polkadot/util';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
 import { BlockNumber } from '@polkadot/types/interfaces';
-import { plasmDefinitions, dustyDefinitions } from '@plasm/types';
 import { LockdropType, Claim, Lockdrop, LockEvent } from 'src/types/LockdropModels';
 
 /**
@@ -56,64 +55,6 @@ export function claimPowNonce(claimId: Uint8Array | H256): Uint8Array {
  * used for adding new polkadot-js api types for communicating with plasm node
  */
 const plasmTypeReg = new TypeRegistry();
-
-/**
- * gets endpoint url for a given network
- * @param network the network
- */
-export function getNetworkEndpoint(network?: PlasmNetwork) {
-    let endpoint: string;
-
-    switch (network) {
-        case PlasmNetwork.Local:
-            endpoint = 'ws://127.0.0.1:9944';
-            break;
-        case PlasmNetwork.Dusty:
-            endpoint = 'wss://rpc.dusty.plasmnet.io/';
-            break;
-        case PlasmNetwork.Main: // main net endpoint will be the default value
-        default:
-            endpoint = 'wss://rpc.plasmnet.io';
-            break;
-    }
-
-    return endpoint;
-}
-
-/**
- * creates ApiPromise for a given network
- * @param network end point for the client to connect to
- */
-export function getApi(network: PlasmNetwork): ApiPromise {
-    const types = network === PlasmNetwork.Main ? plasmDefinitions : dustyDefinitions;
-    const url = getNetworkEndpoint(network);
-    const provider = new WsProvider(url);
-    return new ApiPromise({
-        provider,
-        types: {
-            ...types,
-            // aliases that don't do well as part of interfaces
-            'voting::VoteType': 'VoteType',
-            'voting::TallyType': 'TallyType',
-            // chain-specific overrides
-            Address: 'GenericAddress',
-            Keys: 'SessionKeys4',
-            StakingLedger: 'StakingLedgerTo223',
-            Votes: 'VotesTo230',
-            ReferendumInfo: 'ReferendumInfoTo239',
-        },
-    });
-}
-
-/**
- * establishes a connection between the client and the plasm node with the given endpoint.
- * this will default to the main net node
- * @param network end point for the client to connect to
- */
-export async function createPlasmInstance(network?: PlasmNetwork) {
-    const api = getApi(network || PlasmNetwork.Main);
-    return await api.isReady;
-}
 
 /**
  * convert the given lock duration in to PLM issue bonus rate
