@@ -8,6 +8,10 @@ import { defaultContract } from 'src/data/lockInfo';
 
 let web3: Web3;
 
+export const isMainnet = (currentNetwork: string) => {
+    return currentNetwork === 'main';
+};
+
 function Web3Api({ contractAddress = defaultContract, children }: Props): React.ReactElement<Props> {
     // TODO useReducer, to many state variables
     const [currentNetwork, setCurrentNetwork] = useState<string>('');
@@ -16,29 +20,35 @@ function Web3Api({ contractAddress = defaultContract, children }: Props): React.
     const [contract, setContract] = useState<Contract>();
     const [lockdropStart, setLockdropStart] = useState<string>('0');
     const [lockdropEnd, setLockdropEnd] = useState<string>('0');
-    const [error, setError] = useState<Error>();
+    const [error, setError] = useState<string>();
     const [isChangingContract, setIsChangingContract] = useState<boolean>(false);
-    const [isWeb3Ready, setIsWeb3Ready] = useState<boolean>(false);
+    const [isWeb3Loading, setIsWeb3Loading] = useState<boolean>(false);
+    const [isMainnetLock, setIsMainnetLock] = useState<boolean | undefined>(undefined);
+    const [_contractAddress, _setContactAddress] = useState<string>(contractAddress);
+
+    const plasmNetToEthNet = isMainnetLock ? 'Main Network' : 'Ropsten';
 
     const createContract = async (address: string, isInitial: boolean) => {
         console.log('Creating contract with address ', address);
-
+        _setContactAddress(address);
         try {
-            if (!isInitial) {
-                setIsChangingContract(true);
-            }
+            if (web3) {
+                if (!isInitial) {
+                    setIsChangingContract(true);
+                }
 
-            setError(undefined);
-            const contract = await ethLockdrop.createContractInstance(web3, address);
+                setError(undefined);
+                const contract = await ethLockdrop.createContractInstance(web3, address);
 
-            const start = await ethLockdrop.getContractStartDate(contract);
-            const end = await ethLockdrop.getContractEndDate(contract);
-            setLockdropStart(start);
-            setLockdropEnd(end);
-            setContract(contract);
+                const start = await ethLockdrop.getContractStartDate(contract);
+                const end = await ethLockdrop.getContractEndDate(contract);
+                setLockdropStart(start);
+                setLockdropEnd(end);
+                setContract(contract);
 
-            if (!isInitial) {
-                setIsChangingContract(false);
+                if (!isInitial) {
+                    setIsChangingContract(false);
+                }
             }
         } catch (err) {
             setError(err);
@@ -48,7 +58,7 @@ function Web3Api({ contractAddress = defaultContract, children }: Props): React.
     const value = useMemo<Web3ApiProps>(
         () => ({
             web3,
-            isWeb3Ready,
+            isWeb3Loading,
             currentNetwork,
             latestBlock,
             account,
@@ -60,31 +70,55 @@ function Web3Api({ contractAddress = defaultContract, children }: Props): React.
             changeContractAddress: address => createContract(address, false),
             setLatestBlock: block => setLatestBlock(block),
             setAccount: account => setAccount(account),
+            setIsMainnetLock: value => setIsMainnetLock(value),
         }),
-        [web3, currentNetwork, latestBlock, account, contract, lockdropStart, lockdropEnd],
+        [
+            web3,
+            isWeb3Loading,
+            currentNetwork,
+            latestBlock,
+            account,
+            contract,
+            lockdropStart,
+            lockdropEnd,
+            error,
+            isChangingContract,
+        ],
     );
 
     useEffect(() => {
         const initialize = async () => {
+            if (typeof isMainnetLock === 'undefined') {
+                console.log('isMainnetLock is undefined');
+                return;
+            }
+
+            console.log('initializing web3, isMainnetLock ', isMainnetLock);
+            setError(undefined);
+            setIsWeb3Loading(true);
+
             try {
-                setError(undefined);
-                setIsWeb3Ready(false);
                 web3 = await ethLockdrop.connectWeb3();
 
                 const network = await web3.eth.net.getNetworkType();
                 setCurrentNetwork(network);
 
-                const accounts = await ethLockdrop.fetchAllAddresses(web3);
-                setAccount(accounts[0]);
+                if (isMainnet(network) === isMainnetLock) {
+                    const accounts = await ethLockdrop.fetchAllAddresses(web3);
+                    setAccount(accounts[0]);
 
-                const latest = await web3.eth.getBlockNumber();
-                setLatestBlock(latest);
+                    const latest = await web3.eth.getBlockNumber();
+                    setLatestBlock(latest);
 
-                createContract(contractAddress, true);
-
-                setIsWeb3Ready(true);
+                    createContract(_contractAddress, true);
+                } else {
+                    setError('User is not connected to ' + plasmNetToEthNet);
+                }
             } catch (err) {
-                setError(err);
+                console.log(err);
+                setError(err.message);
+            } finally {
+                setIsWeb3Loading(false);
             }
         };
 
@@ -93,7 +127,7 @@ function Web3Api({ contractAddress = defaultContract, children }: Props): React.
         return () => {
             removeWeb3Event();
         };
-    }, []);
+    }, [isMainnetLock]);
 
     return <Web3Context.Provider value={value}>{children}</Web3Context.Provider>;
 }

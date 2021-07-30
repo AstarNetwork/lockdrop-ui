@@ -22,7 +22,7 @@ import AffiliationList from 'src/components/EthLock/AffiliationList';
 
 const FirstEthLockdropPage: React.FC = () => {
     const [web3, setWeb3] = useState<Web3>();
-    const [account, setAccount] = useState<string>('');
+    const [, setAccount] = useState<string>('');
 
     const [isLoading, setLoading] = useState<{
         loading: boolean;
@@ -125,14 +125,14 @@ const FirstEthLockdropPage: React.FC = () => {
                                 {web3 && (
                                     <>
                                         <Divider />
-                                        <LockdropResult lockData={allLockEvents} web3={web3} />
+                                        <LockdropResult lockData={allLockEvents} />
                                     </>
                                 )}
                             </SectionCard>
 
                             <AffiliationList lockData={allLockEvents} />
 
-                            {web3 && <LockedEthList web3={web3} account={account} lockData={allLockEvents} />}
+                            {web3 && <LockedEthList lockData={allLockEvents} />}
                         </>
                     )}
                 </>

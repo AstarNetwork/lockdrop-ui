@@ -27,15 +27,15 @@ import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import VpnKeyIcon from '@material-ui/icons/VpnKey';
 import { generatePlmAddress } from 'src/helpers/plasmUtils';
+import { useEth } from 'src/helpers/Web3Api';
 
 const etherScanSearch = 'https://etherscan.io/address/';
 
 interface ResultProps {
     lockData: LockEvent[];
-    web3: Web3;
 }
 
-const LockdropResult: React.FC<ResultProps> = ({ lockData, web3 }) => {
+const LockdropResult: React.FC<ResultProps> = ({ lockData }) => {
     const useStyles = makeStyles((theme: Theme) =>
         createStyles({
             pageContent: {
@@ -57,6 +57,7 @@ const LockdropResult: React.FC<ResultProps> = ({ lockData, web3 }) => {
     const [isLoading, setLoadState] = useState(true);
     const [showIntoRefPopover, setShowIntroRefPopover] = useState(false);
     const [showIntoPopover, setShowIntroPopover] = useState(false);
+    const { web3 } = useEth();
 
     useEffect(() => {
         const interval = setInterval(async () => {

@@ -52,7 +52,7 @@ const EthRealTimeLockPage: React.FC = () => {
     const plasmNetToEthNet = isMainnetLock ? 'Main Network' : 'Ropsten';
     const {
         web3,
-        isWeb3Ready,
+        isWeb3Loading,
         account,
         contract,
         latestBlock,
@@ -60,13 +60,14 @@ const EthRealTimeLockPage: React.FC = () => {
         lockdropStart,
         lockdropEnd,
         isChangingContract,
+        currentNetwork,
         setLatestBlock,
         setAccount,
         changeContractAddress,
+        setIsMainnetLock,
     } = useEth();
 
-    // set default testnet contract address
-    const [contractAddress, setContractAddress] = useState(() => {
+    const getContractAddress = () => {
         const _mainContract = secondLockContract.find(i => i.type === 'main')?.address;
         // always use the last contract as default if it's testnet
         const _ropContract = secondLockContract.filter(i => i.type === 'ropsten')[1].address;
@@ -75,7 +76,9 @@ const EthRealTimeLockPage: React.FC = () => {
         if (typeof _addr === 'undefined') throw new Error('Could not find the correct contract address');
 
         return _addr;
-    });
+    };
+
+    const [contractAddress, setContractAddress] = useState<string>(getContractAddress());
 
     const [isLoading, setLoading] = useState<{
         loading: boolean;
@@ -85,10 +88,8 @@ const EthRealTimeLockPage: React.FC = () => {
         message: '',
     });
 
-    const [currentNetwork] = useState('');
     // get lock event list from the local storage if it exists
     const [allLockEvents, setLockEvents] = useState<LockEvent[]>([]);
-
     const [publicKey, setPublicKey] = useState<string>();
 
     const isMainnet = (currentNetwork: string) => {
@@ -142,9 +143,15 @@ const EthRealTimeLockPage: React.FC = () => {
         [latestBlock, allLockEvents],
     );
 
-    // wait for initial API loading or errors
+    // Set contract address
     useEffect(() => {
-        if (!isWeb3Ready) {
+        console.log('changing contract address ', contractAddress);
+        changeContractAddress(contractAddress);
+    }, [contractAddress]);
+
+    // Wait for initial API loading
+    useEffect(() => {
+        if (isWeb3Loading) {
             setLoading({
                 loading: true,
                 message: 'Syncing with Ethereum...',
@@ -152,14 +159,18 @@ const EthRealTimeLockPage: React.FC = () => {
         } else {
             setLoading({ loading: false, message: '' });
         }
+    }, [isWeb3Loading]);
 
+    // Display error messages
+    useEffect(() => {
+        console.log('Error is ', error);
         if (typeof error !== 'undefined') {
-            toast.error(error.message);
-            console.log(error);
+            setLoading({ loading: false, message: '' });
+            toast.error(error);
         }
-    }, [isWeb3Ready, error]);
+    }, [error]);
 
-    // load lock events
+    // Load lock events
     useEffect(() => {
         const fetchLockEvents = async () => {
             if (typeof contract !== 'undefined') {
@@ -169,6 +180,11 @@ const EthRealTimeLockPage: React.FC = () => {
 
         fetchLockEvents();
     }, [contract]);
+
+    // Recreate web3 instance if network changed
+    useEffect(() => {
+        setIsMainnetLock(isMainnetLock);
+    }, [network]);
 
     // fetch ethereum block header in the background
     useEffect(() => {
@@ -196,20 +212,20 @@ const EthRealTimeLockPage: React.FC = () => {
     // refresh if contract reloads
     useEffect(() => {
         if (isChangingContract) {
-            if (isWeb3Ready) {
+            if (!isWeb3Loading) {
                 setLoading({
                     loading: true,
                     message: 'Connecting to Web3 instance with new contract...',
                 });
             }
         } else {
-            if (isWeb3Ready) {
+            if (!isWeb3Loading) {
                 setLoading({ loading: false, message: '' });
             }
         }
 
         if (web3) {
-            changeContractAddress(contractAddress);
+            //changeContractAddress(contractAddress);
         }
         // we disable next line to prevent change on getClaimParams
         // eslint-disable-next-line
@@ -377,8 +393,6 @@ const EthRealTimeLockPage: React.FC = () => {
                         </SectionCard>
                         {web3 && (
                             <LockedEthList
-                                web3={web3}
-                                account={account}
                                 lockData={allLockEvents}
                                 onClickRefresh={
                                     contract
