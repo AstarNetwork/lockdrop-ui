@@ -165,6 +165,7 @@ const ClaimItem: React.FC<ItemProps> = ({
         if (typeof claimData === 'undefined') return '0';
 
         return plasmUtils.femtoToPlm(new BigNumber(claimData.amount.toString()), tokenDecimals).toFixed();
+        // eslint-disable-next-line
     }, [claimData]);
 
     const claimStatus = useMemo(() => {
@@ -187,6 +188,7 @@ const ClaimItem: React.FC<ItemProps> = ({
             // turn off loading if it's on
             if (claimData.complete.valueOf() && claimingLock) setClaimingLock(false);
         }
+        // eslint-disable-next-line
     }, [claimData, claimingLock]);
 
     /**

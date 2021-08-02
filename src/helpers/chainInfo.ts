@@ -19,5 +19,6 @@ function createInfo(api: ApiPromise): ChainInfo {
 export default function useChainInfo(): ChainInfo {
     const { api, isReady } = useApi();
 
+    // eslint-disable-next-line
     return useMemo(() => createInfo(api), [api, isReady]);
 }

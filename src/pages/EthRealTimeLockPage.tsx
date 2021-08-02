@@ -146,6 +146,7 @@ const EthRealTimeLockPage: React.FC = () => {
     // Set contract address
     useEffect(() => {
         changeContractAddress(contractAddress);
+        // eslint-disable-next-line
     }, [contractAddress]);
 
     // Wait for initial API loading
@@ -177,11 +178,13 @@ const EthRealTimeLockPage: React.FC = () => {
         };
 
         fetchLockEvents();
+        // eslint-disable-next-line
     }, [contract]);
 
     // Recreate web3 instance if network changed
     useEffect(() => {
         setIsMainnetLock(isMainnetLock);
+        // eslint-disable-next-line
     }, [network]);
 
     // fetch ethereum block header in the background
@@ -235,6 +238,7 @@ const EthRealTimeLockPage: React.FC = () => {
             console.log('user changed account to ' + currentAccount);
             setAccount(currentAccount);
         }
+        // eslint-disable-next-line
     }, [account]);
 
     // handle metamask account change event handler

@@ -73,7 +73,6 @@ function Web3Api({ contractAddress = defaultContract, children }: Props): React.
             setIsMainnetLock: value => setIsMainnetLock(value),
         }),
         [
-            web3,
             isWeb3Loading,
             currentNetwork,
             latestBlock,
@@ -127,6 +126,7 @@ function Web3Api({ contractAddress = defaultContract, children }: Props): React.
         return () => {
             removeWeb3Event();
         };
+        // eslint-disable-next-line
     }, [isMainnetLock]);
 
     return <Web3Context.Provider value={value}>{children}</Web3Context.Provider>;

@@ -187,6 +187,7 @@ const ClaimStatus: React.FC<Props> = ({
         return () => {
             isUnmounting = true;
         };
+        // eslint-disable-next-line
     }, [plasmAddr, api, isLoadingBal]);
 
     // block subscribe

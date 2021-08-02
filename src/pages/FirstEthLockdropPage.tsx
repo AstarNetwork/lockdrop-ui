@@ -53,6 +53,7 @@ const FirstEthLockdropPage: React.FC = () => {
         } else {
             toast.error('Could not find lockdrop contract');
         }
+        // eslint-disable-next-line
     }, []);
 
     // store all lock events to local storage every time things changes
