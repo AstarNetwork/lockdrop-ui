@@ -8,7 +8,7 @@ import * as plasmUtils from '../helpers/plasmUtils';
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { LockdropType } from '../types/LockdropModels';
 import { BN } from 'ethereumjs-util';
-import { createPlasmInstance } from '../contexts/Api';
+import { createPlasmInstance } from '../api/Api';
 
 const ethPubKey =
     'a27c1e09c563b1221636c7f69690a6e4d41e9c79d38518d00d5f6d3fb5d7a35407caff68e13fcd845646dc848e0649417b89acf1af435bd18f1ab2fcf20e2e61';

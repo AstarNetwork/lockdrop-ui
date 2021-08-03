@@ -32,7 +32,7 @@ import { toast } from 'react-toastify';
 import HourglassEmptyIcon from '@material-ui/icons/HourglassEmpty';
 import ReplayIcon from '@material-ui/icons/Replay';
 import moment from 'moment';
-import { useApi } from '../../contexts/Api';
+import { useApi } from '../../api/Api';
 import useChainInfo from '../../helpers/useChainInfo';
 
 enum ClaimState {

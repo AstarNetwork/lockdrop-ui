@@ -3,32 +3,10 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { ApiContext, ApiProps } from './ApiContext';
 import { PlasmNetwork } from '../helpers/plasmUtils';
 import { plasmDefinitions, dustyDefinitions } from '@plasm/types';
+import { getNetworkEndpoint } from '../config/endpoints';
 
 const DEFAULT_NETWORK = PlasmNetwork.Local;
 let api: ApiPromise;
-
-/**
- * gets endpoint url for a given network
- * @param network the network
- */
-export function getNetworkEndpoint(network?: PlasmNetwork) {
-    let endpoint: string;
-
-    switch (network) {
-        case PlasmNetwork.Local:
-            endpoint = 'ws://127.0.0.1:9944';
-            break;
-        case PlasmNetwork.Dusty:
-            endpoint = 'wss://rpc.dusty.plasmnet.io/';
-            break;
-        case PlasmNetwork.Main: // main net endpoint will be the default value
-        default:
-            endpoint = 'wss://rpc.plasmnet.io';
-            break;
-    }
-
-    return endpoint;
-}
 
 /**
  * creates ApiPromise for a given network

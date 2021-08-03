@@ -1,6 +1,6 @@
 import { ApiPromise } from '@polkadot/api';
 import { useMemo } from 'react';
-import { useApi } from '../contexts/Api';
+import { useApi } from '../api/Api';
 
 export interface ChainInfo {
     tokenDecimals: number;
