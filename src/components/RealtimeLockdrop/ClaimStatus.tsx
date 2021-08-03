@@ -32,8 +32,8 @@ import CopyMessageBox from '../CopyMessageBox';
 import ClaimItem from './ClaimableItem';
 import BigNumber from 'bignumber.js';
 import moment from 'moment';
-import { useApi } from '../../helpers/Api';
-import useChainInfo from '../../helpers/chainInfo';
+import { useApi } from '../../contexts/Api';
+import useChainInfo from '../../helpers/useChainInfo';
 
 interface Props {
     claimParams: Lockdrop[];

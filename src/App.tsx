@@ -29,8 +29,8 @@ import '@ionic/react/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 import LockdropStatPage from './pages/LockdropStatPage';
-import Api from './helpers/Api';
-import Web3Api from './helpers/Web3Api';
+import Api from './contexts/Api';
+import Web3Api from './contexts/Web3Api';
 
 const App: React.FC = () => {
     return (

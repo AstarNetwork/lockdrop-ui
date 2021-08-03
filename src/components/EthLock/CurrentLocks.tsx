@@ -24,7 +24,7 @@ import Web3Utils from 'web3-utils';
 import { toast } from 'react-toastify';
 import Skeleton from '@material-ui/lab/Skeleton';
 import BigNumber from 'bignumber.js';
-import { useEth } from '../../helpers/Web3Api';
+import { useEth } from '../../contexts/Web3Api';
 
 const useStyles = makeStyles(theme =>
     createStyles({

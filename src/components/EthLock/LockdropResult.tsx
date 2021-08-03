@@ -27,7 +27,7 @@ import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import VpnKeyIcon from '@material-ui/icons/VpnKey';
 import { generatePlmAddress } from '../../helpers/plasmUtils';
-import { useEth } from '../../helpers/Web3Api';
+import { useEth } from '../../contexts/Web3Api';
 
 const etherScanSearch = 'https://etherscan.io/address/';
 

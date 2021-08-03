@@ -17,7 +17,7 @@ import { firstLockContract } from '../data/lockInfo';
 import 'react-dropdown/style.css';
 import LockdropResult from '../components/EthLock/LockdropResult';
 import AffiliationList from '../components/EthLock/AffiliationList';
-import { useEth, isMainnet } from '../helpers/Web3Api';
+import { useEth, isMainnet } from '../contexts/Web3Api';
 
 const FirstEthLockdropPage: React.FC = () => {
     const {

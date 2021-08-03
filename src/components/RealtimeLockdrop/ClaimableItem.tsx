@@ -32,8 +32,8 @@ import { toast } from 'react-toastify';
 import HourglassEmptyIcon from '@material-ui/icons/HourglassEmpty';
 import ReplayIcon from '@material-ui/icons/Replay';
 import moment from 'moment';
-import { useApi } from '../../helpers/Api';
-import useChainInfo from '../../helpers/chainInfo';
+import { useApi } from '../../contexts/Api';
+import useChainInfo from '../../helpers/useChainInfo';
 
 enum ClaimState {
     NotReq, // tokens are locked, but no requests are sent

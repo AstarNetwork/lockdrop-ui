@@ -25,7 +25,7 @@ import { Container, Typography } from '@material-ui/core';
 import BigNumber from 'bignumber.js';
 import { ethDurations } from '../data/lockInfo';
 import * as plasmUtils from '../helpers/plasmUtils';
-import { useApi } from '../helpers/Api';
+import { useApi } from '../contexts/Api';
 
 const LockdropCalcPage = () => {
     const [tokenType, setTokenType] = useState<'BTC' | 'ETH'>('ETH');

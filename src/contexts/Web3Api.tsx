@@ -3,7 +3,7 @@ import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 import { Web3Context, Web3ApiProps } from './Web3Context';
 import * as ethLockdrop from '../helpers/lockdrop/EthereumLockdrop';
-import { removeWeb3Event } from './getWeb3';
+import { removeWeb3Event } from '../helpers/getWeb3';
 import { defaultContract } from '../data/lockInfo';
 
 let web3: Web3;

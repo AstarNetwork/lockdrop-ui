@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useContext } from 'react';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { ApiContext, ApiProps } from './ApiContext';
-import { PlasmNetwork } from './plasmUtils';
+import { PlasmNetwork } from '../helpers/plasmUtils';
 import { plasmDefinitions, dustyDefinitions } from '@plasm/types';
 
 const DEFAULT_NETWORK = PlasmNetwork.Local;
@@ -42,15 +42,7 @@ export function getApi(network: PlasmNetwork): ApiPromise {
         provider,
         types: {
             ...types,
-            // aliases that don't do well as part of interfaces
-            'voting::VoteType': 'VoteType',
-            'voting::TallyType': 'TallyType',
-            // chain-specific overrides
-            Address: 'GenericAddress',
-            Keys: 'SessionKeys4',
-            StakingLedger: 'StakingLedgerTo223',
-            Votes: 'VotesTo230',
-            ReferendumInfo: 'ReferendumInfoTo239',
+            LookupSource: 'MultiAddress',
         },
     });
 }

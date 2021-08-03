@@ -22,8 +22,8 @@ import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel
 import { secondLockContract } from '../data/lockInfo';
 import Dropdown from 'react-dropdown';
 import 'react-dropdown/style.css';
-import { useApi } from '../helpers/Api';
-import { useEth } from '../helpers/Web3Api';
+import { useApi } from '../contexts/Api';
+import { useEth } from '../contexts/Web3Api';
 
 const useStyles = makeStyles(theme =>
     createStyles({

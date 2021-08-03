@@ -1,6 +1,6 @@
 import React from 'react';
 import { ApiPromise } from '@polkadot/api';
-import { PlasmNetwork } from './plasmUtils';
+import { PlasmNetwork } from '../helpers/plasmUtils';
 
 export interface ApiProps {
     api: ApiPromise;
