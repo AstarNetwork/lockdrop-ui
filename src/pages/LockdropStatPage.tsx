@@ -1,6 +1,6 @@
 import { IonContent, IonPage } from '@ionic/react';
 import React from 'react';
-import Navbar from 'src/components/Navbar';
+import Navbar from '../components/Navbar';
 import { makeStyles, createStyles } from '@material-ui/core';
 
 const useStyles = makeStyles(() =>

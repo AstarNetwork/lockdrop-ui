@@ -12,9 +12,7 @@ import { PlmDrop } from '../../types/PlasmDrop';
 import Web3Utils from 'web3-utils';
 import * as ethereumUtils from 'ethereumjs-util';
 import EthCrypto from 'eth-crypto';
-//import { firstLockContract, secondLockContract } from 'src/data/lockInfo';
-//import _ from 'lodash';
-import { EtherScanApi } from 'src/types/EtherScanTypes';
+import { EtherScanApi } from '../../types/EtherScanTypes';
 
 /**
  * exchange rate at the start of April 14 UTC (at the end of the first lockdrop)

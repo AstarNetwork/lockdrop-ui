@@ -21,8 +21,7 @@ import lockdropLogoB from '../resources/ld_logo_b.png';
 import ethLogo from '../resources/ethereum_logo.svg';
 import { makeStyles } from '@material-ui/core';
 import { firstLockdropStart, firstLockdropEnd, secondLockdropStart, secondLockdropEnd } from '../data/lockInfo';
-import TosAgreementModal from 'src/components/TosAgreementModal';
-//import moment from 'moment';
+import TosAgreementModal from '../components/TosAgreementModal';
 import momentTimezone from 'moment-timezone';
 
 // randomize the lockdrop logo

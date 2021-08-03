@@ -26,8 +26,8 @@ import SectionCard from '../SectionCard';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import VpnKeyIcon from '@material-ui/icons/VpnKey';
-import { generatePlmAddress } from 'src/helpers/plasmUtils';
-import { useEth } from 'src/helpers/Web3Api';
+import { generatePlmAddress } from '../../helpers/plasmUtils';
+import { useEth } from '../../helpers/Web3Api';
 
 const etherScanSearch = 'https://etherscan.io/address/';
 

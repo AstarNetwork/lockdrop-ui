@@ -23,7 +23,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Container, Typography } from '@material-ui/core';
 import BigNumber from 'bignumber.js';
-import { ethDurations } from 'src/data/lockInfo';
+import { ethDurations } from '../data/lockInfo';
 import * as plasmUtils from '../helpers/plasmUtils';
 import { useApi } from '../helpers/Api';
 

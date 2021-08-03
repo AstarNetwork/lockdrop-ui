@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { ApiPromise } from '@polkadot/api';
 import * as plasmUtils from '../../helpers/plasmUtils';
 import * as polkadotCrypto from '@polkadot/util-crypto';
-import { Claim, Lockdrop } from 'src/types/LockdropModels';
+import { Claim, Lockdrop } from '../../types/LockdropModels';
 import {
     List,
     makeStyles,

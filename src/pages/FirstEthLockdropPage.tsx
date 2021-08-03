@@ -15,9 +15,9 @@ import moment from 'moment';
 import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
 import { firstLockContract } from '../data/lockInfo';
 import 'react-dropdown/style.css';
-import LockdropResult from 'src/components/EthLock/LockdropResult';
-import AffiliationList from 'src/components/EthLock/AffiliationList';
-import { useEth, isMainnet } from 'src/helpers/Web3Api';
+import LockdropResult from '../components/EthLock/LockdropResult';
+import AffiliationList from '../components/EthLock/AffiliationList';
+import { useEth, isMainnet } from '../helpers/Web3Api';
 
 const FirstEthLockdropPage: React.FC = () => {
     const {

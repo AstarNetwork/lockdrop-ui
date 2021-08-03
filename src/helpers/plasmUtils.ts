@@ -7,7 +7,7 @@ import * as polkadotUtils from '@polkadot/util';
 import { u8aConcat } from '@polkadot/util';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
 import { BlockNumber } from '@polkadot/types/interfaces';
-import { LockdropType, Claim, Lockdrop, LockEvent } from 'src/types/LockdropModels';
+import { LockdropType, Claim, Lockdrop, LockEvent } from '../types/LockdropModels';
 
 /**
  * Plasm network enum

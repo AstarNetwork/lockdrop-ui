@@ -3,7 +3,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import * as plasmUtils from '../../helpers/plasmUtils';
 import * as polkadotUtils from '@polkadot/util';
 import * as polkadotCrypto from '@polkadot/util-crypto';
-import { Claim, Lockdrop } from 'src/types/LockdropModels';
+import { Claim, Lockdrop } from '../../types/LockdropModels';
 import {
     makeStyles,
     createStyles,
@@ -32,7 +32,7 @@ import { toast } from 'react-toastify';
 import HourglassEmptyIcon from '@material-ui/icons/HourglassEmpty';
 import ReplayIcon from '@material-ui/icons/Replay';
 import moment from 'moment';
-import { useApi } from 'src/helpers/Api';
+import { useApi } from '../../helpers/Api';
 import useChainInfo from '../../helpers/chainInfo';
 
 enum ClaimState {

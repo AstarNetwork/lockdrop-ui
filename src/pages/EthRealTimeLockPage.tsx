@@ -16,14 +16,14 @@ import { Typography, Container, Divider, makeStyles, createStyles } from '@mater
 import * as plasmUtils from '../helpers/plasmUtils';
 import * as polkadotCrypto from '@polkadot/util-crypto';
 import * as polkadotUtil from '@polkadot/util';
-import ClaimStatus from 'src/components/RealtimeLockdrop/ClaimStatus';
+import ClaimStatus from '../components/RealtimeLockdrop/ClaimStatus';
 import moment from 'moment';
 import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
 import { secondLockContract } from '../data/lockInfo';
 import Dropdown from 'react-dropdown';
 import 'react-dropdown/style.css';
-import { useApi } from 'src/helpers/Api';
-import { useEth } from 'src/helpers/Web3Api';
+import { useApi } from '../helpers/Api';
+import { useEth } from '../helpers/Web3Api';
 
 const useStyles = makeStyles(theme =>
     createStyles({
