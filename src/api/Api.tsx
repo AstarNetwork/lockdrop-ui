@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useContext } from 'react';
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { ApiContext, ApiProps } from './ApiContext';
+import { ApiContext, ApiProps } from '../contexts/ApiContext';
 import { PlasmNetwork } from '../helpers/plasmUtils';
 import { plasmDefinitions, dustyDefinitions } from '@plasm/types';
 import { getNetworkEndpoint } from '../config/endpoints';

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
-import { IonContent, IonPage, IonLoading, IonButton } from '@ionic/react';
+import { IonContent, IonPage, IonButton } from '@ionic/react';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import LockdropForm from '../components/EthLock/LockdropForm';
 import * as ethLockdrop from '../helpers/lockdrop/EthereumLockdrop';
@@ -23,7 +23,8 @@ import { secondLockContract } from '../data/lockInfo';
 import Dropdown from 'react-dropdown';
 import 'react-dropdown/style.css';
 import { useApi } from '../api/Api';
-import { useEth } from '../contexts/Web3Api';
+import { useEth } from '../api/Web3Api';
+import LoadingOverlay from '../components/LoadingOverlay';
 
 const useStyles = makeStyles(theme =>
     createStyles({
@@ -52,15 +53,13 @@ const EthRealTimeLockPage: React.FC = () => {
     const plasmNetToEthNet = isMainnetLock ? 'Main Network' : 'Ropsten';
     const {
         web3,
-        isWeb3Loading,
         account,
         contract,
         latestBlock,
-        error,
         lockdropStart,
         lockdropEnd,
-        isChangingContract,
         currentNetwork,
+        error,
         setLatestBlock,
         setAccount,
         changeContractAddress,
@@ -79,14 +78,7 @@ const EthRealTimeLockPage: React.FC = () => {
     };
 
     const [contractAddress, setContractAddress] = useState<string>(getContractAddress());
-
-    const [isLoading, setLoading] = useState<{
-        loading: boolean;
-        message: string;
-    }>({
-        loading: false,
-        message: '',
-    });
+    const [message, setMessage] = useState<string>('');
 
     // get lock event list from the local storage if it exists
     const [allLockEvents, setLockEvents] = useState<LockEvent[]>([]);
@@ -149,22 +141,9 @@ const EthRealTimeLockPage: React.FC = () => {
         // eslint-disable-next-line
     }, [contractAddress]);
 
-    // Wait for initial API loading
-    useEffect(() => {
-        if (isWeb3Loading) {
-            setLoading({
-                loading: true,
-                message: 'Syncing with Ethereum...',
-            });
-        } else {
-            setLoading({ loading: false, message: '' });
-        }
-    }, [isWeb3Loading]);
-
     // Display error messages
     useEffect(() => {
         if (typeof error !== 'undefined') {
-            setLoading({ loading: false, message: '' });
             toast.error(error);
         }
     }, [error]);
@@ -210,25 +189,6 @@ const EthRealTimeLockPage: React.FC = () => {
         };
     });
 
-    // refresh if contract reloads
-    useEffect(() => {
-        if (isChangingContract) {
-            if (!isWeb3Loading) {
-                setLoading({
-                    loading: true,
-                    message: 'Connecting to Web3 instance with new contract...',
-                });
-            }
-        } else {
-            if (!isWeb3Loading) {
-                setLoading({ loading: false, message: '' });
-            }
-        }
-
-        // we disable next line to prevent change on getClaimParams
-        // eslint-disable-next-line
-    }, [contractAddress, isChangingContract]);
-
     /**
      * called when the user changes MetaMask account
      */
@@ -254,10 +214,7 @@ const EthRealTimeLockPage: React.FC = () => {
 
     const handleGetPublicKey = useCallback(() => {
         if (!publicKey && web3) {
-            setLoading({
-                loading: true,
-                message: 'Obtaining user signature...',
-            });
+            setMessage('Obtaining user signature...');
 
             (async function() {
                 try {
@@ -272,7 +229,7 @@ const EthRealTimeLockPage: React.FC = () => {
                     toast.error(e.message);
                 }
             })().finally(() => {
-                setLoading({ loading: false, message: '' });
+                setMessage('');
             });
         } else if (typeof web3 === 'undefined') {
             toast.error('Not connected to Web3');
@@ -281,10 +238,7 @@ const EthRealTimeLockPage: React.FC = () => {
 
     const handleSubmit = useCallback(
         async (formInputVal: LockInput) => {
-            setLoading({
-                loading: true,
-                message: 'Submitting transaction...',
-            });
+            setMessage('Submitting transaction...');
             try {
                 if (typeof web3 === 'undefined') {
                     throw new Error('Could not find a Web3 instance');
@@ -317,7 +271,7 @@ const EthRealTimeLockPage: React.FC = () => {
                 toast.error(e.message.toString());
                 console.log(e);
             } finally {
-                setLoading({ loading: false, message: '' });
+                setMessage('');
             }
         },
         [account, contract, publicKey, web3, handleFetchLockEvents],
@@ -337,7 +291,7 @@ const EthRealTimeLockPage: React.FC = () => {
         <IonPage>
             <Navbar />
             <IonContent>
-                <IonLoading isOpen={isLoading.loading} message={isLoading.message} />
+                <LoadingOverlay message={message} />
                 {isMainnet(currentNetwork) !== isMainnetLock ? (
                     <SectionCard maxWidth="lg">
                         <Typography variant="h2" component="h4" align="center">
@@ -396,15 +350,9 @@ const EthRealTimeLockPage: React.FC = () => {
                                 onClickRefresh={
                                     contract
                                         ? () => {
-                                              setLoading({
-                                                  loading: true,
-                                                  message: 'Fetching contract events...',
-                                              });
+                                              setMessage('Fetching contract events...');
                                               return handleFetchLockEvents(contract).finally(() => {
-                                                  setLoading({
-                                                      loading: false,
-                                                      message: '',
-                                                  });
+                                                  setMessage('');
                                               });
                                           }
                                         : undefined

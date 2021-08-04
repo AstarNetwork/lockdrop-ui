@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
-import { IonContent, IonPage, IonLoading } from '@ionic/react';
+import { IonContent, IonPage } from '@ionic/react';
 import React, { useState, useEffect } from 'react';
 import * as ethLockdrop from '../helpers/lockdrop/EthereumLockdrop';
 import Navbar from '../components/Navbar';
@@ -17,13 +17,13 @@ import { firstLockContract } from '../data/lockInfo';
 import 'react-dropdown/style.css';
 import LockdropResult from '../components/EthLock/LockdropResult';
 import AffiliationList from '../components/EthLock/AffiliationList';
-import { useEth, isMainnet } from '../contexts/Web3Api';
+import { useEth, isMainnet } from '../api/Web3Api';
+import LoadingOverlay from '../components/LoadingOverlay';
 
 const FirstEthLockdropPage: React.FC = () => {
     const {
         web3,
         contract,
-        isWeb3Loading,
         error,
         lockdropStart,
         lockdropEnd,
@@ -31,14 +31,6 @@ const FirstEthLockdropPage: React.FC = () => {
         setIsMainnetLock,
         changeContractAddress,
     } = useEth();
-
-    const [isLoading, setLoading] = useState<{
-        loading: boolean;
-        message: string;
-    }>({
-        loading: false,
-        message: '',
-    });
 
     const [allLockEvents, setLockEvents] = useState<LockEvent[]>([]);
     const lockStoreKey = `id:${firstLockContract.find(i => i.type === 'main')?.address}`;
@@ -67,22 +59,9 @@ const FirstEthLockdropPage: React.FC = () => {
         }
     }, [allLockEvents, lockStoreKey]);
 
-    // Wait for initial API loading
-    useEffect(() => {
-        if (isWeb3Loading) {
-            setLoading({
-                loading: true,
-                message: 'Syncing with Ethereum...',
-            });
-        } else {
-            setLoading({ loading: false, message: '' });
-        }
-    }, [isWeb3Loading]);
-
     // Display error messages
     useEffect(() => {
         if (typeof error !== 'undefined') {
-            setLoading({ loading: false, message: '' });
             toast.error(error);
         }
     }, [error]);
@@ -104,7 +83,7 @@ const FirstEthLockdropPage: React.FC = () => {
             <Navbar />
             <IonContent>
                 <>
-                    <IonLoading isOpen={isLoading.loading} message={isLoading.message} />
+                    <LoadingOverlay />
                     {!isMainnet(currentNetwork) ? (
                         <SectionCard maxWidth="lg">
                             <Typography variant="h2" component="h4" align="center">

@@ -19,7 +19,7 @@ import { PlmDrop } from '../../types/PlasmDrop';
 import BigNumber from 'bignumber.js';
 import CountUp from 'react-countup';
 import { ThemeColors } from '../../theme/themes';
-import { IonPopover, IonList, IonListHeader, IonItem, IonLabel, IonChip, IonButton, IonLoading } from '@ionic/react';
+import { IonPopover, IonList, IonListHeader, IonItem, IonLabel, IonChip, IonButton } from '@ionic/react';
 import { LockEvent } from '../../types/LockdropModels';
 import Web3 from 'web3';
 import SectionCard from '../SectionCard';
@@ -27,7 +27,8 @@ import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import VpnKeyIcon from '@material-ui/icons/VpnKey';
 import { generatePlmAddress } from '../../helpers/plasmUtils';
-import { useEth } from '../../contexts/Web3Api';
+import { useEth } from '../../api/Web3Api';
+import LoadingOverlay from '../LoadingOverlay';
 
 const etherScanSearch = 'https://etherscan.io/address/';
 
@@ -209,7 +210,7 @@ const ClaimPlm: React.FC<ClaimProps> = ({ web3 }) => {
         }),
     );
 
-    const [isLoading, setLoadState] = useState(false);
+    const [message, setMessage] = useState<string>('');
     const [plmAddress, setPlmAddress] = useState('');
     const [ethPubkey, setEthPubkey] = useState('');
     const [open, setOpen] = useState(false);
@@ -223,7 +224,7 @@ const ClaimPlm: React.FC<ClaimProps> = ({ web3 }) => {
             const plmAddress = generatePlmAddress(pubKey.replace('0x', ''));
             result = plmAddress;
         }
-        setLoadState(false);
+        setMessage('');
         return result;
     };
     const ExpandItem = () => {
@@ -234,13 +235,13 @@ const ClaimPlm: React.FC<ClaimProps> = ({ web3 }) => {
 
     return (
         <>
-            <IonLoading isOpen={isLoading} message={'Verifying user...'} />
+            <LoadingOverlay message={message} />
             <IonButton
                 color="primary"
                 size="large"
                 className={classes.claimButton}
                 onClick={async () => {
-                    setLoadState(true);
+                    setMessage('Verifying user...');
                     setPlmAddress(await getPlasmAddress());
                 }}
             >

@@ -16,7 +16,6 @@ import {
     IonSelect,
     IonSelectOption,
     IonChip,
-    IonLoading,
     IonToggle,
 } from '@ionic/react';
 import Navbar from '../components/Navbar';
@@ -26,6 +25,7 @@ import BigNumber from 'bignumber.js';
 import { ethDurations } from '../data/lockInfo';
 import * as plasmUtils from '../helpers/plasmUtils';
 import { useApi } from '../api/Api';
+import LoadingOverlay from '../components/LoadingOverlay';
 
 const LockdropCalcPage = () => {
     const [tokenType, setTokenType] = useState<'BTC' | 'ETH'>('ETH');
@@ -35,7 +35,7 @@ const LockdropCalcPage = () => {
     const [returnAlpha, setReturnAlpha] = useState(0);
     const [isCustomRate, setIsCustomRate] = useState(false);
     const [customExRate, setCustomExRate] = useState('');
-    const [isLoading, setIsLoading] = useState<{ loading: boolean; message: string }>({ loading: false, message: '' });
+    const [message, setMessage] = useState<string>('');
     const { api, isReady } = useApi();
 
     const tokenLockDurs = useMemo(() => {
@@ -49,7 +49,7 @@ const LockdropCalcPage = () => {
     // initial API setup
     useEffect(() => {
         if (!isReady) {
-            setIsLoading({ loading: true, message: 'Connecting to Plasm Network' });
+            setMessage('Connecting to Plasm Network');
         } else {
             (async () => {
                 const networkAlpha = await plasmUtils.getLockdropAlpha(api);
@@ -57,7 +57,7 @@ const LockdropCalcPage = () => {
                 const rate = await plasmUtils.getCoinRate(api);
                 setTokenExRate(rate);
             })().finally(() => {
-                setIsLoading({ loading: false, message: '' });
+                setMessage('');
             });
         }
         // eslint-disable-next-line
@@ -106,7 +106,7 @@ const LockdropCalcPage = () => {
             <IonPage>
                 <Navbar />
                 <IonContent>
-                    <IonLoading isOpen={isLoading.loading} message={isLoading.message} />
+                    <LoadingOverlay message={message} />
                     <Container maxWidth="lg">
                         <IonCard>
                             <IonCardHeader>
