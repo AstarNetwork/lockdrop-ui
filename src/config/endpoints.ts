@@ -1,6 +1,6 @@
 import { PlasmNetwork } from '../helpers/plasmUtils';
 
-const DEFAULT_ENDPOINT_INDEX = 2;
+const DEFAULT_ENDPOINT_INDEX = 1;
 
 interface Endpoint {
     network: PlasmNetwork;
@@ -11,10 +11,6 @@ const endpoints: Endpoint[] = [
     {
         network: PlasmNetwork.Local,
         address: 'ws://127.0.0.1:9944',
-    },
-    {
-        network: PlasmNetwork.Dusty,
-        address: 'wss://rpc.dusty.plasmnet.io/',
     },
     {
         network: PlasmNetwork.Main,

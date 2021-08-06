@@ -18,7 +18,6 @@ import {
     CircularProgress,
 } from '@material-ui/core';
 import plasmIcon from '../../resources/plasm-icon.svg';
-import dustyIcon from '../../resources/dusty-icon.svg';
 import Web3Utils from 'web3-utils';
 import SendIcon from '@material-ui/icons/Send';
 import CheckIcon from '@material-ui/icons/Check';
@@ -45,7 +44,7 @@ enum ClaimState {
 
 interface ItemProps {
     lockParam: Lockdrop;
-    plasmNetwork: 'Plasm' | 'Dusty';
+    plasmNetwork: 'Plasm';
     networkType: 'BTC' | 'ETH';
     positiveVotes: number;
     voteThreshold: number;
@@ -356,7 +355,7 @@ const ClaimItem: React.FC<ItemProps> = ({
             <ListItem>
                 <ListItemIcon>
                     <Icon>
-                        {plasmNetwork === 'Plasm' ? <img src={plasmIcon} alt="" /> : <img src={dustyIcon} alt="" />}
+                        <img src={plasmIcon} alt="" />
                     </Icon>
                 </ListItemIcon>
                 <ListItemText>

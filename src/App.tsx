@@ -47,14 +47,6 @@ const App: React.FC = () => {
                             <Route
                                 path="/lock-form/second-eth"
                                 component={(props: any) => (
-                                    <Api network={plasmUtils.PlasmNetwork.Main}>
-                                        <EthRealTimeLockPage {...props} />
-                                    </Api>
-                                )}
-                            />
-                            <Route
-                                path="/lock-form/dusty-eth"
-                                component={(props: any) => (
                                     <Api network={plasmUtils.PlasmNetwork.Local}>
                                         <EthRealTimeLockPage {...props} />
                                     </Api>

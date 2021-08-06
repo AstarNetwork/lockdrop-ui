@@ -14,7 +14,6 @@ import { LockdropType, Claim, Lockdrop, LockEvent } from '../types/LockdropModel
  */
 export enum PlasmNetwork {
     Local,
-    Dusty,
     Main,
 }
 

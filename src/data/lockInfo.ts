@@ -64,13 +64,3 @@ export const ethDurations: OptionItem[] = [
     { label: '300 Days', value: 300, rate: 360 },
     { label: '1000 Days', value: 1000, rate: 1600 },
 ];
-
-/**
- * used to define the content of the dropdown menu
- */
-export const ethDustyDurations: OptionItem[] = [
-    { label: '3 Days', value: 3, rate: 24 },
-    { label: '10 Days', value: 10, rate: 100 },
-    { label: '30 Days', value: 30, rate: 360 },
-    { label: '100 Days', value: 100, rate: 1600 },
-];

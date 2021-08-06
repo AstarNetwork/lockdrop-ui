@@ -12,6 +12,8 @@ export const isMainnet = (currentNetwork: string) => {
     return currentNetwork === 'main';
 };
 
+export const plasmNetToEthNet = 'Main Network';
+
 function Web3Api({ contractAddress = defaultContract, children }: Props): React.ReactElement<Props> {
     // TODO useReducer, to many state variables
     const [currentNetwork, setCurrentNetwork] = useState<string>('');
@@ -25,8 +27,6 @@ function Web3Api({ contractAddress = defaultContract, children }: Props): React.
     const [isWeb3Loading, setIsWeb3Loading] = useState<boolean>(false);
     const [isMainnetLock, setIsMainnetLock] = useState<boolean | undefined>(undefined);
     const [_contractAddress, _setContactAddress] = useState<string>(contractAddress);
-
-    const plasmNetToEthNet = isMainnetLock ? 'Main Network' : 'Ropsten';
 
     const createContract = async (address: string, isInitial: boolean) => {
         console.log('Creating contract with address ', address);

@@ -23,7 +23,7 @@ import { secondLockContract } from '../data/lockInfo';
 import Dropdown from 'react-dropdown';
 import 'react-dropdown/style.css';
 import { useApi } from '../api/Api';
-import { useEth } from '../api/Web3Api';
+import { useEth, plasmNetToEthNet } from '../api/Web3Api';
 import LoadingOverlay from '../components/LoadingOverlay';
 
 const useStyles = makeStyles(theme =>
@@ -47,10 +47,8 @@ const EthRealTimeLockPage: React.FC = () => {
     /**
      * returns true if this is lockdrop is for the plasm main net.
      */
-    const isMainnetLock = network === plasmUtils.PlasmNetwork.Main;
+    const isMainnetLock = true;
 
-    // this is used for rendering network names
-    const plasmNetToEthNet = isMainnetLock ? 'Main Network' : 'Ropsten';
     const {
         web3,
         account,
@@ -322,7 +320,7 @@ const EthRealTimeLockPage: React.FC = () => {
                             )}
                         </SectionCard>
 
-                        {isLockdropOpen && <LockdropForm onSubmit={handleSubmit} dusty={!isMainnetLock} />}
+                        {isLockdropOpen && <LockdropForm onSubmit={handleSubmit} />}
 
                         <SectionCard maxWidth="lg">
                             <Typography variant="h4" component="h1" align="center">
@@ -332,7 +330,7 @@ const EthRealTimeLockPage: React.FC = () => {
                                 <ClaimStatus
                                     claimParams={lockParams}
                                     networkType="ETH"
-                                    plasmNetwork={isMainnetLock ? 'Plasm' : 'Dusty'}
+                                    plasmNetwork="Plasm"
                                     publicKey={publicKey}
                                     getLockerSig={(id, addr) => getClaimToSig(id, addr)}
                                 />

@@ -50,7 +50,6 @@ export interface TimeFormat {
 export enum LockSeason {
     First,
     Second,
-    Dusty,
     Third,
 }
 

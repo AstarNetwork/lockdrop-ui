@@ -38,7 +38,7 @@ import useChainInfo from '../../helpers/useChainInfo';
 interface Props {
     claimParams: Lockdrop[];
     networkType: 'ETH' | 'BTC';
-    plasmNetwork: 'Plasm' | 'Dusty';
+    plasmNetwork: 'Plasm';
     publicKey: string;
     // getLockerSig must return a hex string of the signature
     getLockerSig: (id: Uint8Array, sendToAddr: string) => Promise<string> | string;
@@ -315,9 +315,7 @@ const ClaimStatus: React.FC<Props> = ({
                         </IonItem>
                         <IonItem>
                             <IonButton
-                                href={`https://polkadot.js.org/apps/?rpc=wss://rpc.${
-                                    plasmNetwork === 'Dusty' ? 'dusty.' : ''
-                                }plasmnet.io/#/accounts`}
+                                href={`https://polkadot.js.org/apps/?rpc=wss://rpc.plasmnet.io/#/accounts`}
                                 rel="noopener noreferrer"
                                 target="_blank"
                                 slot="start"

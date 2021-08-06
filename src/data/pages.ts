@@ -21,13 +21,3 @@ export const secondLock: LockMenu[] = [
         endDate: secondLockdropEnd,
     },
 ];
-
-export const dustyLock: LockMenu[] = [
-    {
-        title: 'ETH Lock',
-        uri: '/lock-form/dusty-eth',
-        icon: ethLogo,
-        startDate: firstLockdropStart,
-        endDate: firstLockdropEnd,
-    },
-];

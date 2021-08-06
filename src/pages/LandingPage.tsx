@@ -133,20 +133,6 @@ export const LandingPage: React.FC = () => {
                         Lock End: {secondLockdropEnd.format('YYYY-MM-DD hh:mm').toString()} {timezone}
                     </IonCardContent>
                 </SectionCard>
-
-                <SectionCard maxWidth="lg">
-                    <IonCardHeader>
-                        <IonCardTitle>Dusty Lockdrop</IonCardTitle>
-                    </IonCardHeader>
-                    <IonItem>
-                        <IonIcon src={ethLogo} slot="start" />
-                        <IonLabel>Dusty ETH Lock</IonLabel>
-
-                        <IonButton fill="outline" slot="end">
-                            <IonRouterLink routerLink="/lock-form/dusty-eth">View</IonRouterLink>
-                        </IonButton>
-                    </IonItem>
-                </SectionCard>
                 <Footer />
             </IonContent>
         </IonPage>
