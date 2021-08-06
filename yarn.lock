@@ -1692,11 +1692,6 @@
   resolved "https://registry.yarnpkg.com/@nodelib/fs.stat/-/fs.stat-1.1.3.tgz#2b5a3ab3f918cca48a8c754c08168e3f03eba61b"
   integrity sha512-shAmDyaQC4H92APFoIaVDHCx5bStIocgvbwQyxPRrbUY20V1EYTbSDchWbuwlMG3V17cprZhA6+78JfB+3DTPw==
 
-"@plasm/types@^1.5.4-3":
-  version "1.5.4-3"
-  resolved "https://registry.yarnpkg.com/@plasm/types/-/types-1.5.4-3.tgz#6e0ebcbf11d9212e0b3f5e668985dcbe338b7688"
-  integrity sha512-EA6wdcU53d5DiKFuNjtdc9Mdvfgxgeg5tXCTMxxs0EsJPubqThjnxknTkbDPPCNVlRBumGxlrvnBMmn8YdK+Pg==
-
 "@polkadot/api-derive@^2.4.1":
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/@polkadot/api-derive/-/api-derive-2.4.1.tgz#b5a3ee0910d735722e9836ec9b13df17059ca3e3"
