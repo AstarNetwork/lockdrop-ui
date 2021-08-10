@@ -153,7 +153,7 @@ interface PanelWrapperProps {
     children: any;
 }
 
-const PanelWrapper: React.FC<PanelWrapperProps> = ({ children }: PanelWrapperProps) => {
+const PanelWrapper: React.FC<PanelWrapperProps> = ({ children }) => {
     const classes = useStyles();
 
     return (
