@@ -13,7 +13,7 @@ type InputProps = {
     onSubmit: (inputs: LockInput) => void;
 };
 // the main component function
-const LockdropForm = ({ onSubmit }: InputProps) => {
+const LockdropForm: React.FC<InputProps> = ({ onSubmit }: InputProps) => {
     // states used in this component
     const [lockAmount, setAmount] = useState('');
     const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });

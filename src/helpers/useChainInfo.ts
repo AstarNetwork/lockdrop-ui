@@ -12,7 +12,7 @@ function createInfo(api: ApiPromise): ChainInfo {
     const tokenDecimals = api.registry.chainDecimals || DEFAULT_DECIMALS;
 
     return {
-        tokenDecimals,
+        tokenDecimals: tokenDecimals[0],
     };
 }
 

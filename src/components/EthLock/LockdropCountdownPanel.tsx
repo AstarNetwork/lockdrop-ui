@@ -149,7 +149,11 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData 
 
 export default LockdropCountdownPanel;
 
-const PanelWrapper: React.FC = ({ children }) => {
+interface PanelWrapperProps {
+    children: any;
+}
+
+const PanelWrapper: React.FC<PanelWrapperProps> = ({ children }: PanelWrapperProps) => {
     const classes = useStyles();
 
     return (

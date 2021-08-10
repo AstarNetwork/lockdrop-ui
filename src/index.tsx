@@ -1,3 +1,6 @@
+// TODOD check app complaining about unused React import
+/* eslint-disable */
+// @ts-ignore
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';

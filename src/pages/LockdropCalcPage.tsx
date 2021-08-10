@@ -27,7 +27,7 @@ import * as plasmUtils from '../helpers/plasmUtils';
 import { useApi } from '../api/Api';
 import LoadingOverlay from '../components/LoadingOverlay';
 
-const LockdropCalcPage = () => {
+const LockdropCalcPage: React.FC = () => {
     const [tokenType, setTokenType] = useState<'BTC' | 'ETH'>('ETH');
     const [tokenAmount, setTokenAmount] = useState('');
     const [tokenExRate, setTokenExRate] = useState<[number, number]>([0, 0]); // 1 token to USD rate

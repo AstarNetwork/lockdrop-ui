@@ -36,7 +36,7 @@ export async function getMessageSignature<T extends boolean>(
     asSigParam: T,
 ): Promise<T extends true ? ethereumUtils.ECDSASignature : string>;
 
-export async function getMessageSignature(web3: Web3, message: string, asSigParam: boolean) {
+export async function getMessageSignature(web3: Web3, message: string, asSigParam: boolean): Promise<string | any> {
     const addresses = await web3.eth.getAccounts();
 
     // ask the user to sign the message
@@ -60,11 +60,14 @@ export async function getMessageSignature(web3: Web3, message: string, asSigPara
  * This is a temporary cache server with not query
  * @param contractAddr contract address that emits the event
  */
-export const fetchEventsFromCache = async (contractAddr: string) => {
+export const fetchEventsFromCache = async (contractAddr: string): Promise<LockEvent[]> => {
     const api = `https://raw.githubusercontent.com/hoonsubin/plasm-scripts/a4ea5d1f1e35ba7d370c46738bc485fc5164b376/src/data/cache/cache-${contractAddr.slice(
         0,
         6,
     )}.json`;
+
+    // console.log('Fetching transactions for contract: ', contractAddr);
+    // const api = 'http://localhost:27098/assets/transactions.json';
 
     const res = await fetch(api);
 
@@ -90,7 +93,7 @@ export const fetchEventsFromCache = async (contractAddr: string) => {
  * finds the highest block number from the given lock event
  * @param lockEvents lock event list
  */
-export function getHighestBlockNo(lockEvents: LockEvent[]) {
+export function getHighestBlockNo(lockEvents: LockEvent[]): number {
     const latestBlock = Math.max(
         ...lockEvents.map(o => {
             return o.blockNo;
@@ -105,7 +108,7 @@ export function getHighestBlockNo(lockEvents: LockEvent[]) {
  * @param web3 a web3.js instance to access the user's wallet information
  * @param message an optional message that the user should sign
  */
-export async function getPubKey(web3: Web3, message?: string) {
+export async function getPubKey(web3: Web3, message?: string): Promise<string> {
     // default message
     let msg = 'Please Sign this message to generate Plasm Network address';
     // change message if the function provides one
@@ -123,7 +126,7 @@ export async function getPubKey(web3: Web3, message?: string) {
     return compressedPubKey;
 }
 
-export async function fetchAllAddresses(web3: Web3) {
+export async function fetchAllAddresses(web3: Web3): Promise<string[]> {
     let ethAddr: string[];
     // get user account from injected web3
     // we try every method here
@@ -151,7 +154,7 @@ export async function fetchAllAddresses(web3: Web3) {
  * serializes ethereum lock event list and encodes them into base64 string
  * @param lockEvents smart contract lock event
  */
-export function serializeLockEvents(lockEvents: LockEvent[]) {
+export function serializeLockEvents(lockEvents: LockEvent[]): string {
     const _ev = JSON.stringify(lockEvents);
     // encode utf-8 JSON to base 64 string
     return Buffer.from(_ev).toString('base64');
@@ -161,7 +164,7 @@ export function serializeLockEvents(lockEvents: LockEvent[]) {
  * deserialize the base64 string into a lock event list
  * @param lockEvents lock event list in base64 string
  */
-export function deserializeLockEvents(lockEvents: string) {
+export function deserializeLockEvents(lockEvents: string): LockEvent[] {
     try {
         const eventJson = Buffer.from(lockEvents, 'base64').toString('utf-8');
 
@@ -270,7 +273,7 @@ export async function fetchLockdropEvents(
  * This function will return the full list (i.e. previous events + new events) and handle caching as well
  * @param instance a contract instance to parse the contract events
  */
-export async function getAllLockEvents(instance: Contract) {
+export async function getAllLockEvents(instance: Contract): Promise<LockEvent[]> {
     const contractAddr = instance.options.address;
 
     const lockStoreKey = `id:${contractAddr}`;
@@ -291,7 +294,7 @@ export async function getAllLockEvents(instance: Contract) {
  * this function is used for lockers with no introducers
  * @param aff a valid introducer ETH address
  */
-export function defaultAffiliation(aff: string) {
+export function defaultAffiliation(aff: string): string {
     // check if affiliation address is not empty and is not themselves
     if (aff) {
         // return itself when it is a valid address
@@ -435,7 +438,7 @@ export function getTotalLockVal(locks: LockEvent[], roundTo?: number): string {
  * @param web3 web3js API instance
  * @param contractAddress smart contract address
  */
-export async function createContractInstance(web3: Web3, contractAddress: string) {
+export async function createContractInstance(web3: Web3, contractAddress: string): Promise<Contract> {
     const lockdropAbi = Lockdrop.abi as Web3Utils.AbiItem[];
 
     // create an empty contract instance first
@@ -447,7 +450,7 @@ export async function createContractInstance(web3: Web3, contractAddress: string
  * this will return the unlock date in unix time (seconds)
  * @param lockInfo
  */
-export const getUnlockDate = (lockInfo: LockEvent) => {
+export const getUnlockDate = (lockInfo: LockEvent): number => {
     // 24 hours in epoch
     const epochDay = 60 * 60 * 24;
 
@@ -464,7 +467,7 @@ export const getUnlockDate = (lockInfo: LockEvent) => {
  * returns the web3.js instance, list of active accounts and the contract instance
  * @param contractAddress the contract address that it should look for
  */
-export async function connectWeb3() {
+export async function connectWeb3(): Promise<Web3> {
     // Get network provider and web3 instance.
     const web3 = await getWeb3();
 
@@ -479,7 +482,7 @@ export async function connectWeb3() {
  * returns the UTC (in seconds) epoch string of when the lockdrop smart contract will end
  * @param contract the lockdrop contract instance
  */
-export async function getContractEndDate(contract: Contract) {
+export async function getContractEndDate(contract: Contract): Promise<string> {
     const _lockdropEndDate = await contract.methods.LOCK_END_TIME().call();
     return _lockdropEndDate as string;
 }
@@ -488,7 +491,7 @@ export async function getContractEndDate(contract: Contract) {
  * returns the UTC (in seconds) epoch string of when the lockdrop smart contract will start
  * @param contract the lockdrop contract instance
  */
-export async function getContractStartDate(contract: Contract) {
+export async function getContractStartDate(contract: Contract): Promise<string> {
     const _lockdropStartDate = await contract.methods.LOCK_START_TIME().call();
     return _lockdropStartDate as string;
 }
@@ -500,7 +503,7 @@ export async function getContractStartDate(contract: Contract) {
  * @param address the address of the locker
  * @param contract smart contract instance used to invoke the contract method
  */
-export async function submitLockTx(txInput: LockInput, address: string, contract: Contract) {
+export async function submitLockTx(txInput: LockInput, address: string, contract: Contract): Promise<string> {
     // return a default address if user input is empty
     const introducer = defaultAffiliation(txInput.affiliation).toLowerCase();
     if (Number.parseFloat(txInput.amount) < 0) {

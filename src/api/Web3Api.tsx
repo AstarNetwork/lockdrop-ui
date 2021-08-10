@@ -8,7 +8,7 @@ import { defaultContract } from '../data/lockInfo';
 
 let web3: Web3;
 
-export const isMainnet = (currentNetwork: string) => {
+export const isMainnet = (currentNetwork: string): boolean => {
     return currentNetwork === 'main';
 };
 
@@ -138,4 +138,4 @@ interface Props {
 }
 
 export default React.memo(Web3Api);
-export const useEth = () => ({ ...useContext(Web3Context) });
+export const useEth = (): Web3ApiProps => ({ ...useContext(Web3Context) });

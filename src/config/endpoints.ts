@@ -22,7 +22,7 @@ const endpoints: Endpoint[] = [
  * gets endpoint url for a given network
  * @param network the network
  */
-export function getNetworkEndpoint(network?: PlasmNetwork) {
+export function getNetworkEndpoint(network?: PlasmNetwork): string {
     const endpoint = endpoints.find(x => x.network === network) || endpoints[DEFAULT_ENDPOINT_INDEX];
     return endpoint.address;
 }

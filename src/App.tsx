@@ -55,7 +55,7 @@ const App: React.FC = () => {
                             <Route
                                 path="/utils-calculator"
                                 component={() => (
-                                    <Api network={plasmUtils.PlasmNetwork.Local}>
+                                    <Api network={plasmUtils.PlasmNetwork.Main}>
                                         <LockdropCalcPage />
                                     </Api>
                                 )}

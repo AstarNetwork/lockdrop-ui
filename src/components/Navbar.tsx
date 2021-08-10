@@ -1,3 +1,6 @@
+// TODOD check app complaining about unused React import
+/* eslint-disable */
+// @ts-ignore
 import React from 'react';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import { IonHeader, IonButtons, IonMenuButton, IonToolbar, IonTitle } from '@ionic/react';
@@ -45,7 +48,7 @@ const useStyles = makeStyles((theme: Theme) =>
     }),
 );
 
-export default function Navbar() {
+export default function Navbar(): JSX.Element {
     const classes = useStyles();
 
     return (
