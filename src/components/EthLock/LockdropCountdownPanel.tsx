@@ -150,7 +150,7 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData 
 export default LockdropCountdownPanel;
 
 interface PanelWrapperProps {
-    children: any;
+    children: boolean | React.ReactChild | React.ReactFragment | React.ReactPortal;
 }
 
 const PanelWrapper: React.FC<PanelWrapperProps> = ({ children }) => {

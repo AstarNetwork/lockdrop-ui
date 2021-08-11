@@ -1,12 +1,13 @@
 import BigNumber from 'bignumber.js';
 import { ApiPromise } from '@polkadot/api';
 import { H256, Hash } from '@polkadot/types/interfaces';
+import { Codec } from '@polkadot/types/types';
 import * as polkadotUtilCrypto from '@polkadot/util-crypto';
 import * as polkadotUtils from '@polkadot/util';
 import { u8aConcat } from '@polkadot/util';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
 import { BlockNumber } from '@polkadot/types/interfaces';
-import { LockdropType, Claim, Lockdrop, LockEvent } from '../types/LockdropModels';
+import { LockdropType, Claim, Lockdrop, LockEvent, LockdropVoteRequirements } from '../types/LockdropModels';
 
 /**
  * Plasm network enum
@@ -81,6 +82,8 @@ export function lockDurationToRate(duration: number): number {
  * @param duration lock duration in Unix epoch (seconds)
  * @param value lock value in the minimum denominator (Wei or Satoshi)
  */
+
+/* eslint-disable */
 export function createLockParam(
     network: LockdropType,
     transactionHash: string,
@@ -216,7 +219,7 @@ export function generatePlmAddress(publicKey: string): string {
  * Fetches Plasm real-time lockdrop vote threshold and positive vote values.
  * @param api polkadot-js api instance
  */
-export async function getLockdropVoteRequirements(api: ApiPromise) {
+export async function getLockdropVoteRequirements(api: ApiPromise): Promise<LockdropVoteRequirements> {
     // number of minium votes required for a claim request to be accepted
     const _voteThreshold = Number.parseInt((await api.query.plasmLockdrop.voteThreshold()).toString());
     // number of outstanding votes (approve votes - decline votes) required for a claim request to be accepted
@@ -293,7 +296,10 @@ export async function getLockdropAlpha(api: ApiPromise): Promise<number> {
     return parseFloat('0.' + alpha.toString());
 }
 
-export function subscribeCoinRate(api: ApiPromise, subscribeCallback: (rate: [number, number]) => void) {
+export function subscribeCoinRate(
+    api: ApiPromise,
+    subscribeCallback: (rate: [number, number]) => void,
+): Promise<Codec> {
     //const rate = ((await api.query.plasmLockdrop.dollarRate()) as unknown) as [number, number];
     const unsub = api.query.plasmLockdrop.dollarRate((data: u128) => {
         const _rate = (data as unknown) as [number, number];

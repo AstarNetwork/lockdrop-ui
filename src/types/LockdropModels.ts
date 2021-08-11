@@ -75,7 +75,8 @@ export interface LockEvent {
 // option data is the type that is going to be passed to the component
 export interface OptionData {
     dataSets: OptionItem[];
-    onChoose: (e: any) => void;
+    // onChoose: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onChoose: (e: unknown) => void;
 }
 
 // option item type is used to provide the data for dropdown items
@@ -112,3 +113,8 @@ export interface HwSigner {
     sign(hash: Buffer, lowR?: boolean): Buffer | Promise<Buffer>;
     getPublicKey?(): Buffer;
 }
+
+export type LockdropVoteRequirements = {
+    voteThreshold: number;
+    positiveVotes: number;
+};

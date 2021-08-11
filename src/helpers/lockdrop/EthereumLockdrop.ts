@@ -203,7 +203,7 @@ export async function fetchLockdropEvents(
     fromBlock: number | 'latest' | 'pending' | 'earliest' | 'genesis' = 'genesis',
     toBlock: number | 'latest' | 'pending' | 'earliest' | 'genesis' = 'latest',
     ropsten?: boolean,
-) {
+): Promise<LockEvent[]> {
     function wait(ms: number) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }

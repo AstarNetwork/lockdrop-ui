@@ -104,10 +104,8 @@ const LockdropForm: React.FC<InputProps> = ({ onSubmit }: InputProps) => {
                     <IonItem>
                         <DropdownOption
                             dataSets={ethDurations}
-                            onChoose={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                setDuration(
-                                    ethDurations.filter(i => i.value === ((e.target.value as unknown) as number))[0],
-                                );
+                            onChoose={(e: unknown) => {
+                                setDuration(ethDurations.filter(i => i.value === (e as number))[0]);
                             }}
                         ></DropdownOption>
                         <IonChip>
