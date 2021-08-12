@@ -47,7 +47,7 @@ const EthRealTimeLockPage: React.FC = () => {
     /**
      * returns true if this is lockdrop is for the plasm main net.
      */
-    const isMainnetLock = true;
+    const isMainnetLock = network === plasmUtils.PlasmNetwork.Main;
 
     const {
         web3,
@@ -66,10 +66,9 @@ const EthRealTimeLockPage: React.FC = () => {
 
     const getContractAddress = () => {
         const _mainContract = secondLockContract.find(i => i.type === 'main')?.address;
-        // always use the last contract as default if it's testnet
-        const _ropContract = secondLockContract.filter(i => i.type === 'ropsten')[1].address;
+        const _privateContract = secondLockContract.find(i => i.type === 'private')?.address;
 
-        const _addr = isMainnetLock ? _mainContract : _ropContract;
+        const _addr = isMainnetLock ? _mainContract : _privateContract;
         if (typeof _addr === 'undefined') throw new Error('Could not find the correct contract address');
 
         return _addr;
@@ -99,7 +98,7 @@ const EthRealTimeLockPage: React.FC = () => {
     }, [now, lockdropStart, lockdropEnd]);
 
     const getAddressArray = useMemo(() => {
-        const _rop = secondLockContract.filter(i => i.type === 'ropsten');
+        const _rop = secondLockContract.filter(i => i.type === 'private');
         const _addr = _rop.map(i => i.address);
         return _addr;
     }, []);
@@ -126,7 +125,10 @@ const EthRealTimeLockPage: React.FC = () => {
                 allLockEvents.length === 0 ||
                 (latestBlock !== 0 && ethLockdrop.getHighestBlockNo(allLockEvents) <= latestBlock)
             ) {
-                const _allLocks = await ethLockdrop.getAllLockEvents(contractInst);
+                const _allLocks =
+                    currentNetwork !== 'private'
+                        ? await ethLockdrop.getAllLockEvents(contractInst)
+                        : await ethLockdrop.getLocalEvents(web3, contract?.defaultAccount || '', latestBlock);
                 setLockEvents(_allLocks);
             }
         },

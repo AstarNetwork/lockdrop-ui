@@ -3,6 +3,7 @@
 import Lockdrop from '../../contracts/Lockdrop.json';
 import getWeb3 from '../getWeb3';
 import Web3 from 'web3';
+import { Log } from 'web3-core';
 import { Contract } from 'web3-eth-contract';
 import { LockEvent, LockInput } from '../../types/LockdropModels';
 import BigNumber from 'bignumber.js';
@@ -190,6 +191,54 @@ export function deserializeLockEvents(lockEvents: string): LockEvent[] {
     }
 }
 
+async function getLockdropEvents(web3: Web3, events: EtherScanApi.Result[] | Log[]): Promise<LockEvent[]> {
+    const lockdropAbiInputs = [
+        {
+            indexed: true,
+            internalType: 'uint256',
+            name: 'eth',
+            type: 'uint256',
+        },
+        {
+            indexed: true,
+            internalType: 'uint256',
+            name: 'duration',
+            type: 'uint256',
+        },
+        {
+            indexed: false,
+            internalType: 'address',
+            name: 'lock',
+            type: 'address',
+        },
+        {
+            indexed: false,
+            internalType: 'address',
+            name: 'introducer',
+            type: 'address',
+        },
+    ];
+
+    const lockEvents = events.map(async event => {
+        const decoded = web3.eth.abi.decodeLog(lockdropAbiInputs, event.data, event.topics);
+        const senderTx = await web3.eth.getTransaction(event.transactionHash);
+
+        const ev = {
+            eth: new BigNumber(senderTx.value),
+            duration: Web3Utils.hexToNumber(event.topics[2]),
+            lock: decoded['lock'],
+            introducer: decoded['introducer'],
+            blockNo: Web3Utils.hexToNumber(event.blockNumber),
+            timestamp: Web3Utils.hexToNumber((<EtherScanApi.Result>event)?.timeStamp || 0),
+            lockOwner: senderTx.from,
+            transactionHash: event.transactionHash,
+        } as LockEvent;
+        return ev;
+    });
+
+    return Promise.all(lockEvents);
+}
+
 /**
  * fetch contract logs from etherscan. Because there is no API keys, the fetch will be limited to 1 time ever second
  * @param contractAddress lockdrop smart contract address
@@ -219,53 +268,7 @@ export async function fetchLockdropEvents(
         throw new Error(logs.message);
     }
 
-    const lockdropAbiInputs = [
-        {
-            indexed: true,
-            internalType: 'uint256',
-            name: 'eth',
-            type: 'uint256',
-        },
-        {
-            indexed: true,
-            internalType: 'uint256',
-            name: 'duration',
-            type: 'uint256',
-        },
-        {
-            indexed: false,
-            internalType: 'address',
-            name: 'lock',
-            type: 'address',
-        },
-        {
-            indexed: false,
-            internalType: 'address',
-            name: 'introducer',
-            type: 'address',
-        },
-    ];
-
-    const lockEvents = logs.result.map(async event => {
-        const decoded = web3.eth.abi.decodeLog(lockdropAbiInputs, event.data, event.topics);
-        const senderTx = await web3.eth.getTransaction(event.transactionHash);
-
-        //console.log(new BigNumber(senderTx.value));
-
-        const ev = {
-            eth: new BigNumber(senderTx.value),
-            duration: Web3Utils.hexToNumber(event.topics[2]),
-            lock: decoded['lock'],
-            introducer: decoded['introducer'],
-            blockNo: Web3Utils.hexToNumber(event.blockNumber),
-            timestamp: Web3Utils.hexToNumber(event.timeStamp),
-            lockOwner: senderTx.from,
-            transactionHash: event.transactionHash,
-        } as LockEvent;
-        return ev;
-    });
-
-    return Promise.all(lockEvents);
+    return getLockdropEvents(web3, logs.result);
 }
 
 /**
@@ -287,6 +290,20 @@ export async function getAllLockEvents(instance: Contract): Promise<LockEvent[]>
     const cacheEvents = await fetchEventsFromCache(contractAddr);
 
     return cacheEvents;
+}
+
+export async function getLocalEvents(
+    web3: Web3,
+    contractAddress: string,
+    lastBlockNumber: number,
+): Promise<LockEvent[]> {
+    const events = await web3.eth.getPastLogs({
+        fromBlock: 0,
+        toBlock: lastBlockNumber,
+        address: contractAddress,
+    });
+
+    return getLockdropEvents(web3, events);
 }
 
 /**

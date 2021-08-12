@@ -260,7 +260,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, onClickRefresh }) => 
                                             ) : unlocked ? (
                                                 <p>Lock already unlocked!</p>
                                             ) : (
-                                                <p>You can unlocked your lock!</p>
+                                                <p>You can unlock your lock!</p>
                                             )}
                                         </>
                                     )}

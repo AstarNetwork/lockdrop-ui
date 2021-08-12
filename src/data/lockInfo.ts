@@ -18,7 +18,6 @@ export const firstLockdropEnd = firstLockdropStart.clone().add(LOCKDROP_DURATION
  */
 export const secondLockdropStart = moment.unix(1598832000);
 export const secondLockdropEnd = secondLockdropStart.clone().add(LOCKDROP_DURATION, 'days');
-export const defaultContract = '0xa91E04a6ECF202A7628e0c9191676407015F5AF9';
 
 export interface LockdropContract {
     type: 'main' | 'ropsten' | 'private';
@@ -49,7 +48,7 @@ export const secondLockContract: LockdropContract[] = [
     },
     {
         type: 'ropsten',
-        address: defaultContract,
+        address: '0xa91E04a6ECF202A7628e0c9191676407015F5AF9',
         blockHeight: 8474518,
     },
     { type: 'private', address: Lockdrop.networks[5777].address, blockHeight: 0 },

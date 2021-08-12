@@ -4,7 +4,6 @@ import { Contract } from 'web3-eth-contract';
 import { Web3Context, Web3ApiProps } from '../contexts/Web3Context';
 import * as ethLockdrop from '../helpers/lockdrop/EthereumLockdrop';
 import { removeWeb3Event } from '../helpers/getWeb3';
-import { defaultContract } from '../data/lockInfo';
 
 let web3: Web3;
 
@@ -14,7 +13,7 @@ export const isMainnet = (currentNetwork: string): boolean => {
 
 export const plasmNetToEthNet = 'Main Network';
 
-function Web3Api({ contractAddress = defaultContract, children }: Props): React.ReactElement<Props> {
+function Web3Api({ contractAddress, children }: Props): React.ReactElement<Props> {
     // TODO useReducer, to many state variables
     const [currentNetwork, setCurrentNetwork] = useState<string>('');
     const [latestBlock, setLatestBlock] = useState<number>(0);
@@ -26,13 +25,13 @@ function Web3Api({ contractAddress = defaultContract, children }: Props): React.
     const [isChangingContract, setIsChangingContract] = useState<boolean>(false);
     const [isWeb3Loading, setIsWeb3Loading] = useState<boolean>(false);
     const [isMainnetLock, setIsMainnetLock] = useState<boolean | undefined>(undefined);
-    const [_contractAddress, _setContactAddress] = useState<string>(contractAddress);
+    const [_contractAddress, _setContactAddress] = useState<string | undefined>(contractAddress);
 
-    const createContract = async (address: string, isInitial: boolean) => {
+    const createContract = async (address: string | undefined, isInitial: boolean) => {
         console.log('Creating contract with address ', address);
         _setContactAddress(address);
         try {
-            if (web3) {
+            if (web3 && address) {
                 if (!isInitial) {
                     setIsChangingContract(true);
                 }
@@ -51,7 +50,7 @@ function Web3Api({ contractAddress = defaultContract, children }: Props): React.
                 }
             }
         } catch (err) {
-            setError(err);
+            setError(err.message);
         }
     };
 

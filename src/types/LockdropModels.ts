@@ -75,8 +75,7 @@ export interface LockEvent {
 // option data is the type that is going to be passed to the component
 export interface OptionData {
     dataSets: OptionItem[];
-    // onChoose: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onChoose: (e: unknown) => void;
+    onChoose: (e: string) => void;
 }
 
 // option item type is used to provide the data for dropdown items

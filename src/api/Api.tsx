@@ -43,7 +43,7 @@ const types = {
         eth: 'u128',
     },
 };
-/* eslint-enable *?
+/* eslint-enable */
 
 /**
  * creates ApiPromise for a given network
@@ -66,7 +66,7 @@ export function getApi(network: PlasmNetwork): ApiPromise {
  * this will default to the main net node
  * @param network end point for the client to connect to
  */
-export async function createPlasmInstance(network?: PlasmNetwork) {
+export async function createPlasmInstance(network?: PlasmNetwork): Promise<ApiPromise> {
     const api = getApi(network || PlasmNetwork.Main);
     return await api.isReady;
 }
@@ -98,4 +98,4 @@ interface Props {
 }
 
 export default React.memo(Api);
-export const useApi = () => ({ ...useContext(ApiContext) });
+export const useApi = (): ApiProps => ({ ...useContext(ApiContext) });
