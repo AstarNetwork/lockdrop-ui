@@ -4,6 +4,8 @@ import { Contract } from 'web3-eth-contract';
 import { Web3Context, Web3ApiProps } from '../contexts/Web3Context';
 import * as ethLockdrop from '../helpers/lockdrop/EthereumLockdrop';
 import { removeWeb3Event } from '../helpers/getWeb3';
+import { LockSeason } from '../types/LockdropModels';
+import { firstLockContract, secondLockContract } from '../data/lockInfo';
 
 let web3: Web3;
 
@@ -54,6 +56,18 @@ function Web3Api({ contractAddress, children }: Props): React.ReactElement<Props
         }
     };
 
+    const changeLockSeason = async (season: LockSeason, isMainLock: boolean) => {
+        const contracts = season === LockSeason.First ? firstLockContract : secondLockContract;
+        const chainType = isMainLock ? 'main' : 'private';
+        const contAddr = contracts.find(i => i.type === chainType)?.address;
+
+        if (typeof contAddr !== 'undefined') {
+            _setContactAddress(contAddr);
+        } else {
+            setError('Could not find lockdrop contract');
+        }
+    };
+
     const value = useMemo<Web3ApiProps>(
         () => ({
             web3,
@@ -70,6 +84,10 @@ function Web3Api({ contractAddress, children }: Props): React.ReactElement<Props
             setLatestBlock: block => setLatestBlock(block),
             setAccount: account => setAccount(account),
             setIsMainnetLock: value => setIsMainnetLock(value),
+            setParameters: (isMainnetLock, lockSeason) => {
+                setIsMainnetLock(isMainnetLock);
+                changeLockSeason(lockSeason, isMainnetLock);
+            },
         }),
         [
             isWeb3Loading,
@@ -91,7 +109,7 @@ function Web3Api({ contractAddress, children }: Props): React.ReactElement<Props
                 return;
             }
 
-            console.log('initializing web3, isMainnetLock ', isMainnetLock);
+            console.log('Initializing web3, isMainnetLock ', isMainnetLock);
             setError(undefined);
             setIsWeb3Loading(true);
 

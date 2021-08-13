@@ -1,4 +1,5 @@
 import React from 'react';
+import { LockSeason } from '../types/LockdropModels';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 
@@ -17,6 +18,7 @@ export interface Web3ApiProps {
     setLatestBlock: (block: number) => void;
     setAccount: (account: string) => void;
     setIsMainnetLock: (value: boolean) => void;
+    setParameters: (isMainNetLock: boolean, lockSeason: LockSeason) => void;
 }
 
 export const Web3Context = React.createContext<Web3ApiProps>({} as Web3ApiProps);

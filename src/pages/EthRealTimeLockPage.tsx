@@ -7,40 +7,23 @@ import * as ethLockdrop from '../helpers/lockdrop/EthereumLockdrop';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
-import { LockInput, LockEvent } from '../types/LockdropModels';
+import { LockInput, LockEvent, LockSeason } from '../types/LockdropModels';
 import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SectionCard from '../components/SectionCard';
-import { Typography, Container, Divider, makeStyles, createStyles } from '@material-ui/core';
+import { Typography, Container } from '@material-ui/core';
 import * as plasmUtils from '../helpers/plasmUtils';
 import * as polkadotCrypto from '@polkadot/util-crypto';
 import * as polkadotUtil from '@polkadot/util';
 import ClaimStatus from '../components/RealtimeLockdrop/ClaimStatus';
 import moment from 'moment';
 import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
-import { secondLockContract } from '../data/lockInfo';
-import Dropdown from 'react-dropdown';
-import 'react-dropdown/style.css';
 import { useApi } from '../api/Api';
 import { useEth, plasmNetToEthNet } from '../api/Web3Api';
 import LoadingOverlay from '../components/LoadingOverlay';
 
-const useStyles = makeStyles(theme =>
-    createStyles({
-        addressDropdown: {
-            padding: theme.spacing(0, 3, 0),
-            marginLeft: 'auto',
-            marginRight: 'auto',
-            [theme.breakpoints.up('md')]: {
-                maxWidth: '60%',
-            },
-        },
-    }),
-);
-
 const EthRealTimeLockPage: React.FC = () => {
-    const classes = useStyles();
     const now = moment.utc().valueOf();
     const { api, network } = useApi();
 
@@ -60,21 +43,10 @@ const EthRealTimeLockPage: React.FC = () => {
         error,
         setLatestBlock,
         setAccount,
-        changeContractAddress,
+        setParameters,
         setIsMainnetLock,
     } = useEth();
 
-    const getContractAddress = () => {
-        const _mainContract = secondLockContract.find(i => i.type === 'main')?.address;
-        const _privateContract = secondLockContract.find(i => i.type === 'private')?.address;
-
-        const _addr = isMainnetLock ? _mainContract : _privateContract;
-        if (typeof _addr === 'undefined') throw new Error('Could not find the correct contract address');
-
-        return _addr;
-    };
-
-    const [contractAddress, setContractAddress] = useState<string>(getContractAddress());
     const [message, setMessage] = useState<string>('');
 
     // get lock event list from the local storage if it exists
@@ -96,12 +68,6 @@ const EthRealTimeLockPage: React.FC = () => {
 
         return started && !ended;
     }, [now, lockdropStart, lockdropEnd]);
-
-    const getAddressArray = useMemo(() => {
-        const _rop = secondLockContract.filter(i => i.type === 'private');
-        const _addr = _rop.map(i => i.address);
-        return _addr;
-    }, []);
 
     // lockdrop parameter for real-time lockdrop rewards
     const lockParams = useMemo(() => {
@@ -135,11 +101,11 @@ const EthRealTimeLockPage: React.FC = () => {
         [latestBlock, allLockEvents],
     );
 
-    // Set contract address
+    // Set web3 api options
     useEffect(() => {
-        changeContractAddress(contractAddress);
+        setParameters(isMainnetLock, LockSeason.Second);
         // eslint-disable-next-line
-    }, [contractAddress]);
+  }, []);
 
     // Display error messages
     useEffect(() => {
@@ -306,20 +272,6 @@ const EthRealTimeLockPage: React.FC = () => {
                                 endTime={moment.unix(parseInt(lockdropEnd))}
                                 lockData={allLockEvents}
                             />
-                            {!isMainnetLock && (
-                                <>
-                                    <Divider />
-                                    <Typography variant="h4" component="h5" align="center">
-                                        Lockdrop Contract Address
-                                    </Typography>
-                                    <Dropdown
-                                        options={getAddressArray}
-                                        value={contractAddress}
-                                        onChange={e => setContractAddress(e.value)}
-                                        className={classes.addressDropdown}
-                                    />
-                                </>
-                            )}
                         </SectionCard>
 
                         {isLockdropOpen && <LockdropForm onSubmit={handleSubmit} />}

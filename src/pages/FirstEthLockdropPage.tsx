@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import * as ethLockdrop from '../helpers/lockdrop/EthereumLockdrop';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { LockEvent } from '../types/LockdropModels';
+import { LockEvent, LockSeason } from '../types/LockdropModels';
 import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -21,30 +21,14 @@ import { useEth, isMainnet } from '../api/Web3Api';
 import LoadingOverlay from '../components/LoadingOverlay';
 
 const FirstEthLockdropPage: React.FC = () => {
-    const {
-        web3,
-        contract,
-        error,
-        lockdropStart,
-        lockdropEnd,
-        currentNetwork,
-        setIsMainnetLock,
-        changeContractAddress,
-    } = useEth();
+    const { web3, contract, error, lockdropStart, lockdropEnd, currentNetwork, setParameters } = useEth();
 
     const [allLockEvents, setLockEvents] = useState<LockEvent[]>([]);
     const lockStoreKey = `id:${firstLockContract.find(i => i.type === 'main')?.address}`;
 
     // Set network and contract address
     useEffect(() => {
-        setIsMainnetLock(true);
-
-        const contAddr = firstLockContract.find(i => i.type === 'main')?.address;
-        if (typeof contAddr !== 'undefined') {
-            changeContractAddress(contAddr);
-        } else {
-            toast.error('Could not find lockdrop contract');
-        }
+        setParameters(true, LockSeason.First);
         // eslint-disable-next-line
     }, []);
 
