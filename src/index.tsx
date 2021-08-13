@@ -7,7 +7,7 @@ import './index.css';
 import 'react-virtualized/styles.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
-import { MuiThemeProvider, createMuiTheme, responsiveFontSizes } from '@material-ui/core/styles';
+import { MuiThemeProvider, createTheme, responsiveFontSizes } from '@material-ui/core/styles';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 import { toast } from 'react-toastify';
@@ -31,7 +31,7 @@ toast.configure({
 window.contract = window.contract || {};
 window.web3 = window.web3 || {};
 
-let theme = createMuiTheme({
+let theme = createTheme({
     typography: {
         fontFamily: [
             'Work Sans',

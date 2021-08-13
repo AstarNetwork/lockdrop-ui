@@ -109,7 +109,7 @@ const LockdropCountdownPanel: React.FC<Props> = ({ startTime, endTime, lockData 
                         <Typography variant="h4" component="h3" align="center" className={classes.headerText}>
                             Lockdrop {lockState === LockState.notStart ? 'Starting' : 'Ending'} in:
                         </Typography>
-                        <Grid container spacing={2} justify="center">
+                        <Grid container spacing={2} justifyContent="center">
                             <Grid item>
                                 <h2>{timeLeft.days}</h2>
                                 <h4>Days</h4>

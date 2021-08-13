@@ -52,7 +52,7 @@ const StickyFooter: React.FC = () => {
         <div className={classes.root}>
             <footer className={classes.footer}>
                 <Container maxWidth="lg">
-                    <Grid container spacing={4} justify="center" className={classes.siteMap}>
+                    <Grid container spacing={4} justifyContent="center" className={classes.siteMap}>
                         <Grid item>
                             <Typography variant="body1" component="h1" align="center" className={classes.footerHeader}>
                                 Company
