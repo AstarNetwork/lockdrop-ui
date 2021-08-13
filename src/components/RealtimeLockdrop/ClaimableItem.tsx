@@ -1,8 +1,8 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState, useMemo } from 'react';
-import * as plasmUtils from '../../helpers/plasmUtils';
-import * as polkadotUtils from '@polkadot/util';
-import * as polkadotCrypto from '@polkadot/util-crypto';
+import { createLockParam, claimPowNonce, getClaimStatus } from '../../helpers/plasmUtils';
+import { formatBalance, hexToU8a } from '@polkadot/util';
+import { encodeAddress } from '@polkadot/util-crypto';
 import { Claim, Lockdrop } from '../../types/LockdropModels';
 import {
     makeStyles,
@@ -22,7 +22,6 @@ import Web3Utils from 'web3-utils';
 import SendIcon from '@material-ui/icons/Send';
 import CheckIcon from '@material-ui/icons/Check';
 import { green } from '@material-ui/core/colors';
-import BigNumber from 'bignumber.js';
 import Badge from '@material-ui/core/Badge';
 import ThumbUpIcon from '@material-ui/icons/ThumbUp';
 import ThumbDownIcon from '@material-ui/icons/ThumbDown';
@@ -106,7 +105,7 @@ const ClaimItem: React.FC<ItemProps> = ({
     const { tokenDecimals } = useChainInfo();
 
     const claimId = useMemo(() => {
-        return plasmUtils.createLockParam(
+        return createLockParam(
             lockParam.type,
             lockParam.transactionHash.toHex(),
             lockParam.publicKey.toHex(),
@@ -163,7 +162,7 @@ const ClaimItem: React.FC<ItemProps> = ({
     const receivingPlm = useMemo(() => {
         if (typeof claimData === 'undefined') return '0';
 
-        return plasmUtils.femtoToPlm(new BigNumber(claimData.amount.toString()), tokenDecimals).toFixed();
+        return formatBalance(claimData.amount, { decimals: tokenDecimals, withSi: true });
         // eslint-disable-next-line
     }, [claimData]);
 
@@ -196,14 +195,14 @@ const ClaimItem: React.FC<ItemProps> = ({
      */
     const submitClaimReq = async (param: Lockdrop) => {
         setSendingRequest(true);
-        const _lock = plasmUtils.createLockParam(
+        const _lock = createLockParam(
             param.type,
             param.transactionHash.toHex(),
             param.publicKey.toHex(),
             param.duration.toString(),
             param.value.toString(),
         );
-        const _nonce = plasmUtils.claimPowNonce(_lock.hash);
+        const _nonce = claimPowNonce(_lock.hash);
 
         const unsubscribe = await api.tx.plasmLockdrop.request(_lock.toU8a(), _nonce).send(({ status }) => {
             // set the timestamp of the request
@@ -213,7 +212,7 @@ const ClaimItem: React.FC<ItemProps> = ({
             if (status.isFinalized) {
                 console.log('Finalized block hash', status.asFinalized.toHex());
 
-                plasmUtils.getClaimStatus(api, claimId).then(claim => {
+                getClaimStatus(api, claimId).then(claim => {
                     setClaimData(claim);
                     setSendingRequest(false);
                 });
@@ -239,14 +238,14 @@ const ClaimItem: React.FC<ItemProps> = ({
                     const _sig = await getLockerSig(id, claimRecipientAddress);
 
                     const unsubscribe = await api.tx.plasmLockdrop
-                        .claimTo(claimId, claimRecipientAddress, polkadotUtils.hexToU8a(_sig))
+                        .claimTo(claimId, claimRecipientAddress, hexToU8a(_sig))
                         .send(({ status }) => {
                             console.log('Token claim status:', status.type);
 
                             if (status.isFinalized) {
                                 console.log('Finalized block hash', status.asFinalized.toHex());
 
-                                plasmUtils.getClaimStatus(api, claimId).then(claim => {
+                                getClaimStatus(api, claimId).then(claim => {
                                     setClaimData(claim);
                                     setClaimingLock(false);
                                 });
@@ -262,7 +261,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                         if (status.isFinalized) {
                             console.log('Finalized block hash', status.asFinalized.toHex());
 
-                            plasmUtils.getClaimStatus(api, claimId).then(claim => {
+                            getClaimStatus(api, claimId).then(claim => {
                                 setClaimData(claim);
                                 setClaimingLock(false);
                             });
@@ -300,7 +299,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                 header={'Confirm Rewards'}
                 subHeader={'Real-time lockdrop claim'}
                 message={`Sending claim rewards of ${receivingPlm} ${plasmNetwork === 'Plasm' ? 'PLM' : 'PLD'}.
-                    to ${polkadotCrypto.encodeAddress(claimRecipientAddress, 5)}.
+                    to ${encodeAddress(claimRecipientAddress, 5)}.
                     Please confirm`}
                 buttons={[
                     {

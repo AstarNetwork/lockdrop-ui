@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { ApiPromise } from '@polkadot/api';
+import { formatBalance } from '@polkadot/util';
 import * as plasmUtils from '../../helpers/plasmUtils';
 import * as polkadotCrypto from '@polkadot/util-crypto';
 import { Claim, Lockdrop } from '../../types/LockdropModels';
@@ -30,7 +31,6 @@ import { toast } from 'react-toastify';
 import EditIcon from '@material-ui/icons/Edit';
 import CopyMessageBox from '../CopyMessageBox';
 import ClaimItem from './ClaimableItem';
-import BigNumber from 'bignumber.js';
 import moment from 'moment';
 import { useApi } from '../../api/Api';
 import useChainInfo from '../../helpers/useChainInfo';
@@ -174,8 +174,7 @@ const ClaimStatus: React.FC<Props> = ({
             const unsub = await api.query.system.account(plasmAddr, ({ data: balance }) => {
                 if (isUnmounting) unsub();
                 const freeBal = balance.free;
-                const plmTokens = plasmUtils.femtoToPlm(new BigNumber(freeBal.toString(10)), tokenDecimals).toFixed(3);
-                const formatBal = parseFloat(plmTokens).toLocaleString('en');
+                const formatBal = formatBalance(freeBal, { decimals: tokenDecimals, withSi: true });
                 setBalance(formatBal);
                 // turn off the loading circle for initial fetches
                 if (isLoadingBal && balance) setLoadingBal(false);
