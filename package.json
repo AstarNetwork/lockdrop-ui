@@ -103,5 +103,8 @@
             "last 1 safari version"
         ]
     },
+    "jest": {
+      "transformIgnorePatterns" : ["<rootDir>/node_modules/(?!@polkadot|@babel/runtime/helpers/esm/)"]
+    },
     "description": "Lockdrop Application for Plasm Network"
 }
