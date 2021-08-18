@@ -1,6 +1,6 @@
 {
     "name": "lockdrop-ui",
-    "homepage": "https://lockdrop.plasmnet.io",
+    "homepage": "https://lockdrop.astar.network",
     "version": "0.0.1",
     "private": true,
     "dependencies": {
