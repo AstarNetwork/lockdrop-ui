@@ -1,7 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { ApiPromise } from '@polkadot/api';
-import { formatBalance } from '@polkadot/util';
 import * as plasmUtils from '../../helpers/plasmUtils';
 import * as polkadotCrypto from '@polkadot/util-crypto';
 import { Claim, Lockdrop } from '../../types/LockdropModels';
@@ -97,7 +96,7 @@ const ClaimStatus: React.FC<Props> = ({
 }) => {
     const classes = useStyles();
     const { api } = useApi();
-    const { tokenDecimals } = useChainInfo();
+    const { formatBalance } = useChainInfo();
 
     const defaultAddr = useMemo(() => {
         return plasmUtils.generatePlmAddress(publicKey);
@@ -174,7 +173,7 @@ const ClaimStatus: React.FC<Props> = ({
             const unsub = await api.query.system.account(plasmAddr, ({ data: balance }) => {
                 if (isUnmounting) unsub();
                 const freeBal = balance.free;
-                const formatBal = formatBalance(freeBal, { decimals: tokenDecimals, withSi: true });
+                const formatBal = formatBalance(freeBal);
                 setBalance(formatBal);
                 // turn off the loading circle for initial fetches
                 if (isLoadingBal && balance) setLoadingBal(false);
@@ -355,8 +354,7 @@ const ClaimStatus: React.FC<Props> = ({
 
             {balance && !addrEditMode && (
                 <Typography variant="body1" component="p" align="center">
-                    Has balance of {balance + ' '}
-                    {plasmNetwork === 'Plasm' ? 'PLM' : 'PLD'}
+                    Has balance of {balance}
                 </Typography>
             )}
 

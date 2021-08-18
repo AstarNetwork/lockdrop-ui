@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState, useMemo } from 'react';
 import { createLockParam, claimPowNonce, getClaimStatus } from '../../helpers/plasmUtils';
-import { formatBalance, hexToU8a } from '@polkadot/util';
+import { hexToU8a } from '@polkadot/util';
 import { encodeAddress } from '@polkadot/util-crypto';
 import { Claim, Lockdrop } from '../../types/LockdropModels';
 import {
@@ -89,7 +89,6 @@ const useStyles = makeStyles(theme =>
 
 const ClaimItem: React.FC<ItemProps> = ({
     lockParam,
-    plasmNetwork,
     networkType,
     positiveVotes,
     voteThreshold,
@@ -102,7 +101,7 @@ const ClaimItem: React.FC<ItemProps> = ({
     const classes = useStyles();
     const { api } = useApi();
     const now = moment.utc().valueOf();
-    const { tokenDecimals } = useChainInfo();
+    const { formatBalance } = useChainInfo();
 
     const claimId = useMemo(() => {
         return createLockParam(
@@ -160,9 +159,9 @@ const ClaimItem: React.FC<ItemProps> = ({
     }, [hasAllVotes, reqAccepted, claimData, lastClaimTime, now, isOver]);
 
     const receivingPlm = useMemo(() => {
-        if (typeof claimData === 'undefined') return '0';
+        if (typeof claimData === 'undefined') return formatBalance(0);
 
-        return formatBalance(claimData.amount, { decimals: tokenDecimals, withSi: true });
+        return formatBalance(claimData.amount);
         // eslint-disable-next-line
     }, [claimData]);
 
@@ -298,7 +297,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                 translucent
                 header={'Confirm Rewards'}
                 subHeader={'Real-time lockdrop claim'}
-                message={`Sending claim rewards of ${receivingPlm} ${plasmNetwork === 'Plasm' ? 'PLM' : 'PLD'}.
+                message={`Sending claim rewards of ${receivingPlm}.
                     to ${encodeAddress(claimRecipientAddress, 5)}.
                     Please confirm`}
                 buttons={[
@@ -373,7 +372,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                         <>
                             <br />
                             <Typography component="h5" variant="h6" className={classes.inline} color="textPrimary">
-                                Receiving {receivingPlm} {plasmNetwork === 'Plasm' ? 'PLM' : 'PLD'}
+                                Receiving {receivingPlm}
                             </Typography>
                         </>
                     )}
