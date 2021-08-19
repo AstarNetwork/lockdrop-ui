@@ -29,37 +29,43 @@ import '@ionic/react/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 import LockdropStatPage from './pages/LockdropStatPage';
+import Api from './api/Api';
+import Web3Api from './api/Web3Api';
 
 const App: React.FC = () => {
     return (
-        <IonApp>
-            <IonReactHashRouter>
-                <IonSplitPane contentId="main" when="lg">
-                    <SideMenu />
+        <Web3Api>
+            <IonApp>
+                <IonReactHashRouter>
+                    <IonSplitPane contentId="main" when="lg">
+                        <SideMenu />
 
-                    <IonRouterOutlet id="main" animated>
-                        <Route exact path="/lock-form" component={LandingPage} />
-                        <Route exact path="/" render={() => <Redirect to="/lock-form" />} />
-                        <Route path="/lock-form/first" component={FirstEthLockdropPage} />
-                        <Route
-                            path="/lock-form/second-eth"
-                            component={(props: any) => (
-                                <EthRealTimeLockPage {...props} lockdropNetwork={plasmUtils.PlasmNetwork.Main} />
-                            )}
-                        />
-                        <Route
-                            path="/lock-form/dusty-eth"
-                            component={(props: any) => (
-                                <EthRealTimeLockPage {...props} lockdropNetwork={plasmUtils.PlasmNetwork.Local} />
-                            )}
-                        />
-                        <Route path="/utils-calculator" component={LockdropCalcPage} />
-
-                        <Route path="/lockdrop-stat" component={LockdropStatPage} />
-                    </IonRouterOutlet>
-                </IonSplitPane>
-            </IonReactHashRouter>
-        </IonApp>
+                        <IonRouterOutlet id="main" animated>
+                            <Route exact path="/lock-form" component={LandingPage} />
+                            <Route exact path="/" render={() => <Redirect to="/lock-form" />} />
+                            <Route path="/lock-form/first" component={FirstEthLockdropPage} />
+                            <Route
+                                path="/lock-form/second-eth"
+                                component={(props: any) => (
+                                    <Api network={plasmUtils.PlasmNetwork.Main}>
+                                        <EthRealTimeLockPage {...props} />
+                                    </Api>
+                                )}
+                            />
+                            <Route
+                                path="/utils-calculator"
+                                component={() => (
+                                    <Api network={plasmUtils.PlasmNetwork.Main}>
+                                        <LockdropCalcPage />
+                                    </Api>
+                                )}
+                            />
+                            <Route path="/lockdrop-stat" component={LockdropStatPage} />
+                        </IonRouterOutlet>
+                    </IonSplitPane>
+                </IonReactHashRouter>
+            </IonApp>
+        </Web3Api>
     );
 };
 

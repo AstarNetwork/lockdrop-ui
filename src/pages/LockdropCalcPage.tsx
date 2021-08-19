@@ -16,29 +16,27 @@ import {
     IonSelect,
     IonSelectOption,
     IonChip,
-    IonLoading,
     IonToggle,
 } from '@ionic/react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Container, Typography } from '@material-ui/core';
-import BN from 'bn.js';
-import { ethDurations } from 'src/data/lockInfo';
-import { ApiPromise } from '@polkadot/api';
+import BigNumber from 'bignumber.js';
+import { ethDurations } from '../data/lockInfo';
 import * as plasmUtils from '../helpers/plasmUtils';
+import { useApi } from '../api/Api';
+import LoadingOverlay from '../components/LoadingOverlay';
 
-const LockdropCalcPage = () => {
+const LockdropCalcPage: React.FC = () => {
     const [tokenType, setTokenType] = useState<'BTC' | 'ETH'>('ETH');
     const [tokenAmount, setTokenAmount] = useState('');
     const [tokenExRate, setTokenExRate] = useState<[number, number]>([0, 0]); // 1 token to USD rate
     const [lockDuration, setLockDuration] = useState(0);
-    const [plasmApi, setPlasmApi] = useState<ApiPromise>();
     const [returnAlpha, setReturnAlpha] = useState(0);
-
     const [isCustomRate, setIsCustomRate] = useState(false);
     const [customExRate, setCustomExRate] = useState('');
-
-    const [isLoading, setIsLoading] = useState<{ loading: boolean; message: string }>({ loading: false, message: '' });
+    const [message, setMessage] = useState<string>('');
+    const { api, isReady } = useApi();
 
     const tokenLockDurs = useMemo(() => {
         switch (tokenType) {
@@ -50,30 +48,27 @@ const LockdropCalcPage = () => {
 
     // initial API setup
     useEffect(() => {
-        setIsLoading({ loading: true, message: 'Connecting to Plasm Network' });
-        (async () => {
-            const api = await plasmUtils.createPlasmInstance(plasmUtils.PlasmNetwork.Local);
-            setPlasmApi(api);
-
-            const networkAlpha = await plasmUtils.getLockdropAlpha(api);
-            setReturnAlpha(networkAlpha);
-            const rate = await plasmUtils.getCoinRate(api);
-            setTokenExRate(rate);
-        })().finally(() => {
-            setIsLoading({ loading: false, message: '' });
-        });
-        return () => {
-            plasmApi && plasmApi.disconnect();
-        };
+        if (!isReady) {
+            setMessage('Connecting to Plasm Network');
+        } else {
+            (async () => {
+                const networkAlpha = await plasmUtils.getLockdropAlpha(api);
+                setReturnAlpha(networkAlpha);
+                const rate = await plasmUtils.getCoinRate(api);
+                setTokenExRate(rate);
+            })().finally(() => {
+                setMessage('');
+            });
+        }
         // eslint-disable-next-line
-    }, []);
+    }, [isReady]);
 
     // fetch lock data in the background
     useEffect(() => {
         const interval = setInterval(async () => {
-            if (plasmApi) {
+            if (api) {
                 try {
-                    const rates = await plasmUtils.getCoinRate(plasmApi);
+                    const rates = await plasmUtils.getCoinRate(api);
                     setTokenExRate(rates);
                 } catch (error) {
                     console.log(error);
@@ -97,14 +92,10 @@ const LockdropCalcPage = () => {
                 : tokenType === 'BTC' // or use exchange rate for each token
                 ? tokenExRate[0]
                 : tokenExRate[1];
-
-            // Since BN doesn't support decimals be careful about returnAlpha which is decimal number.
-            const multiplier = 1000000000000000; // todo use number of decimals here from other branch
-            const newAlpha = returnAlpha * multiplier;
-            const _lockVal = new BN(tokenAmount).mul(new BN(_exRate));
-            const total = _lockVal.mul(new BN(newAlpha)).mul(new BN(lockDuration));
-            const totalDiv = parseFloat(total.toString()) / multiplier;
-            return totalDiv.toLocaleString('en');
+            const _lockVal = new BigNumber(tokenAmount).times(new BigNumber(_exRate));
+            const total = _lockVal.times(new BigNumber(returnAlpha)).times(new BigNumber(lockDuration));
+            if (total.isNaN()) throw new Error('Invalid value in the calculation');
+            return parseFloat(total.toFixed()).toLocaleString('en');
         } catch (e) {
             return '0';
         }
@@ -115,7 +106,7 @@ const LockdropCalcPage = () => {
             <IonPage>
                 <Navbar />
                 <IonContent>
-                    <IonLoading isOpen={isLoading.loading} message={isLoading.message} />
+                    <LoadingOverlay message={message} />
                     <Container maxWidth="lg">
                         <IonCard>
                             <IonCardHeader>

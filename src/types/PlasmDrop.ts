@@ -22,7 +22,7 @@ export class PlmDrop {
         this.locks = locks;
     }
 
-    getTotal() {
+    getTotal(): string {
         let totalIntroBonuses = new BigNumber(0);
 
         for (let i = 0; i < this.introducerAndBonuses.length; i++) {
@@ -37,20 +37,20 @@ export class PlmDrop {
             .toFixed();
     }
 
-    getTotalPlm() {
+    getTotalPlm(): string {
         return new BigNumber(this.getTotal()).toFixed();
     }
 
-    getAffBonus() {
+    getAffBonus(): string {
         return new BigNumber(this.calculateAffBonus()).toFormat(2);
     }
 
-    getIntroBonus() {
+    getIntroBonus(): string {
         return new BigNumber(this.calculateIntroBonus()).toFormat(2);
     }
 
     // calculate the number of PLM you get for being affiliated
-    calculateAffBonus() {
+    calculateAffBonus(): BigNumber {
         return this.affiliationRefsBonuses.reduce(
             (sum: BigNumber, bonus: [string, BigNumber]): BigNumber => sum.plus(bonus[1]),
             new BigNumber(0),
@@ -58,7 +58,7 @@ export class PlmDrop {
     }
 
     // the number of PLM you get for referencing an affiliate
-    calculateIntroBonus() {
+    calculateIntroBonus(): BigNumber {
         return this.introducerAndBonuses.reduce(
             (sum: BigNumber, bonus: [string, BigNumber]): BigNumber => sum.plus(bonus[1]),
             new BigNumber(0),

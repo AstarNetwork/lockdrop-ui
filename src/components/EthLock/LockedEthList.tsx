@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
 import React from 'react';
-import Web3 from 'web3';
 import SectionCard from '../SectionCard';
 import { LockEvent } from '../../types/LockdropModels';
 import { createStyles, Theme, makeStyles, useTheme } from '@material-ui/core/styles';
@@ -22,8 +21,6 @@ interface TabPanelProps {
 }
 
 interface LockHistoryProps {
-    web3: Web3;
-    account: string; // this will be used to get locks for a certain account
     lockData: LockEvent[];
     onClickRefresh?: () => Promise<void>;
 }
@@ -62,12 +59,12 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 // component that displays the number of tokens and the duration for the lock via Web3
-const LockedEthList: React.FC<LockHistoryProps> = ({ web3, account, lockData, onClickRefresh }) => {
+const LockedEthList: React.FC<LockHistoryProps> = ({ lockData, onClickRefresh }) => {
     const classes = useStyles();
     const theme = useTheme();
     const [value, setValue] = React.useState(0);
 
-    const handleChange = (_event: React.ChangeEvent<{}>, newValue: number) => {
+    const handleChange = (_event: React.ChangeEvent<any>, newValue: number) => {
         setValue(newValue);
     };
 
@@ -101,12 +98,7 @@ const LockedEthList: React.FC<LockHistoryProps> = ({ web3, account, lockData, on
                             <GlobalLocks lockData={lockData} />
                         </TabPanel>
                         <TabPanel value={value} index={1} dir={theme.direction}>
-                            <CurrentLocks
-                                web3={web3}
-                                account={account}
-                                lockData={lockData}
-                                onClickRefresh={onClickRefresh}
-                            />
+                            <CurrentLocks lockData={lockData} onClickRefresh={onClickRefresh} />
                         </TabPanel>
                     </SwipeableViews>
                 </div>

@@ -28,7 +28,7 @@ export const BlogLinks = {
 export const AppLinks = {
     plasmnetIo: 'https://apps.plasmnet.io/',
     polkadotNetwork: 'https://telemetry.polkadot.io/#list/Plasm%20Testnet%20v3',
-    joinLockdrop: 'https://lockdrop.plasmnet.io',
+    joinLockdrop: 'https://lockdrop.astar.network',
     inkPlayground: 'https://ink-playground.com/',
 };
 

@@ -1,22 +1,19 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import BigNumber from 'bignumber.js';
-import BN from 'bn.js';
-import { ApiPromise, WsProvider } from '@polkadot/api';
-import { H256 } from '@polkadot/types/interfaces';
+import { ApiPromise } from '@polkadot/api';
+import { H256, Hash } from '@polkadot/types/interfaces';
+import { Codec } from '@polkadot/types/types';
 import * as polkadotUtilCrypto from '@polkadot/util-crypto';
 import * as polkadotUtils from '@polkadot/util';
 import { u8aConcat } from '@polkadot/util';
 import { Struct, TypeRegistry, u64, u128, U8aFixed, u8 } from '@polkadot/types';
 import { BlockNumber } from '@polkadot/types/interfaces';
-import * as plasmDefinitions from '@plasm/types/dist/interfaces/definitions';
-import { LockdropType, Claim, Lockdrop, LockEvent } from 'src/types/LockdropModels';
+import { LockdropType, Claim, Lockdrop, LockEvent, LockdropVoteRequirements } from '../types/LockdropModels';
 
 /**
  * Plasm network enum
  */
 export enum PlasmNetwork {
     Local,
-    Dusty,
     Main,
 }
 
@@ -24,24 +21,13 @@ export enum PlasmNetwork {
  * converts the plasm network minimum denominator to PLM
  * @param femto minimum token value
  */
-export function femtoToPlm(femto: BigNumber) {
+export function femtoToPlm(femto: BigNumber, tokenDecimals: number): BigNumber {
     if (femto.isLessThanOrEqualTo(new BigNumber(0))) {
         return new BigNumber(0);
     }
-    const plmDenominator = new BigNumber(10).pow(new BigNumber(15));
-    return femto.dividedBy(plmDenominator);
-}
 
-/**
- * converts the plasm network minimum denominator to PLM
- * @param femto minimum token value
- */
-export function femtoToPlmBN(femto: BN): BN {
-    if (femto.lte(new BN(0))) {
-        return new BN(0);
-    }
-    const plmDenominator = new BN(10).pow(new BN(15));
-    return femto.div(plmDenominator);
+    const plmDenominator = new BigNumber(10).pow(new BigNumber(tokenDecimals));
+    return femto.dividedBy(plmDenominator);
 }
 
 /**
@@ -70,55 +56,10 @@ export function claimPowNonce(claimId: Uint8Array | H256): Uint8Array {
 const plasmTypeReg = new TypeRegistry();
 
 /**
- * establishes a connection between the client and the plasm node with the given endpoint.
- * this will default to the main net node
- * @param network end point for the client to connect to
- */
-export async function createPlasmInstance(network?: PlasmNetwork) {
-    let endpoint = '';
-    const types = Object.values(plasmDefinitions).reduce((res, { types }): object => ({ ...res, ...types }), {});
-
-    switch (network) {
-        case PlasmNetwork.Local:
-            endpoint = 'ws://127.0.0.1:9944';
-            break;
-        case PlasmNetwork.Dusty:
-            endpoint = 'wss://rpc.dusty.plasmnet.io/';
-            break;
-        case PlasmNetwork.Main: // main net endpoint will be the default value
-        default:
-            endpoint = 'wss://rpc.plasmnet.io';
-            break;
-    }
-
-    const wsProvider = new WsProvider(endpoint);
-
-    const api = await ApiPromise.create({
-        provider: wsProvider,
-        types: {
-            ...types,
-            // aliases that don't do well as part of interfaces
-            'voting::VoteType': 'VoteType',
-            'voting::TallyType': 'TallyType',
-            // chain-specific overrides
-            Address: 'GenericAddress',
-            Keys: 'SessionKeys4',
-            StakingLedger: 'StakingLedgerTo223',
-            Votes: 'VotesTo230',
-            ReferendumInfo: 'ReferendumInfoTo239',
-        },
-        // override duplicate type name
-        typesAlias: { voting: { Tally: 'VotingTally' } },
-    });
-
-    return await api.isReady;
-}
-
-/**
  * convert the given lock duration in to PLM issue bonus rate
  * @param duration token lock duration
  */
-export function lockDurationToRate(duration: number) {
+export function lockDurationToRate(duration: number): number {
     if (duration < 30) {
         return 0;
     } else if (duration < 100) {
@@ -141,6 +82,8 @@ export function lockDurationToRate(duration: number) {
  * @param duration lock duration in Unix epoch (seconds)
  * @param value lock value in the minimum denominator (Wei or Satoshi)
  */
+
+/* eslint-disable */
 export function createLockParam(
     network: LockdropType,
     transactionHash: string,
@@ -176,7 +119,7 @@ export function createLockParam(
  * @param claimId lockdrop claim ID in hex string
  * @param plasmAddress plasm network public address in ss58 encoding. This is the receiving address
  */
-export const claimToMessage = (claimId: string, plasmAddress: string) => {
+export const claimToMessage = (claimId: string, plasmAddress: string): string => {
     const addressHex = polkadotUtils.u8aToHex(polkadotUtilCrypto.decodeAddress(plasmAddress)).replace('0x', '');
 
     return `I declare to claim lockdrop reward with ID ${claimId.replace('0x', '')} to AccountId ${addressHex}`;
@@ -195,7 +138,7 @@ export async function claimTo(
     claimId: Uint8Array,
     recipient: Uint8Array | string,
     signature: Uint8Array,
-) {
+): Promise<Hash> {
     const encodedAddr = recipient instanceof Uint8Array ? polkadotUtilCrypto.encodeAddress(recipient) : recipient;
     const addrCheck = polkadotUtilCrypto.checkAddress(encodedAddr, 5);
     if (!addrCheck[0]) {
@@ -217,7 +160,7 @@ export async function claimTo(
  * @param nonce nonce for PoW authentication with the node
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function sendLockClaimRequest(api: ApiPromise, lockParam: Struct<any>, nonce: Uint8Array) {
+export async function sendLockClaimRequest(api: ApiPromise, lockParam: Struct<any>, nonce: Uint8Array): Promise<Hash> {
     if (typeof api.tx.plasmLockdrop === 'undefined') {
         throw new Error('Plasm node cannot find lockdrop module');
     }
@@ -233,7 +176,7 @@ export async function sendLockClaimRequest(api: ApiPromise, lockParam: Struct<an
  * generates a Plasm public address with the given ethereum public key
  * @param ethPubKey an compressed ECDSA public key. With or without the 0x prefix
  */
-export function generatePlmAddress(publicKey: string) {
+export function generatePlmAddress(publicKey: string): string {
     // converts a given hex string into Uint8Array
     const toByteArray = (hexString: string) => {
         const result = [];
@@ -256,27 +199,27 @@ export function generatePlmAddress(publicKey: string) {
  * @param plasmAddress Plasm network address
  * @param asPlm if the output value should be in PLM. Default denominator is in femto
  */
-export async function getAddressBalance(api: ApiPromise, plasmAddress: string | Uint8Array, asPlm?: boolean) {
-    const encodedAddr =
-        plasmAddress instanceof Uint8Array ? polkadotUtilCrypto.encodeAddress(plasmAddress) : plasmAddress;
-    const addrCheck = polkadotUtilCrypto.checkAddress(encodedAddr, 5);
-    if (!addrCheck[0]) {
-        throw new Error('Plasm address check error: ' + addrCheck[1]);
-    }
+// export async function getAddressBalance(api: ApiPromise, plasmAddress: string | Uint8Array, asPlm?: boolean) {
+//     const encodedAddr =
+//         plasmAddress instanceof Uint8Array ? polkadotUtilCrypto.encodeAddress(plasmAddress) : plasmAddress;
+//     const addrCheck = polkadotUtilCrypto.checkAddress(encodedAddr, 5);
+//     if (!addrCheck[0]) {
+//         throw new Error('Plasm address check error: ' + addrCheck[1]);
+//     }
 
-    const { data: balance } = await api.query.system.account(plasmAddress);
-    let _bal = new BigNumber(balance.free.toString());
-    if (asPlm) {
-        _bal = femtoToPlm(new BigNumber(balance.free.toString()));
-    }
-    return _bal;
-}
+//     const { data: balance } = await api.query.system.account(plasmAddress);
+//     let _bal = new BigNumber(balance.free.toString());
+//     if (asPlm) {
+//         _bal = femtoToPlm(new BigNumber(balance.free.toString()));
+//     }
+//     return _bal;
+// }
 
 /**
  * Fetches Plasm real-time lockdrop vote threshold and positive vote values.
  * @param api polkadot-js api instance
  */
-export async function getLockdropVoteRequirements(api: ApiPromise) {
+export async function getLockdropVoteRequirements(api: ApiPromise): Promise<LockdropVoteRequirements> {
     // number of minium votes required for a claim request to be accepted
     const _voteThreshold = Number.parseInt((await api.query.plasmLockdrop.voteThreshold()).toString());
     // number of outstanding votes (approve votes - decline votes) required for a claim request to be accepted
@@ -293,7 +236,7 @@ export async function getLockdropVoteRequirements(api: ApiPromise) {
  * @param api polkadot API instance
  * @param claimId real-time lockdrop claim ID
  */
-export async function sendLockdropClaim(api: ApiPromise, claimId: Uint8Array | H256) {
+export async function sendLockdropClaim(api: ApiPromise, claimId: Uint8Array | H256): Promise<Hash> {
     if (typeof api.tx.plasmLockdrop === 'undefined') {
         throw new Error('Plasm node cannot find lockdrop module');
     }
@@ -312,7 +255,7 @@ export async function sendLockdropClaim(api: ApiPromise, claimId: Uint8Array | H
  * @param api Polkadot-js API instance
  * @param claimId real-time lockdrop claim ID
  */
-export async function getClaimStatus(api: ApiPromise, claimId: Uint8Array | H256) {
+export async function getClaimStatus(api: ApiPromise, claimId: Uint8Array | H256): Promise<Claim | undefined> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const claim = (await api.query.plasmLockdrop.claims(claimId)) as any;
 
@@ -346,23 +289,26 @@ export async function getClaimStatus(api: ApiPromise, claimId: Uint8Array | H256
     return data;
 }
 
-export async function getLockdropAlpha(api: ApiPromise) {
+export async function getLockdropAlpha(api: ApiPromise): Promise<number> {
     const alpha = await api.query.plasmLockdrop.alpha();
     // the queried data will always be a whole number, but the calculated data is between 0 ~ 1.
     // so we need to manually convert them
     return parseFloat('0.' + alpha.toString());
 }
 
-export function subscribeCoinRate(api: ApiPromise, subscribeCallback: (rate: [number, number]) => void) {
+export function subscribeCoinRate(
+    api: ApiPromise,
+    subscribeCallback: (rate: [number, number]) => void,
+): Promise<Codec> {
     //const rate = ((await api.query.plasmLockdrop.dollarRate()) as unknown) as [number, number];
-    const unsub = api.query.plasmLockdrop.dollarRate(data => {
+    const unsub = api.query.plasmLockdrop.dollarRate((data: u128) => {
         const _rate = (data as unknown) as [number, number];
         subscribeCallback(_rate);
     });
     return unsub;
 }
 
-export async function getCoinRate(api: ApiPromise) {
+export async function getCoinRate(api: ApiPromise): Promise<[number, number]> {
     const rate = ((await api.query.plasmLockdrop.dollarRate()) as unknown) as [number, number];
     return rate;
 }
@@ -372,7 +318,7 @@ export async function getCoinRate(api: ApiPromise) {
  * and the second entry is the end block number
  * @param api plasm network api inst
  */
-export async function getLockdropDuration(api: ApiPromise) {
+export async function getLockdropDuration(api: ApiPromise): Promise<[BlockNumber, BlockNumber]> {
     const lockdropBounds = await api.query.plasmLockdrop.lockdropBounds();
 
     return (lockdropBounds as unknown) as [BlockNumber, BlockNumber];
@@ -382,7 +328,7 @@ export async function getLockdropDuration(api: ApiPromise) {
  * converts lockdrop parameter into a Lockdrop type
  * @param lockdropParam lockdrop parameter type in polakdot-js structure
  */
-export function structToLockdrop(lockdropParam: Struct) {
+export function structToLockdrop(lockdropParam: Struct): Lockdrop {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const claim = lockdropParam as any;
     const param: Lockdrop = {
@@ -401,7 +347,7 @@ export function structToLockdrop(lockdropParam: Struct) {
  * @param api polkadot-js api
  * @param claimId claim ID
  */
-export async function requestClaimBump(api: ApiPromise, claimId: Uint8Array | H256) {
+export async function requestClaimBump(api: ApiPromise, claimId: Uint8Array | H256): Promise<Hash> {
     const claimData = await getClaimStatus(api, claimId);
     if (typeof claimData === 'undefined') {
         throw new Error('No claim request was found for ' + polkadotUtils.u8aToHex(claimId));
@@ -419,7 +365,7 @@ export async function requestClaimBump(api: ApiPromise, claimId: Uint8Array | H2
     return hash;
 }
 
-export async function isClaimHanging(plasmApi: ApiPromise, claimData: Claim) {
+export async function isClaimHanging(plasmApi: ApiPromise, claimData: Claim): Promise<boolean> {
     const { voteThreshold, positiveVotes } = await getLockdropVoteRequirements(plasmApi);
 
     const isClaimHanging =
@@ -440,7 +386,7 @@ const durationToEpoch = (duration: number) => {
  * This is used to manually send claim requests from polkadot-js app portal
  * @param claimId claim ID in hex string
  */
-export const claimIdToNonceString = (claimId: string) => {
+export const claimIdToNonceString = (claimId: string): string => {
     const nonce2 = claimPowNonce(polkadotUtils.hexToU8a(claimId));
 
     return polkadotUtils.u8aToHex(nonce2);
@@ -452,7 +398,7 @@ export const claimIdToNonceString = (claimId: string) => {
  * @param locks the lock event that has been parsed from the chain
  * @param latestBlock the current highest ethereum block number
  */
-export const getClaimParamsFromEth = (pubKey: string, locks: LockEvent[], latestBlock: number) => {
+export const getClaimParamsFromEth = (pubKey: string, locks: LockEvent[], latestBlock: number): Lockdrop[] => {
     if (typeof pubKey === 'undefined' || pubKey === '') {
         throw new Error('No public key was provided');
     }

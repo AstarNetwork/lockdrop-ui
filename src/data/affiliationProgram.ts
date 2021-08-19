@@ -328,7 +328,7 @@ export const validBtcAddressList = [...secondBtcIntroducer];
  * @param introducer a bitcoin or ethereum address
  * @param tokenType what blockchain network the given address belongs to. Default is ETH
  */
-export function isValidIntroducerAddress(introducer: string, tokenType: 'BTC' | 'ETH' = 'ETH') {
+export function isValidIntroducerAddress(introducer: string, tokenType: 'BTC' | 'ETH' = 'ETH'): boolean {
     const validIntroducer =
         tokenType === 'ETH'
             ? validEthAddressList.find(i => introducer.toLowerCase().match(i.toLowerCase()))

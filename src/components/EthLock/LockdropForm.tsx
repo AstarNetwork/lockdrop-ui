@@ -7,14 +7,13 @@ import Container from '@material-ui/core/Container';
 import { Typography, Link } from '@material-ui/core';
 import quantstampLogo from '../../resources/quantstamp-logo.png';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-import { ethDurations, ethDustyDurations } from '../../data/lockInfo';
+import { ethDurations } from '../../data/lockInfo';
 
 type InputProps = {
     onSubmit: (inputs: LockInput) => void;
-    dusty?: boolean;
 };
 // the main component function
-const LockdropForm = ({ onSubmit, dusty }: InputProps) => {
+const LockdropForm: React.FC<InputProps> = ({ onSubmit }: InputProps) => {
     // states used in this component
     const [lockAmount, setAmount] = useState('');
     const [lockDuration, setDuration] = useState<OptionItem>({ label: '', value: 0, rate: 0 });
@@ -60,7 +59,7 @@ const LockdropForm = ({ onSubmit, dusty }: InputProps) => {
             <SectionCard maxWidth="lg">
                 <div className={classes.formRoot}>
                     <Typography variant="h4" component="h1" align="center">
-                        {dusty ? 'Dusty Plasm' : 'Plasm Main'} Network Ethereum Lockdrop
+                        Plasm Main Network Ethereum Lockdrop
                     </Typography>
                     <div>
                         <Typography variant="body2" component="h2" align="center">
@@ -104,12 +103,9 @@ const LockdropForm = ({ onSubmit, dusty }: InputProps) => {
                     <IonLabel className={classes.formLabel}>Lock Duration</IonLabel>
                     <IonItem>
                         <DropdownOption
-                            dataSets={dusty ? ethDustyDurations : ethDurations}
-                            onChoose={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                const durationSet = dusty ? ethDustyDurations : ethDurations;
-                                setDuration(
-                                    durationSet.filter(i => i.value === ((e.target.value as unknown) as number))[0],
-                                );
+                            dataSets={ethDurations}
+                            onChoose={(e: string) => {
+                                setDuration(ethDurations.filter(i => i.value === parseInt(e))[0]);
                             }}
                         ></DropdownOption>
                         <IonChip>
