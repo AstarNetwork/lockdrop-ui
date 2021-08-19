@@ -1,6 +1,9 @@
-import { IonContent, IonPage } from '@ionic/react';
+// TODOD check app complaining about unused React import
+/* eslint-disable */
+// @ts-ignore
 import React from 'react';
-import Navbar from 'src/components/Navbar';
+import { IonContent, IonPage } from '@ionic/react';
+import Navbar from '../components/Navbar';
 import { makeStyles, createStyles } from '@material-ui/core';
 
 const useStyles = makeStyles(() =>

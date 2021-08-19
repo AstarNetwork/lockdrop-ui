@@ -21,8 +21,7 @@ import lockdropLogoB from '../resources/ld_logo_b.png';
 import ethLogo from '../resources/ethereum_logo.svg';
 import { makeStyles } from '@material-ui/core';
 import { firstLockdropStart, firstLockdropEnd, secondLockdropStart, secondLockdropEnd } from '../data/lockInfo';
-import TosAgreementModal from 'src/components/TosAgreementModal';
-//import moment from 'moment';
+import TosAgreementModal from '../components/TosAgreementModal';
 import momentTimezone from 'moment-timezone';
 
 // randomize the lockdrop logo
@@ -133,20 +132,6 @@ export const LandingPage: React.FC = () => {
                         <br />
                         Lock End: {secondLockdropEnd.format('YYYY-MM-DD hh:mm').toString()} {timezone}
                     </IonCardContent>
-                </SectionCard>
-
-                <SectionCard maxWidth="lg">
-                    <IonCardHeader>
-                        <IonCardTitle>Dusty Lockdrop</IonCardTitle>
-                    </IonCardHeader>
-                    <IonItem>
-                        <IonIcon src={ethLogo} slot="start" />
-                        <IonLabel>Dusty ETH Lock</IonLabel>
-
-                        <IonButton fill="outline" slot="end">
-                            <IonRouterLink routerLink="/lock-form/dusty-eth">View</IonRouterLink>
-                        </IonButton>
-                    </IonItem>
                 </SectionCard>
                 <Footer />
             </IonContent>

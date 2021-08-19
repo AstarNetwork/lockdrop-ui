@@ -1,93 +1,57 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/prop-types */
-import { IonContent, IonPage, IonLoading, IonButton } from '@ionic/react';
+import { IonContent, IonPage, IonButton } from '@ionic/react';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import LockdropForm from '../components/EthLock/LockdropForm';
 import * as ethLockdrop from '../helpers/lockdrop/EthereumLockdrop';
-import Web3 from 'web3';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Contract } from 'web3-eth-contract';
-import { LockInput, LockEvent } from '../types/LockdropModels';
+import { LockInput, LockEvent, LockSeason } from '../types/LockdropModels';
 import LockedEthList from '../components/EthLock/LockedEthList';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { removeWeb3Event } from '../helpers/getWeb3';
 import SectionCard from '../components/SectionCard';
-import { Typography, Container, Divider, makeStyles, createStyles } from '@material-ui/core';
+import { Typography, Container } from '@material-ui/core';
 import * as plasmUtils from '../helpers/plasmUtils';
-import { ApiPromise } from '@polkadot/api';
 import * as polkadotCrypto from '@polkadot/util-crypto';
 import * as polkadotUtil from '@polkadot/util';
-import ClaimStatus from 'src/components/RealtimeLockdrop/ClaimStatus';
+import ClaimStatus from '../components/RealtimeLockdrop/ClaimStatus';
 import moment from 'moment';
 import LockdropCountdownPanel from '../components/EthLock/LockdropCountdownPanel';
-import { secondLockContract } from '../data/lockInfo';
-import Dropdown from 'react-dropdown';
-import 'react-dropdown/style.css';
+import { useApi } from '../api/Api';
+import { useEth, plasmNetToEthNet } from '../api/Web3Api';
+import LoadingOverlay from '../components/LoadingOverlay';
 
-const useStyles = makeStyles(theme =>
-    createStyles({
-        addressDropdown: {
-            padding: theme.spacing(0, 3, 0),
-            marginLeft: 'auto',
-            marginRight: 'auto',
-            [theme.breakpoints.up('md')]: {
-                maxWidth: '60%',
-            },
-        },
-    }),
-);
-
-interface Props {
-    lockdropNetwork: plasmUtils.PlasmNetwork;
-}
-
-const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
-    const classes = useStyles();
+const EthRealTimeLockPage: React.FC = () => {
     const now = moment.utc().valueOf();
+    const { api, network } = useApi();
 
     /**
      * returns true if this is lockdrop is for the plasm main net.
      */
-    const isMainnetLock = lockdropNetwork === plasmUtils.PlasmNetwork.Main;
+    const isMainnetLock = network === plasmUtils.PlasmNetwork.Main;
 
-    // this is used for rendering network names
-    const plasmNetToEthNet = isMainnetLock ? 'Main Network' : 'Ropsten';
+    const {
+        web3,
+        account,
+        contract,
+        latestBlock,
+        lockdropStart,
+        lockdropEnd,
+        currentNetwork,
+        error,
+        setLatestBlock,
+        setAccount,
+        setParameters,
+        setIsMainnetLock,
+    } = useEth();
 
-    const [web3, setWeb3] = useState<Web3>();
-    const [plasmApi, setPlasmApi] = useState<ApiPromise>();
-    const [account, setAccount] = useState<string>('');
-    const [contract, setContract] = useState<Contract>();
-    const [latestBlock, setLatestBlock] = useState(0);
-    // set default testnet contract address
-    const [contractAddress, setContractAddress] = useState(() => {
-        const _mainContract = secondLockContract.find(i => i.type === 'main')?.address;
-        // always use the last contract as default if it's testnet
-        const _ropContract = secondLockContract.filter(i => i.type === 'ropsten')[1].address;
+    const [message, setMessage] = useState<string>('');
 
-        const _addr = isMainnetLock ? _mainContract : _ropContract;
-        if (typeof _addr === 'undefined') throw new Error('Could not find the correct contract address');
-
-        return _addr;
-    });
-
-    const [isLoading, setLoading] = useState<{
-        loading: boolean;
-        message: string;
-    }>({
-        loading: false,
-        message: '',
-    });
-
-    const [currentNetwork, setCurrentNetwork] = useState('');
     // get lock event list from the local storage if it exists
     const [allLockEvents, setLockEvents] = useState<LockEvent[]>([]);
-
     const [publicKey, setPublicKey] = useState<string>();
-
-    const [lockdropStart, setLockdropStart] = useState('0');
-    const [lockdropEnd, setLockdropEnd] = useState('0');
 
     const isMainnet = (currentNetwork: string) => {
         return currentNetwork === 'main';
@@ -104,12 +68,6 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
 
         return started && !ended;
     }, [now, lockdropStart, lockdropEnd]);
-
-    const getAddressArray = useMemo(() => {
-        const _rop = secondLockContract.filter(i => i.type === 'ropsten');
-        const _addr = _rop.map(i => i.address);
-        return _addr;
-    }, []);
 
     // lockdrop parameter for real-time lockdrop rewards
     const lockParams = useMemo(() => {
@@ -133,65 +91,46 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                 allLockEvents.length === 0 ||
                 (latestBlock !== 0 && ethLockdrop.getHighestBlockNo(allLockEvents) <= latestBlock)
             ) {
-                const _allLocks = await ethLockdrop.getAllLockEvents(contractInst);
+                const _allLocks =
+                    currentNetwork !== 'private'
+                        ? await ethLockdrop.getAllLockEvents(contractInst)
+                        : await ethLockdrop.getLocalEvents(web3, contract?.defaultAccount || '', latestBlock);
                 setLockEvents(_allLocks);
             }
         },
         [latestBlock, allLockEvents],
     );
 
-    // initial API loading
+    // Set web3 api options
     useEffect(() => {
-        setLoading({
-            loading: true,
-            message: 'Syncing with Ethereum...',
-        });
-        (async function() {
-            try {
-                const web3Inst = await ethLockdrop.connectWeb3();
-                const _netType = await web3Inst.eth.net.getNetworkType();
-
-                if (isMainnet(_netType) === isMainnetLock) {
-                    // get user account from injected web3
-                    const ethAddr = await ethLockdrop.fetchAllAddresses(web3Inst);
-                    setCurrentNetwork(_netType);
-                    const _latest = await web3Inst.eth.getBlockNumber();
-                    setLatestBlock(_latest);
-
-                    const _contract = await ethLockdrop.createContractInstance(web3Inst, contractAddress);
-
-                    // check contract start and end dates
-                    const _end = await ethLockdrop.getContractEndDate(_contract);
-                    const _start = await ethLockdrop.getContractStartDate(_contract);
-                    setLockdropEnd(_end);
-                    setLockdropStart(_start);
-
-                    await handleFetchLockEvents(_contract);
-
-                    setWeb3(web3Inst);
-                    setContract(_contract);
-                    setAccount(ethAddr[0]);
-                    // connect to plasm node
-                    const plasmNode = await plasmUtils.createPlasmInstance(
-                        isMainnetLock ? plasmUtils.PlasmNetwork.Main : plasmUtils.PlasmNetwork.Dusty,
-                    );
-                    setPlasmApi(plasmNode);
-                } else {
-                    throw new Error('User is not connected to ' + plasmNetToEthNet);
-                }
-            } catch (e) {
-                toast.error(e.message);
-                console.log(e);
-            }
-        })().finally(() => {
-            setLoading({ loading: false, message: '' });
-        });
-        return () => {
-            plasmApi && plasmApi.disconnect();
-        };
-        // we disable this because we want this to only call once (on component mount)
+        setParameters(isMainnetLock, LockSeason.Second);
         // eslint-disable-next-line
-    }, []);
+  }, []);
+
+    // Display error messages
+    useEffect(() => {
+        if (typeof error !== 'undefined') {
+            toast.error(error);
+        }
+    }, [error]);
+
+    // Load lock events
+    useEffect(() => {
+        const fetchLockEvents = async () => {
+            if (typeof contract !== 'undefined') {
+                await handleFetchLockEvents(contract);
+            }
+        };
+
+        fetchLockEvents();
+        // eslint-disable-next-line
+    }, [contract]);
+
+    // Recreate web3 instance if network changed
+    useEffect(() => {
+        setIsMainnetLock(isMainnetLock);
+        // eslint-disable-next-line
+    }, [network]);
 
     // fetch ethereum block header in the background
     useEffect(() => {
@@ -216,42 +155,6 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         };
     });
 
-    // refresh if contract reloads
-    useEffect(() => {
-        if (web3) {
-            setLoading({
-                loading: true,
-                message: 'Connecting to Web3 instance with new contract...',
-            });
-
-            (async function() {
-                // fetch a new contract
-                const _contract = await ethLockdrop.createContractInstance(web3, contractAddress);
-                // fetch new lock events
-                await handleFetchLockEvents(_contract);
-                // check contract start and end dates
-                const _end = await ethLockdrop.getContractEndDate(_contract);
-                const _start = await ethLockdrop.getContractStartDate(_contract);
-                setLockdropEnd(_end);
-                setLockdropStart(_start);
-                setContract(_contract);
-            })()
-                .catch(e => {
-                    console.log(e);
-                    toast.error(e.message);
-                })
-                .finally(() => {
-                    setLoading({ loading: false, message: '' });
-                });
-        }
-        return () => {
-            removeWeb3Event();
-            if (plasmApi && plasmApi.hasSubscriptions) plasmApi.disconnect();
-        };
-        // we disable next line to prevent change on getClaimParams
-        // eslint-disable-next-line
-    }, [contractAddress]);
-
     /**
      * called when the user changes MetaMask account
      */
@@ -261,6 +164,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
             console.log('user changed account to ' + currentAccount);
             setAccount(currentAccount);
         }
+        // eslint-disable-next-line
     }, [account]);
 
     // handle metamask account change event handler
@@ -276,10 +180,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
 
     const handleGetPublicKey = useCallback(() => {
         if (!publicKey && web3) {
-            setLoading({
-                loading: true,
-                message: 'Obtaining user signature...',
-            });
+            setMessage('Obtaining user signature...');
 
             (async function() {
                 try {
@@ -294,7 +195,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                     toast.error(e.message);
                 }
             })().finally(() => {
-                setLoading({ loading: false, message: '' });
+                setMessage('');
             });
         } else if (typeof web3 === 'undefined') {
             toast.error('Not connected to Web3');
@@ -303,10 +204,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
 
     const handleSubmit = useCallback(
         async (formInputVal: LockInput) => {
-            setLoading({
-                loading: true,
-                message: 'Submitting transaction...',
-            });
+            setMessage('Submitting transaction...');
             try {
                 if (typeof web3 === 'undefined') {
                     throw new Error('Could not find a Web3 instance');
@@ -339,7 +237,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                 toast.error(e.message.toString());
                 console.log(e);
             } finally {
-                setLoading({ loading: false, message: '' });
+                setMessage('');
             }
         },
         [account, contract, publicKey, web3, handleFetchLockEvents],
@@ -359,7 +257,7 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
         <IonPage>
             <Navbar />
             <IonContent>
-                <IonLoading isOpen={isLoading.loading} message={isLoading.message} />
+                <LoadingOverlay message={message} />
                 {isMainnet(currentNetwork) !== isMainnetLock ? (
                     <SectionCard maxWidth="lg">
                         <Typography variant="h2" component="h4" align="center">
@@ -374,34 +272,19 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                                 endTime={moment.unix(parseInt(lockdropEnd))}
                                 lockData={allLockEvents}
                             />
-                            {!isMainnetLock && (
-                                <>
-                                    <Divider />
-                                    <Typography variant="h4" component="h5" align="center">
-                                        Lockdrop Contract Address
-                                    </Typography>
-                                    <Dropdown
-                                        options={getAddressArray}
-                                        value={contractAddress}
-                                        onChange={e => setContractAddress(e.value)}
-                                        className={classes.addressDropdown}
-                                    />
-                                </>
-                            )}
                         </SectionCard>
 
-                        {isLockdropOpen && <LockdropForm onSubmit={handleSubmit} dusty={!isMainnetLock} />}
+                        {isLockdropOpen && <LockdropForm onSubmit={handleSubmit} />}
 
                         <SectionCard maxWidth="lg">
                             <Typography variant="h4" component="h1" align="center">
                                 Real-time Lockdrop Status
                             </Typography>
-                            {publicKey && plasmApi ? (
+                            {publicKey && api ? (
                                 <ClaimStatus
                                     claimParams={lockParams}
-                                    plasmApi={plasmApi}
                                     networkType="ETH"
-                                    plasmNetwork={isMainnetLock ? 'Plasm' : 'Dusty'}
+                                    plasmNetwork="Plasm"
                                     publicKey={publicKey}
                                     getLockerSig={(id, addr) => getClaimToSig(id, addr)}
                                 />
@@ -415,21 +298,13 @@ const EthRealTimeLockPage: React.FC<Props> = ({ lockdropNetwork }) => {
                         </SectionCard>
                         {web3 && (
                             <LockedEthList
-                                web3={web3}
-                                account={account}
                                 lockData={allLockEvents}
                                 onClickRefresh={
                                     contract
                                         ? () => {
-                                              setLoading({
-                                                  loading: true,
-                                                  message: 'Fetching contract events...',
-                                              });
+                                              setMessage('Fetching contract events...');
                                               return handleFetchLockEvents(contract).finally(() => {
-                                                  setLoading({
-                                                      loading: false,
-                                                      message: '',
-                                                  });
+                                                  setMessage('');
                                               });
                                           }
                                         : undefined

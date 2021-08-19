@@ -2,8 +2,6 @@
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect, useCallback } from 'react';
 import { getTotalLockVal } from '../../helpers/lockdrop/EthereumLockdrop';
-//import * as ethAddress from 'ethereum-address';
-import Web3 from 'web3';
 import { LockEvent, TimeFormat } from '../../types/LockdropModels';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
@@ -26,6 +24,7 @@ import Web3Utils from 'web3-utils';
 import { toast } from 'react-toastify';
 import Skeleton from '@material-ui/lab/Skeleton';
 import BigNumber from 'bignumber.js';
+import { useEth } from '../../api/Web3Api';
 
 const useStyles = makeStyles(theme =>
     createStyles({
@@ -60,20 +59,17 @@ const useStyles = makeStyles(theme =>
 );
 
 interface CurrentLockProps {
-    web3: Web3;
-    account: string; // this will be used to get locks for a certain account
     lockData: LockEvent[];
     onClickRefresh?: () => Promise<void>;
 }
 
 interface UnlockInfoProps {
     lockInfo: LockEvent;
-    web3: Web3;
-    address: string;
     onClickRefresh?: () => Promise<void>;
 }
 // displays a list of locks tha the current user has locked
-const CurrentLocks: React.FC<CurrentLockProps> = ({ web3, account, lockData, onClickRefresh }) => {
+const CurrentLocks: React.FC<CurrentLockProps> = ({ lockData, onClickRefresh }) => {
+    const { account } = useEth();
     const classes = useStyles();
     const [lockEvents, setEvents] = useState<LockEvent[]>(lockData.filter(i => i.lockOwner === account));
 
@@ -94,12 +90,7 @@ const CurrentLocks: React.FC<CurrentLockProps> = ({ web3, account, lockData, onC
                                 <Divider />
                                 {lockEvents.map((eventItem, index) => (
                                     <div key={index}>
-                                        <UnlockInfo
-                                            lockInfo={eventItem}
-                                            web3={web3}
-                                            address={account}
-                                            onClickRefresh={onClickRefresh}
-                                        />
+                                        <UnlockInfo lockInfo={eventItem} onClickRefresh={onClickRefresh} />
                                         <Divider />
                                     </div>
                                 ))}
@@ -118,10 +109,11 @@ const CurrentLocks: React.FC<CurrentLockProps> = ({ web3, account, lockData, onC
 };
 
 // the individual lock item
-const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address, onClickRefresh }) => {
+const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, onClickRefresh }) => {
     const classes = useStyles();
     // 24 hours in epoch
     const epochDayMil = 86400000;
+    const { web3, account } = useEth();
 
     const getUnlockDate = useCallback(() => {
         // Ethereum timestamp is in seconds while JS Date is ms
@@ -206,7 +198,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address, onClic
         setLoading(true);
         try {
             await web3.eth.sendTransaction({
-                from: address,
+                from: account,
                 to: lockInfo.lock,
                 value: '0',
             });
@@ -221,7 +213,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address, onClic
         }
         // we don't want to add web3 in here
         // eslint-disable-next-line
-    }, [address, lockInfo.lock]);
+    }, [account, lockInfo.lock]);
 
     return (
         <>
@@ -268,7 +260,7 @@ const UnlockInfo: React.FC<UnlockInfoProps> = ({ lockInfo, web3, address, onClic
                                             ) : unlocked ? (
                                                 <p>Lock already unlocked!</p>
                                             ) : (
-                                                <p>You can unlocked your lock!</p>
+                                                <p>You can unlock your lock!</p>
                                             )}
                                         </>
                                     )}

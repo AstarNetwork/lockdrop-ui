@@ -33,7 +33,7 @@ async function web3Listener() {
     }
 }
 
-export const removeWeb3Event = () => {
+export const removeWeb3Event = (): void => {
     new Promise((resolve, reject) => {
         try {
             window.removeEventListener('load', () => resolve(web3Listener()));
@@ -43,7 +43,7 @@ export const removeWeb3Event = () => {
     });
 };
 
-const getWeb3 = () =>
+const getWeb3 = (): Promise<unknown> =>
     new Promise((resolve, reject) => {
         // check if the event was already fired
         if (document.readyState === 'complete') {

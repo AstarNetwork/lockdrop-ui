@@ -11,7 +11,7 @@ import { Company, Products, Collaboration, Blogs, Community } from '../data/link
 import Divider from '@material-ui/core/Divider';
 import { ThemeColors } from '../theme/themes';
 
-const Copyright = () => {
+const Copyright: React.FC = () => {
     return (
         <>
             <Typography variant="body2">
@@ -45,14 +45,14 @@ const useStyles = makeStyles(theme => ({
     siteMap: {},
 }));
 
-const StickyFooter = () => {
+const StickyFooter: React.FC = () => {
     const classes = useStyles();
 
     return (
         <div className={classes.root}>
             <footer className={classes.footer}>
                 <Container maxWidth="lg">
-                    <Grid container spacing={4} justify="center" className={classes.siteMap}>
+                    <Grid container spacing={4} justifyContent="center" className={classes.siteMap}>
                         <Grid item>
                             <Typography variant="body1" component="h1" align="center" className={classes.footerHeader}>
                                 Company

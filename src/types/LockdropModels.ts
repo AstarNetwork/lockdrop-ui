@@ -50,7 +50,6 @@ export interface TimeFormat {
 export enum LockSeason {
     First,
     Second,
-    Dusty,
     Third,
 }
 
@@ -76,7 +75,7 @@ export interface LockEvent {
 // option data is the type that is going to be passed to the component
 export interface OptionData {
     dataSets: OptionItem[];
-    onChoose: Function;
+    onChoose: (e: string) => void;
 }
 
 // option item type is used to provide the data for dropdown items
@@ -113,3 +112,8 @@ export interface HwSigner {
     sign(hash: Buffer, lowR?: boolean): Buffer | Promise<Buffer>;
     getPublicKey?(): Buffer;
 }
+
+export type LockdropVoteRequirements = {
+    voteThreshold: number;
+    positiveVotes: number;
+};

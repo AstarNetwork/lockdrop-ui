@@ -1,10 +1,9 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState, useMemo } from 'react';
-import { ApiPromise } from '@polkadot/api';
-import * as plasmUtils from '../../helpers/plasmUtils';
-import * as polkadotUtils from '@polkadot/util';
-import * as polkadotCrypto from '@polkadot/util-crypto';
-import { Claim, Lockdrop } from 'src/types/LockdropModels';
+import { createLockParam, claimPowNonce, getClaimStatus } from '../../helpers/plasmUtils';
+import { hexToU8a } from '@polkadot/util';
+import { encodeAddress } from '@polkadot/util-crypto';
+import { Claim, Lockdrop } from '../../types/LockdropModels';
 import {
     makeStyles,
     createStyles,
@@ -19,12 +18,10 @@ import {
     CircularProgress,
 } from '@material-ui/core';
 import plasmIcon from '../../resources/plasm-icon.svg';
-import dustyIcon from '../../resources/dusty-icon.svg';
 import Web3Utils from 'web3-utils';
 import SendIcon from '@material-ui/icons/Send';
 import CheckIcon from '@material-ui/icons/Check';
 import { green } from '@material-ui/core/colors';
-import BigNumber from 'bignumber.js';
 import Badge from '@material-ui/core/Badge';
 import ThumbUpIcon from '@material-ui/icons/ThumbUp';
 import ThumbDownIcon from '@material-ui/icons/ThumbDown';
@@ -33,6 +30,8 @@ import { toast } from 'react-toastify';
 import HourglassEmptyIcon from '@material-ui/icons/HourglassEmpty';
 import ReplayIcon from '@material-ui/icons/Replay';
 import moment from 'moment';
+import { useApi } from '../../api/Api';
+import useChainInfo from '../../helpers/useChainInfo';
 
 enum ClaimState {
     NotReq, // tokens are locked, but no requests are sent
@@ -44,8 +43,7 @@ enum ClaimState {
 
 interface ItemProps {
     lockParam: Lockdrop;
-    plasmApi: ApiPromise;
-    plasmNetwork: 'Plasm' | 'Dusty';
+    plasmNetwork: 'Plasm';
     networkType: 'BTC' | 'ETH';
     positiveVotes: number;
     voteThreshold: number;
@@ -91,8 +89,6 @@ const useStyles = makeStyles(theme =>
 
 const ClaimItem: React.FC<ItemProps> = ({
     lockParam,
-    plasmApi,
-    plasmNetwork,
     networkType,
     positiveVotes,
     voteThreshold,
@@ -103,11 +99,12 @@ const ClaimItem: React.FC<ItemProps> = ({
     initClaimData,
 }) => {
     const classes = useStyles();
-
+    const { api } = useApi();
     const now = moment.utc().valueOf();
+    const { formatBalance } = useChainInfo();
 
     const claimId = useMemo(() => {
-        return plasmUtils.createLockParam(
+        return createLockParam(
             lockParam.type,
             lockParam.transactionHash.toHex(),
             lockParam.publicKey.toHex(),
@@ -162,9 +159,10 @@ const ClaimItem: React.FC<ItemProps> = ({
     }, [hasAllVotes, reqAccepted, claimData, lastClaimTime, now, isOver]);
 
     const receivingPlm = useMemo(() => {
-        if (typeof claimData === 'undefined') return '0';
+        if (typeof claimData === 'undefined') return formatBalance(0);
 
-        return plasmUtils.femtoToPlm(new BigNumber(claimData.amount.toString())).toFixed();
+        return formatBalance(claimData.amount);
+        // eslint-disable-next-line
     }, [claimData]);
 
     const claimStatus = useMemo(() => {
@@ -187,6 +185,7 @@ const ClaimItem: React.FC<ItemProps> = ({
             // turn off loading if it's on
             if (claimData.complete.valueOf() && claimingLock) setClaimingLock(false);
         }
+        // eslint-disable-next-line
     }, [claimData, claimingLock]);
 
     /**
@@ -195,16 +194,16 @@ const ClaimItem: React.FC<ItemProps> = ({
      */
     const submitClaimReq = async (param: Lockdrop) => {
         setSendingRequest(true);
-        const _lock = plasmUtils.createLockParam(
+        const _lock = createLockParam(
             param.type,
             param.transactionHash.toHex(),
             param.publicKey.toHex(),
             param.duration.toString(),
             param.value.toString(),
         );
-        const _nonce = plasmUtils.claimPowNonce(_lock.hash);
+        const _nonce = claimPowNonce(_lock.hash);
 
-        const unsubscribe = await plasmApi.tx.plasmLockdrop.request(_lock.toU8a(), _nonce).send(({ status }) => {
+        const unsubscribe = await api.tx.plasmLockdrop.request(_lock.toU8a(), _nonce).send(({ status }) => {
             // set the timestamp of the request
             setLastClaimTime(now);
             console.log('Claim request status:', status.type);
@@ -212,7 +211,7 @@ const ClaimItem: React.FC<ItemProps> = ({
             if (status.isFinalized) {
                 console.log('Finalized block hash', status.asFinalized.toHex());
 
-                plasmUtils.getClaimStatus(plasmApi, claimId).then(claim => {
+                getClaimStatus(api, claimId).then(claim => {
                     setClaimData(claim);
                     setSendingRequest(false);
                 });
@@ -237,15 +236,15 @@ const ClaimItem: React.FC<ItemProps> = ({
                     // hex string signature
                     const _sig = await getLockerSig(id, claimRecipientAddress);
 
-                    const unsubscribe = await plasmApi.tx.plasmLockdrop
-                        .claimTo(claimId, claimRecipientAddress, polkadotUtils.hexToU8a(_sig))
+                    const unsubscribe = await api.tx.plasmLockdrop
+                        .claimTo(claimId, claimRecipientAddress, hexToU8a(_sig))
                         .send(({ status }) => {
                             console.log('Token claim status:', status.type);
 
                             if (status.isFinalized) {
                                 console.log('Finalized block hash', status.asFinalized.toHex());
 
-                                plasmUtils.getClaimStatus(plasmApi, claimId).then(claim => {
+                                getClaimStatus(api, claimId).then(claim => {
                                     setClaimData(claim);
                                     setClaimingLock(false);
                                 });
@@ -255,13 +254,13 @@ const ClaimItem: React.FC<ItemProps> = ({
                         });
                 } else {
                     console.log('Sending tokens to the default address');
-                    const unsubscribe = await plasmApi.tx.plasmLockdrop.claim(claimId).send(({ status }) => {
+                    const unsubscribe = await api.tx.plasmLockdrop.claim(claimId).send(({ status }) => {
                         console.log('Token claim status:', status.type);
 
                         if (status.isFinalized) {
                             console.log('Finalized block hash', status.asFinalized.toHex());
 
-                            plasmUtils.getClaimStatus(plasmApi, claimId).then(claim => {
+                            getClaimStatus(api, claimId).then(claim => {
                                 setClaimData(claim);
                                 setClaimingLock(false);
                             });
@@ -298,8 +297,8 @@ const ClaimItem: React.FC<ItemProps> = ({
                 translucent
                 header={'Confirm Rewards'}
                 subHeader={'Real-time lockdrop claim'}
-                message={`Sending claim rewards of ${receivingPlm} ${plasmNetwork === 'Plasm' ? 'PLM' : 'PLD'}.
-                    to ${polkadotCrypto.encodeAddress(claimRecipientAddress, 5)}.
+                message={`Sending claim rewards of ${receivingPlm}.
+                    to ${encodeAddress(claimRecipientAddress, 5)}.
                     Please confirm`}
                 buttons={[
                     {
@@ -354,7 +353,7 @@ const ClaimItem: React.FC<ItemProps> = ({
             <ListItem>
                 <ListItemIcon>
                     <Icon>
-                        {plasmNetwork === 'Plasm' ? <img src={plasmIcon} alt="" /> : <img src={dustyIcon} alt="" />}
+                        <img src={plasmIcon} alt="" />
                     </Icon>
                 </ListItemIcon>
                 <ListItemText>
@@ -373,7 +372,7 @@ const ClaimItem: React.FC<ItemProps> = ({
                         <>
                             <br />
                             <Typography component="h5" variant="h6" className={classes.inline} color="textPrimary">
-                                Receiving {receivingPlm} {plasmNetwork === 'Plasm' ? 'PLM' : 'PLD'}
+                                Receiving {receivingPlm}
                             </Typography>
                         </>
                     )}

@@ -7,7 +7,7 @@ import twitter from '../resources/logo-twitter.svg';
 import discord from '../resources/logo-discord.svg';
 import telegram from '../resources/logo-telegram.svg';
 import github from '../resources/logo-github.svg';
-import { firstLock, secondLock, dustyLock } from '../data/pages';
+import { firstLock, secondLock } from '../data/pages';
 import { LockMenu } from '../types/LockdropModels';
 import { calculator, stats } from 'ionicons/icons';
 
@@ -48,7 +48,6 @@ const SideMenu: React.FC = () => {
 
                     <MenuSection headerText="First Lockdrop" menuItems={firstLock} />
                     <MenuSection headerText="Second Lockdrop" menuItems={secondLock} />
-                    <MenuSection headerText="Dusty Lockdrop" menuItems={dustyLock} />
 
                     <IonList>
                         <IonListHeader>Lockdrop Utility</IonListHeader>
