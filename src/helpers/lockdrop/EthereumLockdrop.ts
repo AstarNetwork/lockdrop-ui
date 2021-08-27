@@ -550,7 +550,7 @@ export async function submitLockTx(txInput: LockInput, address: string, contract
         .send({
             from: address,
             value: amountToSend,
-            maxPriorityFeePerGas
+            maxPriorityFeePerGas,
         })
         .on('transactionHash', (res: any) => {
             hash = res;
