@@ -43,7 +43,7 @@
         "truffle-contract": "^3.0.1",
         "typescript": "^4.3.5",
         "varuint-bitcoin": "^1.1.2",
-        "web3": "^1.3.0",
+        "web3": "^1.5.2",
         "web3-utils": "^1.3.0"
     },
     "devDependencies": {

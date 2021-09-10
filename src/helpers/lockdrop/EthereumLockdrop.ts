@@ -541,12 +541,16 @@ export async function submitLockTx(txInput: LockInput, address: string, contract
     const amountToSend = Web3.utils.toWei(txInput.amount, 'ether');
     let hash = '';
 
+    // Memo: 2gwei
+    const maxPriorityFeePerGas = 2000000000;
+
     // communicate with the smart contract
     await contract.methods
         .lock(txInput.duration, introducer)
         .send({
             from: address,
             value: amountToSend,
+            maxPriorityFeePerGas,
         })
         .on('transactionHash', (res: any) => {
             hash = res;
